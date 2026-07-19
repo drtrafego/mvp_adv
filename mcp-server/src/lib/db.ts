@@ -128,6 +128,33 @@ export async function upsertComunicacoes(comuns: ComunicacaoDJEN[]): Promise<num
 }
 
 /**
+ * Grava uma análise (de intimação ou documento) na tabela `analises`, ligada a um processo
+ * da carteira pelo número CNJ. Nasce origem='maquina' (sugerida); o advogado revisa no painel.
+ * Retorna null se o processo ainda não estiver na carteira.
+ */
+export async function salvarAnalise(a: {
+  numeroCnj: string;
+  tipo: string;
+  conteudo: unknown;
+  modelo?: string;
+}): Promise<{ id: string } | null> {
+  const d = getDb();
+  const processoId = await processoExistente(a.numeroCnj);
+  if (!processoId) return null;
+  const [row] = await d
+    .insert(schema.analises)
+    .values({
+      processoId,
+      tipo: a.tipo,
+      conteudo: a.conteudo as any,
+      origem: "maquina",
+      modelo: a.modelo ?? null,
+    })
+    .returning({ id: schema.analises.id });
+  return { id: row.id };
+}
+
+/**
  * Retorna o id do processo na carteira pelo número CNJ (compara sempre com máscara), ou null
  * se ainda não estiver cadastrado.
  */

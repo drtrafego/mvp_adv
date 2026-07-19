@@ -8,6 +8,7 @@ import {
   CalendarClock,
   Scale,
   Inbox,
+  FileSearch,
   Users,
   Settings,
   LogOut,
@@ -24,6 +25,7 @@ const SETORES = [
   { href: "/prazos", label: "Prazos", icon: CalendarClock },
   { href: "/processos", label: "Processos", icon: Scale },
   { href: "/intimacoes", label: "Intimações", icon: Inbox },
+  { href: "/analises", label: "Análises", icon: FileSearch },
   { href: "/clientes", label: "Clientes", icon: Users },
   { href: "/configuracoes", label: "Configurações", icon: Settings },
 ];

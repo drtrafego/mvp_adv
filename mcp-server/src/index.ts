@@ -25,6 +25,7 @@ import {
   upsertProcesso,
   upsertMovimentacoes,
   upsertComunicacoes,
+  salvarAnalise,
   inserirPrazoSugerido,
   confirmarPrazo,
   editarPrazo,
@@ -605,6 +606,55 @@ server.registerTool(
         "ICP-Brasil do advogado habilitado). No MVP, arraste o PDF no painel ou aponte o arquivo " +
         "local para analisar. Configure JUDIT_API_KEY ou ESCAVADOR_API_KEY para habilitar.",
     ),
+);
+
+// ---------------------------------------------------------------------------
+// salvar_analise — grava a análise de uma intimação/documento (Fase 5)
+// ---------------------------------------------------------------------------
+server.registerTool(
+  "salvar_analise",
+  {
+    title: "Salvar análise de documento/intimação",
+    description:
+      "Grava no painel a análise de uma intimação ou documento. Você (Claude) lê o teor, produz a " +
+      "análise estruturada e chama esta ferramenta para persistir. A análise nasce como SUGESTÃO " +
+      "(máquina); o advogado revisa e tem a palavra final. Ligada ao processo pelo número CNJ.",
+    inputSchema: {
+      numero_cnj: z.string().describe("Número CNJ do processo já cadastrado na carteira."),
+      tipo: z
+        .string()
+        .default("analise_documento")
+        .describe("Tipo da análise: analise_intimacao, analise_documento, estrategia_defesa, etc."),
+      tipo_ato: z.string().optional().describe("Natureza do ato analisado (ex.: 'Decisão', 'Sentença')."),
+      resultado: z
+        .enum(["favoravel", "desfavoravel", "neutro"])
+        .optional()
+        .describe("Como o ato impacta o cliente."),
+      resumo: z.string().describe("Resumo objetivo do que o documento diz."),
+      acao_necessaria: z.string().optional().describe("O que o advogado precisa fazer, se algo."),
+      prazo: z.string().optional().describe("Prazo mencionado, se houver (ex.: '5 dias úteis')."),
+      pontos: z.array(z.string()).optional().describe("Pontos-chave, um por item."),
+      atencao: z.string().optional().describe("Alerta ou risco a destacar."),
+    },
+  },
+  async ({ numero_cnj, tipo, tipo_ato, resultado, resumo, acao_necessaria, prazo, pontos, atencao }) => {
+    if (!bancoConfigurado())
+      return erro("Banco (Neon) não configurado. Defina DATABASE_URL para salvar análises.");
+    try {
+      const conteudo = { tipo_ato, resultado, resumo, acao_necessaria, prazo: prazo ?? null, pontos, atencao };
+      const r = await salvarAnalise({ numeroCnj: numero_cnj, tipo, conteudo, modelo: "claude (análise assistida)" });
+      if (!r)
+        return erro(
+          `Processo ${formatarCNJ(numero_cnj)} não está na carteira. Cadastre com adicionar_processo antes de analisar.`,
+        );
+      return texto(
+        `✅ Análise salva no painel (setor Análises) para ${formatarCNJ(numero_cnj)}. ` +
+          `Nasce como sugestão; o advogado revisa e confirma. id=${r.id}`,
+      );
+    } catch (e) {
+      return erro((e as Error).message);
+    }
+  },
 );
 
 async function main() {

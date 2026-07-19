@@ -184,6 +184,50 @@ export async function listarIntimacoes(): Promise<IntimacaoRow[]> {
   return rows as IntimacaoRow[];
 }
 
+export interface AnaliseConteudo {
+  tipo_ato?: string;
+  resultado?: string;
+  resumo?: string;
+  acao_necessaria?: string;
+  prazo?: string | null;
+  pontos?: string[];
+  atencao?: string;
+}
+
+export interface AnaliseRow {
+  id: string;
+  tipo: string;
+  conteudo: AnaliseConteudo;
+  origem: string | null;
+  modelo: string | null;
+  createdAt: Date | null;
+  processoId: string | null;
+  numeroCnj: string | null;
+  clienteNome: string | null;
+}
+
+/** Análises de documentos/intimações produzidas pela máquina, para o advogado revisar. */
+export async function listarAnalises(): Promise<AnaliseRow[]> {
+  if (!db) return [];
+  const rows = await db
+    .select({
+      id: schema.analises.id,
+      tipo: schema.analises.tipo,
+      conteudo: schema.analises.conteudo,
+      origem: schema.analises.origem,
+      modelo: schema.analises.modelo,
+      createdAt: schema.analises.createdAt,
+      processoId: schema.analises.processoId,
+      numeroCnj: schema.processos.numeroCnj,
+      clienteNome: schema.processos.clienteNome,
+    })
+    .from(schema.analises)
+    .leftJoin(schema.processos, eq(schema.analises.processoId, schema.processos.id))
+    .orderBy(desc(schema.analises.createdAt))
+    .limit(100);
+  return rows as AnaliseRow[];
+}
+
 export interface ClienteRow {
   nome: string;
   totalProcessos: number;
