@@ -7,10 +7,12 @@ import { ProcessosList } from "@/components/processos-list";
 import { Reveal } from "@/components/motion-primitives";
 import { bancoConectado } from "@/db";
 import { listarPrazos, listarProcessos, resumo } from "@/db/queries";
+import { exigirLogin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
+  await exigirLogin();
   const conectado = bancoConectado();
   const [dados, prazos, processos] = await Promise.all([
     resumo(),

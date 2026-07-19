@@ -214,6 +214,32 @@ export const feriadosForenses = pgTable(
   (t) => ({ uniq: unique("feriado_unique").on(t.tribunal, t.data) }),
 );
 
+// Autenticacao do painel. Projeto de um advogado so (nao e SaaS): normalmente
+// existe um unico usuario. Login por email + senha (hash bcrypt); a sessao vive
+// no proprio banco (token opaco no cookie, hash sha256 guardado aqui).
+export const usuarios = pgTable("usuarios", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  email: text("email").unique().notNull(),
+  senhaHash: text("senha_hash").notNull(),
+  nome: text("nome"),
+  oab: text("oab"),
+  criadoEm: timestamp("criado_em", { withTimezone: true }).defaultNow(),
+});
+
+export const sessoes = pgTable(
+  "sessoes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    usuarioId: uuid("usuario_id")
+      .references(() => usuarios.id, { onDelete: "cascade" })
+      .notNull(),
+    tokenHash: text("token_hash").unique().notNull(),
+    expiraEm: timestamp("expira_em", { withTimezone: true }).notNull(),
+    criadoEm: timestamp("criado_em", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({ idxUsuario: index("idx_sessoes_usuario").on(t.usuarioId) }),
+);
+
 // Fonte de verdade do "o que foi coletado e quando". Cada busca no DJEN ou no
 // DataJud grava uma linha (ok | erro | parcial), para o painel mostrar o status
 // da coleta e diferenciar "sem intimação" de "falha na coleta".

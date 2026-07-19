@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, FileWarning } from "lucide-react";
 import { detalheProcesso } from "@/db/queries";
 import { ProcessoDetalhe } from "@/components/processo/processo-detalhe";
+import { exigirLogin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,7 @@ export default async function ProcessoPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await exigirLogin();
   const { id } = await params;
   const detalhe = await detalheProcesso(id);
 
