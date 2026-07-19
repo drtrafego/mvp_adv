@@ -38,13 +38,19 @@ montar defesa, redigir peça), existe um squad de subagentes coordenado pelo **f
 | Especialista | Função | Aciona quando |
 |---|---|---|
 | `forense` | orquestra: classifica o pedido e delega, em hierarquia | qualquer pedido de raciocínio jurídico sobre um caso |
+| `construtor-tese` | caso NOVO: monta a tese do zero (direito, pedidos, viabilidade, provas) | "quero entrar com uma ação", cliente novo, ainda sem peça |
 | `pesquisador-juridico` | busca e VERIFICA lei/súmula/jurisprudência em fonte oficial | precisa de fundamento; é a trava contra citação inventada |
-| `analista-documento` | lê intimação/documento e devolve análise estruturada (grava no painel) | "analisa esse documento/intimação" |
-| `estrategista-defesa` | propõe preliminares, mérito, provas, pontos frágeis | "qual a estratégia", "como respondo essa ação" |
+| `analista-documento` | lê intimação/documento JÁ existente e devolve análise estruturada | "analisa esse documento/intimação" |
+| `estrategista-defesa` | defesa de ação JÁ proposta: preliminares, mérito, provas, pontos frágeis | "qual a estratégia", "como respondo essa ação" |
 | `redator-forense` | monta o rascunho da peça (CPC), para o advogado revisar/assinar | "faz um rascunho da inicial/contestação/recurso" |
 
-Fluxo em hierarquia (o output de um alimenta o próximo): `pesquisador-juridico` → `estrategista-defesa`
-→ `redator-forense`. A `analista-documento` roda sozinha.
+Distinção-chave: **caso novo** (do zero) → `construtor-tese`; **documento/ação que já existe** →
+`analista-documento` (ler) ou `estrategista-defesa` (defender).
+
+Fluxos em hierarquia (o output de um alimenta o próximo):
+- **Caso novo**: `construtor-tese` → `pesquisador-juridico` → `redator-forense` (inicial).
+- **Caso em curso**: `pesquisador-juridico` → `estrategista-defesa` → `redator-forense` (defesa).
+- A `analista-documento` roda sozinha.
 
 **Trava inegociável (skill `jurisprudencia-real`):** nenhum agente cita lei, artigo, parágrafo,
 súmula ou julgado de memória. Toda citação vem de fonte oficial consultada na hora, com o link, e
