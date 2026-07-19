@@ -179,6 +179,16 @@ async function buscarIntimacoesRaw(
     }
     if (resp.status === 403) {
       if (i === tentativas - 1) {
+        // Fora do Brasil o DJEN geobloqueia e o fallback de navegador também não passa;
+        // COMUNICA_SEM_BROWSER=1 pula o fallback e devolve erro claro (evita travar).
+        if (process.env.COMUNICA_SEM_BROWSER === "1") {
+          throw new ComunicaError(
+            "DJEN retornou 403 (WAF/geobloqueio) e o fallback de navegador está desativado. " +
+              "Rode a coleta de um IP brasileiro (VPS ou máquina no Brasil).",
+            403,
+            true,
+          );
+        }
         // O fetch direto tomou 403 do AWS WAF. Delega ao navegador real (Playwright),
         // que carrega o SPA, deixa o SDK do WAF emitir o aws-waf-token e dispara a
         // consulta por dentro da página (same-origin). Import dinâmico para não
