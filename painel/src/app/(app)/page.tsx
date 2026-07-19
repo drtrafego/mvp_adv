@@ -1,18 +1,15 @@
 import Image from "next/image";
 import { Scale, FileText, Clock, TriangleAlert } from "lucide-react";
-import { Topbar } from "@/components/topbar";
 import { SiteHeader } from "@/components/site-header";
 import { PrazosBoard } from "@/components/prazos-board";
 import { ProcessosList } from "@/components/processos-list";
 import { Reveal } from "@/components/motion-primitives";
 import { bancoConectado } from "@/db";
 import { listarPrazos, listarProcessos, resumo } from "@/db/queries";
-import { exigirLogin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  await exigirLogin();
   const conectado = bancoConectado();
   const [dados, prazos, processos] = await Promise.all([
     resumo(),
@@ -22,7 +19,6 @@ export default async function Home() {
 
   return (
     <div className="relative flex flex-1 flex-col">
-      <Topbar />
       <SiteHeader resumo={dados} />
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">

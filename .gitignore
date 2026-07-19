@@ -10,3 +10,6 @@ build/
 .vercel
 .turbo
 coverage/
+
+.vercel
+.env*

@@ -1,0 +1,74 @@
+import { Scale, Mail, IdCard, ShieldCheck, LogOut } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+import { getUsuarioAtual } from "@/lib/auth";
+import { fazerLogout } from "@/app/login/actions";
+
+export const dynamic = "force-dynamic";
+
+export default async function ConfiguracoesPage() {
+  const usuario = await getUsuarioAtual();
+
+  return (
+    <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-8">
+      <PageHeader
+        rotulo="preferências e acesso"
+        titulo="Configurações"
+        descricao="Este sistema é de um único advogado. Aqui ficam seus dados de acesso e a fronteira do sistema."
+      />
+
+      <section className="rounded-xl border bg-card p-6 shadow-sm">
+        <h2 className="font-serif text-lg font-semibold">Titular do gabinete</h2>
+        <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+          <Campo icone={<Scale className="h-4 w-4" />} rotulo="Nome" valor={usuario?.nome ?? "-"} />
+          <Campo icone={<Mail className="h-4 w-4" />} rotulo="Email de acesso" valor={usuario?.email ?? "-"} />
+          <Campo icone={<IdCard className="h-4 w-4" />} rotulo="OAB" valor={usuario?.oab ?? "-"} />
+          <Campo
+            icone={<ShieldCheck className="h-4 w-4" />}
+            rotulo="Senha"
+            valor="alterar pelo terminal: pnpm criar-advogado"
+          />
+        </dl>
+
+        <form action={fazerLogout} className="mt-6 border-t border-border pt-5">
+          <button
+            type="submit"
+            className="inline-flex items-center gap-2 rounded-lg border bg-background px-4 py-2 text-sm font-medium transition-colors hover:border-destructive/40 hover:text-destructive"
+          >
+            <LogOut className="h-4 w-4" />
+            Sair da conta
+          </button>
+        </form>
+      </section>
+
+      <section className="mt-6 rounded-xl border border-amber-brand/30 bg-amber-tint/40 p-6">
+        <h2 className="font-serif text-lg font-semibold text-amber-brand">A fronteira do sistema</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          O Gabinete coleta, organiza, analisa e sugere prazos. Ele{" "}
+          <strong className="text-foreground">não peticiona, não decide, não é consultoria</strong>. Leva você
+          até a beira da decisão e para. Peticionar, traçar estratégia e assinar a peça é seu. A máquina
+          propõe, o profissional dispõe.
+        </p>
+      </section>
+    </div>
+  );
+}
+
+function Campo({
+  icone,
+  rotulo,
+  valor,
+}: {
+  icone: React.ReactNode;
+  rotulo: string;
+  valor: string;
+}) {
+  return (
+    <div>
+      <dt className="flex items-center gap-1.5 font-mono text-[0.65rem] uppercase tracking-[0.15em] text-muted-foreground">
+        {icone}
+        {rotulo}
+      </dt>
+      <dd className="mt-1 font-serif text-sm">{valor}</dd>
+    </div>
+  );
+}

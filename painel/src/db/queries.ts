@@ -148,6 +148,62 @@ export async function detalheProcesso(id: string): Promise<DetalheProcesso | nul
   };
 }
 
+export interface IntimacaoRow {
+  id: string;
+  tipo: string | null;
+  meio: string | null;
+  dataDisponibilizacao: string | null;
+  dataPublicacao: string | null;
+  oabDestino: string | null;
+  inteiroTeor: string | null;
+  processada: boolean | null;
+  numeroProcesso: string | null;
+  numeroCnj: string | null;
+}
+
+/** Últimas intimações/comunicações (DJEN), da mais recente para a mais antiga. */
+export async function listarIntimacoes(): Promise<IntimacaoRow[]> {
+  if (!db) return [];
+  const rows = await db
+    .select({
+      id: schema.comunicacoes.id,
+      tipo: schema.comunicacoes.tipo,
+      meio: schema.comunicacoes.meio,
+      dataDisponibilizacao: schema.comunicacoes.dataDisponibilizacao,
+      dataPublicacao: schema.comunicacoes.dataPublicacao,
+      oabDestino: schema.comunicacoes.oabDestino,
+      inteiroTeor: schema.comunicacoes.inteiroTeor,
+      processada: schema.comunicacoes.processada,
+      numeroProcesso: schema.comunicacoes.numeroProcesso,
+      numeroCnj: schema.processos.numeroCnj,
+    })
+    .from(schema.comunicacoes)
+    .leftJoin(schema.processos, eq(schema.comunicacoes.processoId, schema.processos.id))
+    .orderBy(desc(schema.comunicacoes.dataDisponibilizacao))
+    .limit(100);
+  return rows as IntimacaoRow[];
+}
+
+export interface ClienteRow {
+  nome: string;
+  totalProcessos: number;
+}
+
+/** Clientes da carteira, agregados a partir dos processos ativos. */
+export async function listarClientes(): Promise<ClienteRow[]> {
+  if (!db) return [];
+  const rows = await db
+    .select({
+      nome: schema.processos.clienteNome,
+      totalProcessos: sql<number>`count(*)::int`,
+    })
+    .from(schema.processos)
+    .where(and(isNull(schema.processos.excluidoEm), sql`${schema.processos.clienteNome} is not null and ${schema.processos.clienteNome} <> ''`))
+    .groupBy(schema.processos.clienteNome)
+    .orderBy(schema.processos.clienteNome);
+  return rows as ClienteRow[];
+}
+
 export interface Resumo {
   totalProcessos: number;
   prazosAbertos: number;
