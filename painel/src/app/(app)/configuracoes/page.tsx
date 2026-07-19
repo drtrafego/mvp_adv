@@ -1,5 +1,6 @@
-import { Scale, Mail, IdCard, ShieldCheck, LogOut } from "lucide-react";
+import { Scale, Mail, IdCard, ShieldCheck, LogOut, Users } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
+import { ImportarClientes } from "@/components/importar-clientes";
 import { getUsuarioAtual } from "@/lib/auth";
 import { fazerLogout } from "@/app/login/actions";
 
@@ -38,6 +39,16 @@ export default async function ConfiguracoesPage() {
             Sair da conta
           </button>
         </form>
+      </section>
+
+      <section className="mt-6 rounded-xl border bg-card p-6 shadow-sm">
+        <h2 className="flex items-center gap-2 font-serif text-lg font-semibold">
+          <Users className="h-5 w-5 text-indigo-brand" /> Importar clientes
+        </h2>
+        <p className="mt-1 mb-4 text-sm text-muted-foreground">
+          Suba uma planilha e traga sua carteira de clientes de uma vez. Quem já existe não é duplicado.
+        </p>
+        <ImportarClientes />
       </section>
 
       <section className="mt-6 rounded-xl border border-amber-brand/30 bg-amber-tint/40 p-6">

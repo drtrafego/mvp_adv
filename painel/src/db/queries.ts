@@ -233,18 +233,25 @@ export interface ClienteRow {
   totalProcessos: number;
 }
 
-/** Clientes da carteira, agregados a partir dos processos ativos. */
+/**
+ * Clientes da carteira: une os cadastrados na tabela `clientes` (ex.: importados de planilha) com
+ * os nomes que aparecem nos processos, sem duplicar, e conta os processos de cada um.
+ */
 export async function listarClientes(): Promise<ClienteRow[]> {
   if (!db) return [];
-  const rows = await db
-    .select({
-      nome: schema.processos.clienteNome,
-      totalProcessos: sql<number>`count(*)::int`,
-    })
-    .from(schema.processos)
-    .where(and(isNull(schema.processos.excluidoEm), sql`${schema.processos.clienteNome} is not null and ${schema.processos.clienteNome} <> ''`))
-    .groupBy(schema.processos.clienteNome)
-    .orderBy(schema.processos.clienteNome);
+  const res = await db.execute(sql`
+    SELECT todos.nome AS nome, count(p.id)::int AS "totalProcessos"
+    FROM (
+      SELECT nome FROM clientes WHERE nome IS NOT NULL AND nome <> ''
+      UNION
+      SELECT DISTINCT cliente_nome AS nome FROM processos
+        WHERE cliente_nome IS NOT NULL AND cliente_nome <> '' AND excluido_em IS NULL
+    ) todos
+    LEFT JOIN processos p ON p.cliente_nome = todos.nome AND p.excluido_em IS NULL
+    GROUP BY todos.nome
+    ORDER BY todos.nome
+  `);
+  const rows = (Array.isArray(res) ? res : (res as { rows?: unknown[] }).rows) ?? [];
   return rows as ClienteRow[];
 }
 

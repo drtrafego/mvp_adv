@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Check, Pencil, X, RefreshCw, CalendarDays, Inbox, ShieldCheck } from "lucide-react";
@@ -28,11 +28,8 @@ export function PrazosBoard({ prazos }: { prazos: PrazoRow[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
-  // "acende sozinho": revalida a cada 30s buscando prazos novos gravados pelo Claude Code.
-  useEffect(() => {
-    const t = setInterval(() => router.refresh(), 30000);
-    return () => clearInterval(t);
-  }, [router]);
+  // A coleta é diária (o robô roda 1x/dia). O painel atualiza quando você age (confirmar/editar)
+  // ou ao recarregar a página, sem ficar consultando o banco a cada poucos segundos.
 
   function confirmar(id: string) {
     startTransition(async () => {
