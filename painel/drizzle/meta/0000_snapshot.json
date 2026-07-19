@@ -1,0 +1,799 @@
+{
+  "id": "05dfa9a8-b53d-4a7c-a606-264d6b25838f",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.analises": {
+      "name": "analises",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "processo_id": {
+          "name": "processo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "documento_id": {
+          "name": "documento_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "conteudo": {
+          "name": "conteudo",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "versao": {
+          "name": "versao",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 1
+        },
+        "origem": {
+          "name": "origem",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'maquina'"
+        },
+        "editado_por": {
+          "name": "editado_por",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "editado_em": {
+          "name": "editado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "modelo": {
+          "name": "modelo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tokens_input": {
+          "name": "tokens_input",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tokens_output": {
+          "name": "tokens_output",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "custo_usd": {
+          "name": "custo_usd",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "analises_processo_id_processos_id_fk": {
+          "name": "analises_processo_id_processos_id_fk",
+          "tableFrom": "analises",
+          "tableTo": "processos",
+          "columnsFrom": [
+            "processo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "analises_documento_id_documentos_id_fk": {
+          "name": "analises_documento_id_documentos_id_fk",
+          "tableFrom": "analises",
+          "tableTo": "documentos",
+          "columnsFrom": [
+            "documento_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.comunicacoes": {
+      "name": "comunicacoes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "processo_id": {
+          "name": "processo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hash_djen": {
+          "name": "hash_djen",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "meio": {
+          "name": "meio",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'DJEN'"
+        },
+        "inteiro_teor": {
+          "name": "inteiro_teor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data_disponibilizacao": {
+          "name": "data_disponibilizacao",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data_publicacao": {
+          "name": "data_publicacao",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "oab_destino": {
+          "name": "oab_destino",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "processada": {
+          "name": "processada",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_comunic_proc": {
+          "name": "idx_comunic_proc",
+          "columns": [
+            {
+              "expression": "processada",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "comunicacoes_processo_id_processos_id_fk": {
+          "name": "comunicacoes_processo_id_processos_id_fk",
+          "tableFrom": "comunicacoes",
+          "tableTo": "processos",
+          "columnsFrom": [
+            "processo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "comunicacoes_hash_djen_unique": {
+          "name": "comunicacoes_hash_djen_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "hash_djen"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.documentos": {
+      "name": "documentos",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "processo_id": {
+          "name": "processo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "titulo": {
+          "name": "titulo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "storage_path": {
+          "name": "storage_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "paginas": {
+          "name": "paginas",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hash_sha256": {
+          "name": "hash_sha256",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "texto_extraido": {
+          "name": "texto_extraido",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "fonte": {
+          "name": "fonte",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "documentos_processo_id_processos_id_fk": {
+          "name": "documentos_processo_id_processos_id_fk",
+          "tableFrom": "documentos",
+          "tableTo": "processos",
+          "columnsFrom": [
+            "processo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.feriados_forenses": {
+      "name": "feriados_forenses",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tribunal": {
+          "name": "tribunal",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "data": {
+          "name": "data",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "descricao": {
+          "name": "descricao",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'feriado'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "feriado_unique": {
+          "name": "feriado_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "tribunal",
+            "data"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.movimentacoes": {
+      "name": "movimentacoes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "processo_id": {
+          "name": "processo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "codigo_cnj": {
+          "name": "codigo_cnj",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "descricao": {
+          "name": "descricao",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "data_hora": {
+          "name": "data_hora",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "complemento": {
+          "name": "complemento",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fonte": {
+          "name": "fonte",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'datajud'"
+        }
+      },
+      "indexes": {
+        "idx_mov_proc": {
+          "name": "idx_mov_proc",
+          "columns": [
+            {
+              "expression": "processo_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "data_hora",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "movimentacoes_processo_id_processos_id_fk": {
+          "name": "movimentacoes_processo_id_processos_id_fk",
+          "tableFrom": "movimentacoes",
+          "tableTo": "processos",
+          "columnsFrom": [
+            "processo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "mov_unique": {
+          "name": "mov_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "processo_id",
+            "codigo_cnj",
+            "data_hora"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.prazos": {
+      "name": "prazos",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "processo_id": {
+          "name": "processo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "comunicacao_id": {
+          "name": "comunicacao_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ato": {
+          "name": "ato",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "regra_aplicada": {
+          "name": "regra_aplicada",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dias": {
+          "name": "dias",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contagem": {
+          "name": "contagem",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'uteis'"
+        },
+        "data_publicacao": {
+          "name": "data_publicacao",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data_inicio": {
+          "name": "data_inicio",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data_fatal_sugerida": {
+          "name": "data_fatal_sugerida",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "data_fatal": {
+          "name": "data_fatal",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'sugerido'"
+        },
+        "origem": {
+          "name": "origem",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'maquina'"
+        },
+        "justificativa_ia": {
+          "name": "justificativa_ia",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "divergencia": {
+          "name": "divergencia",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "editado_por": {
+          "name": "editado_por",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "editado_em": {
+          "name": "editado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "alertas_enviados": {
+          "name": "alertas_enviados",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'[]'::jsonb"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_prazos_fatal": {
+          "name": "idx_prazos_fatal",
+          "columns": [
+            {
+              "expression": "data_fatal",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "prazos_processo_id_processos_id_fk": {
+          "name": "prazos_processo_id_processos_id_fk",
+          "tableFrom": "prazos",
+          "tableTo": "processos",
+          "columnsFrom": [
+            "processo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "prazos_comunicacao_id_comunicacoes_id_fk": {
+          "name": "prazos_comunicacao_id_comunicacoes_id_fk",
+          "tableFrom": "prazos",
+          "tableTo": "comunicacoes",
+          "columnsFrom": [
+            "comunicacao_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.processos": {
+      "name": "processos",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "numero_cnj": {
+          "name": "numero_cnj",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tribunal": {
+          "name": "tribunal",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "classe": {
+          "name": "classe",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "assunto": {
+          "name": "assunto",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "orgao_julgador": {
+          "name": "orgao_julgador",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "valor_causa": {
+          "name": "valor_causa",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "grau": {
+          "name": "grau",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "partes": {
+          "name": "partes",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cliente_nome": {
+          "name": "cliente_nome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'ativo'"
+        },
+        "ultima_sincronizacao": {
+          "name": "ultima_sincronizacao",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "processos_numero_cnj_unique": {
+          "name": "processos_numero_cnj_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "numero_cnj"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

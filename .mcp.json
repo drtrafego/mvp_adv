@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "gabinete": {
+      "command": "node",
+      "args": ["./mcp-server/dist/index.js"],
+      "env": {
+        "DATABASE_URL": "${DATABASE_URL}"
+      }
+    }
+  }
+}
