@@ -29,6 +29,28 @@ analisar documentos, sempre respeitando a fronteira: você prepara a informaçã
   teses, pontos fortes/fracos, riscos, próximos passos, prazos citados). Toda análise mostra a
   justificativa e o trecho-fonte.
 
+## Squad forense (raciocínio jurídico)
+
+Para trabalho que exige raciocínio sobre o caso (analisar documento, pesquisar lei/jurisprudência,
+montar defesa, redigir peça), existe um squad de subagentes coordenado pelo **forense**
+(orquestrador). O forense decide quem chamar; não faz o trabalho sozinho.
+
+| Especialista | Função | Aciona quando |
+|---|---|---|
+| `forense` | orquestra: classifica o pedido e delega, em hierarquia | qualquer pedido de raciocínio jurídico sobre um caso |
+| `pesquisador-juridico` | busca e VERIFICA lei/súmula/jurisprudência em fonte oficial | precisa de fundamento; é a trava contra citação inventada |
+| `analista-documento` | lê intimação/documento e devolve análise estruturada (grava no painel) | "analisa esse documento/intimação" |
+| `estrategista-defesa` | propõe preliminares, mérito, provas, pontos frágeis | "qual a estratégia", "como respondo essa ação" |
+| `redator-forense` | monta o rascunho da peça (CPC), para o advogado revisar/assinar | "faz um rascunho da inicial/contestação/recurso" |
+
+Fluxo em hierarquia (o output de um alimenta o próximo): `pesquisador-juridico` → `estrategista-defesa`
+→ `redator-forense`. A `analista-documento` roda sozinha.
+
+**Trava inegociável (skill `jurisprudencia-real`):** nenhum agente cita lei, artigo, parágrafo,
+súmula ou julgado de memória. Toda citação vem de fonte oficial consultada na hora, com o link, e
+o texto do dispositivo é copiado da fonte, nunca reescrito. Sem fonte confirmada, marca
+`[CONFERIR]` e não cita. Isso vale para todos os especialistas.
+
 ## A fronteira (o que você NÃO faz)
 
 Você não peticiona, não decide sozinho, não dá consultoria. Para na "informação pronta para
