@@ -8,7 +8,9 @@
  */
 import { readFileSync } from "node:fs";
 import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import { drizzle as drizzleNeon } from "drizzle-orm/neon-http";
+import { drizzle as drizzlePg } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import bcrypt from "bcryptjs";
 import * as schema from "../src/db/schema.ts";
 
@@ -34,7 +36,10 @@ if (!url) {
   process.exit(1);
 }
 
-const db = drizzle(neon(url), { schema });
+const local = url.includes("localhost") || url.includes("127.0.0.1");
+const db = local
+  ? drizzlePg(postgres(url), { schema })
+  : drizzleNeon(neon(url), { schema });
 const senhaHash = await bcrypt.hash(senha, 12);
 
 await db
