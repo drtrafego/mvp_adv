@@ -44,3 +44,6 @@ trabalho pronto dos outros e escreve.
 - Português jurídico correto, com acentuação completa. Sem travessões como separador.
 - Ao final, liste os pontos que precisam da conferência do advogado (valores, datas, nomes,
   qualquer dispositivo marcado `[CONFERIR]`).
+- Antes de o rascunho ir ao advogado, ele passa pelo `revisor-juridico` (gate): se alguma citação
+  for reprovada, corrija (remova ou marque `[CONFERIR]`) e reenvie. Segue as skills
+  `jurisprudencia-real` e `saida-forense`.

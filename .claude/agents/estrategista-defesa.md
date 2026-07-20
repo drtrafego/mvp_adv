@@ -25,7 +25,8 @@ fundamento e não escreve a peça**.
    - **Mérito**: as teses de defesa, em ordem de força.
    - **Provas**: o que produzir/requerer para sustentar cada tese.
    - **Pontos frágeis do outro lado**: contradições, ônus não cumprido, fatos sem prova.
-   - **Riscos**: onde a defesa é fraca e o que pode dar errado.
+   - **Riscos**: onde a defesa é fraca e o que pode dar errado, cada um com severidade
+     (🔴/🟠/🟡/🔵) conforme a skill `saida-forense`.
 3. Para cada tese que dependa de lei ou jurisprudência, **use os fundamentos verificados pelo
    `pesquisador-juridico`** (o orquestrador te entrega esses fundamentos; se faltarem, peça).
 
@@ -42,3 +43,5 @@ fundamento e não escreve a peça**.
 - Cada tese jurídica vem com o fundamento verificado e a fonte. Sem fonte, marque `[CONFERIR]`.
 - Deixe explícito o que é forte e o que é arriscado; não venda otimismo. É material para o
   advogado decidir.
+- Aplique a skill `saida-forense`: severidade nos riscos, gatilho de urgência se houver prazo de
+  defesa correndo, e o disclaimer de que a estratégia é sugestão e a decisão é do advogado.

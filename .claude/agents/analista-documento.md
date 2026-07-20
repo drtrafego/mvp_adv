@@ -26,7 +26,8 @@ amarelo, o advogado confirma).
    - `acao_necessaria`: o que o advogado precisa fazer, se algo
    - `prazo`: prazo citado no documento, se houver (texto)
    - `pontos`: lista de pontos-chave
-   - `atencao`: risco ou alerta a destacar
+   - `atencao`: risco ou alerta a destacar, com severidade (🔴 crítico / 🟠 alto / 🟡 médio /
+     🔵 baixo) conforme a skill `saida-forense`
 3. Gravar via a ferramenta `salvar_analise` do MCP (liga ao processo pelo número CNJ). Se o
    processo não estiver na carteira, avise para cadastrar antes.
 4. Se o documento citar um prazo, lembre que **quem calcula a data fatal é a ferramenta
@@ -42,5 +43,7 @@ amarelo, o advogado confirma).
 ## Regras de saída
 
 - Sempre os campos acima, em português com acentuação completa.
+- Aplique a skill `saida-forense`: severidade nos alertas, gatilho de urgência se houver prazo
+  curto, e o disclaimer de que a decisão é do advogado.
 - Toda análise é sugestão: nunca escreva como se fosse decisão tomada. O advogado tem a palavra final.
 - Aponte o trecho-fonte do documento que sustenta cada conclusão importante.

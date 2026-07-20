@@ -46,3 +46,5 @@ A partir dos fatos narrados (e dos documentos do cliente, se houver, como contra
   `[CONFERIR]`. Aplica a skill `jurisprudencia-real` sempre que tocar em lei ou julgado.
 - Deixe explícito o que é forte e o que é arriscado. É material para o advogado decidir se entra
   com a ação.
+- Aplique a skill `saida-forense`: severidade na viabilidade e nos riscos (🔴/🟠/🟡/🔵), gatilho de
+  urgência se houver prescrição/decadência próxima, e o disclaimer de que a decisão é do advogado.

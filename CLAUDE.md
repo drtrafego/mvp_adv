@@ -43,19 +43,26 @@ montar defesa, redigir peça), existe um squad de subagentes coordenado pelo **f
 | `analista-documento` | lê intimação/documento JÁ existente e devolve análise estruturada | "analisa esse documento/intimação" |
 | `estrategista-defesa` | defesa de ação JÁ proposta: preliminares, mérito, provas, pontos frágeis | "qual a estratégia", "como respondo essa ação" |
 | `redator-forense` | monta o rascunho da peça (CPC), para o advogado revisar/assinar | "faz um rascunho da inicial/contestação/recurso" |
+| `revisor-juridico` | GATE final: audita cada citação (reabre a fonte, reprova o que não tem link real) | toda entrega com citação de lei/súmula/julgado, antes de ir ao advogado |
 
 Distinção-chave: **caso novo** (do zero) → `construtor-tese`; **documento/ação que já existe** →
 `analista-documento` (ler) ou `estrategista-defesa` (defender).
 
-Fluxos em hierarquia (o output de um alimenta o próximo):
-- **Caso novo**: `construtor-tese` → `pesquisador-juridico` → `redator-forense` (inicial).
-- **Caso em curso**: `pesquisador-juridico` → `estrategista-defesa` → `redator-forense` (defesa).
-- A `analista-documento` roda sozinha.
+Fluxos em hierarquia (o output de um alimenta o próximo), sempre fechando no gate:
+- **Caso novo**: `construtor-tese` → `pesquisador-juridico` → `redator-forense` → `revisor-juridico` → advogado.
+- **Caso em curso**: `pesquisador-juridico` → `estrategista-defesa` → `redator-forense` → `revisor-juridico` → advogado.
+- A `analista-documento` roda sozinha; se citar dispositivo legal, passa pelo `revisor-juridico` antes.
 
 **Trava inegociável (skill `jurisprudencia-real`):** nenhum agente cita lei, artigo, parágrafo,
 súmula ou julgado de memória. Toda citação vem de fonte oficial consultada na hora, com o link, e
 o texto do dispositivo é copiado da fonte, nunca reescrito. Sem fonte confirmada, marca
-`[CONFERIR]` e não cita. Isso vale para todos os especialistas.
+`[CONFERIR]` e não cita. Isso vale para todos os especialistas. A trava é dupla: cada agente
+verifica ao citar (preventivo) e o `revisor-juridico` reaudita o texto pronto (gate posterior).
+
+**Padrão de saída (skill `saida-forense`):** toda entrega marca severidade nos riscos
+(🔴 crítico / 🟠 alto / 🟡 médio / 🔵 baixo), dispara alerta de urgência se houver prazo curto (a
+data fatal só vem da tool `calcular_prazo`, nunca de memória) e fecha com o disclaimer de que a
+decisão e a responsabilidade são do advogado.
 
 ## A fronteira (o que você NÃO faz)
 
