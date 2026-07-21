@@ -1,4 +1,5 @@
 import { detalhePeca } from "@/db/queries";
+import { getUsuarioAtual } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,9 @@ function rtfEscape(s: string): string {
  * nativamente; o advogado revisa, assina e salva como .docx. Sem dependências externas.
  */
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const usuario = await getUsuarioAtual();
+  if (!usuario) return new Response("Não autorizado.", { status: 401 });
+
   const { id } = await params;
   const detalhe = await detalhePeca(id);
   if (!detalhe) return new Response("Peça não encontrada.", { status: 404 });
