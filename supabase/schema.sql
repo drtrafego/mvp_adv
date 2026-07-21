@@ -83,10 +83,12 @@ create table if not exists documentos (
   created_at timestamptz default now()
 );
 
--- Notas livres do advogado sobre o processo
+-- Notas livres do advogado sobre um processo, cliente ou prazo.
+-- processo_id e nullable; cliente_id/prazo_id e o CHECK sao adicionados no fim
+-- do arquivo (depois que clientes e prazos existem).
 create table if not exists anotacoes (
   id uuid primary key default gen_random_uuid(),
-  processo_id uuid not null references processos(id) on delete cascade,
+  processo_id uuid references processos(id) on delete cascade,
   texto text not null,
   autor text default 'advogado',
   criado_em timestamptz default now(),
@@ -194,6 +196,59 @@ alter table movimentacoes drop constraint if exists mov_unique;
 create unique index if not exists mov_unique_datajud
   on movimentacoes (processo_id, codigo_cnj, data_hora)
   where fonte = 'datajud';
+
+-- =====================================================================
+-- Feature Peças: biblioteca de modelos do escritório + rascunhos gerados
+-- =====================================================================
+
+-- Peças-modelo do escritório (upload). Base de estrutura/estilo do redator.
+create table if not exists modelos_peca (
+  id uuid primary key default gen_random_uuid(),
+  tipo text not null,                        -- inicial | contestacao | recurso | ...
+  titulo text not null,
+  texto_extraido text,
+  arquivo_nome text,
+  storage_path text,
+  tags text[] default '{}',
+  ativo boolean default true,
+  criado_em timestamptz default now()
+);
+create index if not exists idx_modelos_tipo on modelos_peca (tipo);
+
+-- Rascunhos de peça gerados. Nascem origem 'maquina' (amarelo); o advogado
+-- edita/aprova e vira 'humana' (verde). O motor nunca sobrescreve humano.
+create table if not exists pecas (
+  id uuid primary key default gen_random_uuid(),
+  processo_id uuid references processos(id) on delete cascade,
+  prazo_id uuid references prazos(id) on delete set null,
+  cliente_id uuid references clientes(id) on delete set null,
+  modelo_base_id uuid references modelos_peca(id),
+  tipo text not null,
+  titulo text,
+  conteudo text,
+  status text default 'pendente',            -- pendente | gerado | editado | arquivado
+  origem text default 'maquina',             -- maquina | humana
+  versao int default 1,
+  editado_por text,
+  editado_em timestamptz,
+  criado_em timestamptz default now(),
+  atualizado_em timestamptz default now()
+);
+create index if not exists idx_pecas_processo on pecas (processo_id, criado_em);
+
+-- Estende anotacoes para aceitar cliente ou prazo como alvo (alem de processo).
+-- Idempotente: seguro rodar em banco novo e em banco ja existente.
+alter table anotacoes alter column processo_id drop not null;
+alter table anotacoes add column if not exists cliente_id uuid references clientes(id) on delete cascade;
+alter table anotacoes add column if not exists prazo_id uuid references prazos(id) on delete cascade;
+create index if not exists idx_anotacoes_cliente on anotacoes (cliente_id, criado_em);
+create index if not exists idx_anotacoes_prazo on anotacoes (prazo_id, criado_em);
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'anotacoes_um_alvo') then
+    alter table anotacoes add constraint anotacoes_um_alvo
+      check (num_nonnulls(processo_id, cliente_id, prazo_id) = 1);
+  end if;
+end $$;
 
 -- ============================================================================
 -- RLS: no MVP mono-usuário, o painel usa a service role no servidor. Se abrir

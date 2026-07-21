@@ -154,6 +154,110 @@ export async function salvarAnalise(a: {
   return { id: row.id };
 }
 
+// ===== Peças e modelos do escritório =====
+
+/**
+ * Modelos-peça do escritório de um dado tipo (e opcionalmente tags). São a base de
+ * ESTRUTURA e ESTILO que o redator usa. NUNCA são fonte de citação (a citação vem
+ * verificada pelo pesquisador). Retorna vazio se não houver modelo cadastrado.
+ */
+export async function buscarModelos(filtro: {
+  tipo?: string;
+  tags?: string[];
+}): Promise<
+  Array<{ id: string; tipo: string; titulo: string; textoExtraido: string | null; tags: string[] | null }>
+> {
+  const d = getDb();
+  const conds = [eq(schema.modelosPeca.ativo, true)];
+  if (filtro.tipo) conds.push(eq(schema.modelosPeca.tipo, filtro.tipo));
+  return await d
+    .select({
+      id: schema.modelosPeca.id,
+      tipo: schema.modelosPeca.tipo,
+      titulo: schema.modelosPeca.titulo,
+      textoExtraido: schema.modelosPeca.textoExtraido,
+      tags: schema.modelosPeca.tags,
+    })
+    .from(schema.modelosPeca)
+    .where(and(...conds))
+    .orderBy(desc(schema.modelosPeca.criadoEm));
+}
+
+/** Grava um modelo-peça do escritório (vindo do upload nas Configurações). */
+export async function salvarModelo(m: {
+  tipo: string;
+  titulo: string;
+  textoExtraido?: string;
+  arquivoNome?: string;
+  tags?: string[];
+}): Promise<{ id: string }> {
+  const d = getDb();
+  const [row] = await d
+    .insert(schema.modelosPeca)
+    .values({
+      tipo: m.tipo,
+      titulo: m.titulo,
+      textoExtraido: m.textoExtraido ?? null,
+      arquivoNome: m.arquivoNome ?? null,
+      tags: m.tags ?? [],
+    })
+    .returning({ id: schema.modelosPeca.id });
+  return { id: row.id };
+}
+
+/**
+ * Grava o rascunho de uma peça (origem 'maquina', status 'gerado'). Se `pecaId` vier,
+ * atualiza a linha pendente que o painel criou; senão insere nova. REGRA DE OURO: nunca
+ * sobrescreve peça que o advogado já assumiu como 'humana' (retorna null nesse caso).
+ */
+export async function salvarPeca(p: {
+  pecaId?: string;
+  processoId?: string | null;
+  prazoId?: string | null;
+  clienteId?: string | null;
+  tipo: string;
+  titulo?: string;
+  conteudo: string;
+  modeloBaseId?: string | null;
+}): Promise<{ id: string } | null> {
+  const d = getDb();
+  if (p.pecaId) {
+    const [existente] = await d
+      .select({ origem: schema.pecas.origem })
+      .from(schema.pecas)
+      .where(eq(schema.pecas.id, p.pecaId))
+      .limit(1);
+    if (existente?.origem === "humana") return null;
+    const [row] = await d
+      .update(schema.pecas)
+      .set({
+        conteudo: p.conteudo,
+        titulo: p.titulo ?? null,
+        modeloBaseId: p.modeloBaseId ?? null,
+        status: "gerado",
+        atualizadoEm: new Date(),
+      })
+      .where(eq(schema.pecas.id, p.pecaId))
+      .returning({ id: schema.pecas.id });
+    return row ? { id: row.id } : null;
+  }
+  const [row] = await d
+    .insert(schema.pecas)
+    .values({
+      processoId: p.processoId ?? null,
+      prazoId: p.prazoId ?? null,
+      clienteId: p.clienteId ?? null,
+      modeloBaseId: p.modeloBaseId ?? null,
+      tipo: p.tipo,
+      titulo: p.titulo ?? null,
+      conteudo: p.conteudo,
+      status: "gerado",
+      origem: "maquina",
+    })
+    .returning({ id: schema.pecas.id });
+  return { id: row.id };
+}
+
 /**
  * Retorna o id do processo na carteira pelo número CNJ (compara sempre com máscara), ou null
  * se ainda não estiver cadastrado.

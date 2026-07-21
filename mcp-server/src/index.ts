@@ -35,6 +35,9 @@ import {
   carregarFeriadosForenses,
   registrarSincronizacao,
   ultimaSincronizacao,
+  buscarModelos,
+  salvarModelo,
+  salvarPeca,
   type RegistroSincronizacao,
 } from "./lib/db.js";
 import { reconciliarIntimacoes } from "./lib/reconciliacao.js";
@@ -650,6 +653,87 @@ server.registerTool(
       return texto(
         `✅ Análise salva no painel (setor Análises) para ${formatarCNJ(numero_cnj)}. ` +
           `Nasce como sugestão; o advogado revisa e confirma. id=${r.id}`,
+      );
+    } catch (e) {
+      return erro((e as Error).message);
+    }
+  },
+);
+
+// buscar_modelos — peças-modelo do escritório de um tipo, base de estrutura/estilo do redator
+server.registerTool(
+  "buscar_modelos",
+  {
+    title: "Buscar peças-modelo do escritório",
+    description:
+      "Retorna as peças-modelo do escritório de um dado tipo (inicial, contestacao, recurso...), " +
+      "para o redator usar como base de ESTRUTURA e ESTILO. NUNCA copie citação do modelo: os " +
+      "fundamentos vêm verificados pelo pesquisador-juridico. Se não houver modelo, redija do zero.",
+    inputSchema: {
+      tipo: z.string().describe("Tipo da peça: inicial, contestacao, recurso, manifestacao, etc."),
+      tags: z.array(z.string()).optional().describe("Filtro opcional por tags (ex.: área do direito)."),
+    },
+  },
+  async ({ tipo, tags }) => {
+    if (!bancoConfigurado()) return erro("Banco (Neon) não configurado. Defina DATABASE_URL.");
+    try {
+      const modelos = await buscarModelos({ tipo, tags });
+      if (!modelos.length)
+        return texto(`Nenhum modelo do tipo "${tipo}" cadastrado. Redija do zero seguindo o CPC.`);
+      const lista = modelos
+        .map((m, i) => `--- MODELO ${i + 1}: ${m.titulo} (${m.tipo}) ---\n${m.textoExtraido ?? "(sem texto)"}`)
+        .join("\n\n");
+      return texto(
+        `${modelos.length} modelo(s) do tipo "${tipo}". Use como referência de estrutura e estilo, ` +
+          `nunca de fundamento (a citação vem do pesquisador-juridico):\n\n${lista}`,
+      );
+    } catch (e) {
+      return erro((e as Error).message);
+    }
+  },
+);
+
+// salvar_peca — grava o rascunho de uma peça produzida pelo redator (sugestão, amarelo)
+server.registerTool(
+  "salvar_peca",
+  {
+    title: "Salvar rascunho de peça",
+    description:
+      "Grava no painel o rascunho de uma peça que você (redator) produziu. Nasce como SUGESTÃO " +
+      "(máquina, amarelo); o advogado revisa, edita e assina. Se o painel já criou uma peça " +
+      "pendente (peca_id), passe-o para preencher aquela linha; senão, uma nova é criada. Só " +
+      "grave depois que o revisor-juridico auditar as citações.",
+    inputSchema: {
+      peca_id: z.string().optional().describe("Id da peça pendente criada pelo painel, se houver."),
+      processo_id: z.string().optional().describe("Id do processo (uuid), se ligada a um processo."),
+      prazo_id: z.string().optional().describe("Id do prazo (uuid), se gerada a partir de um prazo."),
+      cliente_id: z.string().optional().describe("Id do cliente (uuid), útil na inicial de caso novo."),
+      tipo: z.string().describe("Tipo da peça: inicial, contestacao, recurso, manifestacao, etc."),
+      titulo: z.string().optional().describe("Título curto da peça."),
+      conteudo: z.string().describe("O texto do rascunho (já auditado pelo revisor-juridico)."),
+      modelo_base_id: z.string().optional().describe("Id do modelo do escritório usado como base."),
+    },
+  },
+  async ({ peca_id, processo_id, prazo_id, cliente_id, tipo, titulo, conteudo, modelo_base_id }) => {
+    if (!bancoConfigurado()) return erro("Banco (Neon) não configurado. Defina DATABASE_URL.");
+    try {
+      const r = await salvarPeca({
+        pecaId: peca_id,
+        processoId: processo_id ?? null,
+        prazoId: prazo_id ?? null,
+        clienteId: cliente_id ?? null,
+        tipo,
+        titulo,
+        conteudo,
+        modeloBaseId: modelo_base_id ?? null,
+      });
+      if (!r)
+        return erro(
+          "Peça não salva: a linha já foi assumida pelo advogado (humana) e o motor não sobrescreve.",
+        );
+      return texto(
+        `✅ Rascunho de peça salvo no painel (setor Peças). Nasce como sugestão; o advogado revisa e ` +
+          `assina. id=${r.id}`,
       );
     } catch (e) {
       return erro((e as Error).message);

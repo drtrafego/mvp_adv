@@ -127,20 +127,24 @@ export const analises = pgTable("analises", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
-// Notas livres do advogado sobre o processo.
+// Notas livres do advogado sobre um processo, cliente OU prazo (exatamente um alvo).
 export const anotacoes = pgTable(
   "anotacoes",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    processoId: uuid("processo_id")
-      .references(() => processos.id, { onDelete: "cascade" })
-      .notNull(),
+    processoId: uuid("processo_id").references(() => processos.id, { onDelete: "cascade" }),
+    clienteId: uuid("cliente_id").references(() => clientes.id, { onDelete: "cascade" }),
+    prazoId: uuid("prazo_id").references(() => prazos.id, { onDelete: "cascade" }),
     texto: text("texto").notNull(),
     autor: text("autor").default("advogado"),
     criadoEm: timestamp("criado_em", { withTimezone: true }).defaultNow(),
     atualizadoEm: timestamp("atualizado_em", { withTimezone: true }).defaultNow(),
   },
-  (t) => ({ idxProc: index("idx_anotacoes_proc").on(t.processoId, t.criadoEm) }),
+  (t) => ({
+    idxProc: index("idx_anotacoes_proc").on(t.processoId, t.criadoEm),
+    idxCliente: index("idx_anotacoes_cliente").on(t.clienteId, t.criadoEm),
+    idxPrazo: index("idx_anotacoes_prazo").on(t.prazoId, t.criadoEm),
+  }),
 );
 
 // Cadastro de clientes/partes, reaproveitável entre processos.
@@ -257,4 +261,46 @@ export const sincronizacoes = pgTable(
     concluidoEm: timestamp("concluido_em", { withTimezone: true }),
   },
   (t) => ({ idxFonte: index("idx_sinc_fonte").on(t.fonte, t.iniciadoEm) }),
+);
+
+// Biblioteca de peças-modelo do escritório (upload). O redator usa como base de
+// ESTRUTURA e ESTILO, nunca como fonte de citação (a citação vem verificada).
+export const modelosPeca = pgTable(
+  "modelos_peca",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tipo: text("tipo").notNull(), // inicial | contestacao | recurso | manifestacao | ...
+    titulo: text("titulo").notNull(),
+    textoExtraido: text("texto_extraido"),
+    arquivoNome: text("arquivo_nome"),
+    storagePath: text("storage_path"),
+    tags: text("tags").array().default([]),
+    ativo: boolean("ativo").default(true),
+    criadoEm: timestamp("criado_em", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({ idxTipo: index("idx_modelos_tipo").on(t.tipo) }),
+);
+
+// Rascunhos de peça gerados pelo squad forense. Nascem origem 'maquina' (amarelo);
+// o advogado edita/aprova e vira 'humana' (verde). O motor nunca sobrescreve humano.
+export const pecas = pgTable(
+  "pecas",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    processoId: uuid("processo_id").references(() => processos.id, { onDelete: "cascade" }),
+    prazoId: uuid("prazo_id").references(() => prazos.id, { onDelete: "set null" }),
+    clienteId: uuid("cliente_id").references(() => clientes.id, { onDelete: "set null" }),
+    modeloBaseId: uuid("modelo_base_id").references(() => modelosPeca.id),
+    tipo: text("tipo").notNull(),
+    titulo: text("titulo"),
+    conteudo: text("conteudo"),
+    status: text("status").default("pendente"), // pendente | gerado | editado | arquivado
+    origem: text("origem").default("maquina"),
+    versao: integer("versao").default(1),
+    editadoPor: text("editado_por"),
+    editadoEm: timestamp("editado_em", { withTimezone: true }),
+    criadoEm: timestamp("criado_em", { withTimezone: true }).defaultNow(),
+    atualizadoEm: timestamp("atualizado_em", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({ idxProc: index("idx_pecas_processo").on(t.processoId, t.criadoEm) }),
 );
