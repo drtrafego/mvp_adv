@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, gte, isNull, lte, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, ilike, isNull, lte, ne, or, sql } from "drizzle-orm";
 import { db, schema } from "./index";
 
 export interface PrazoRow {
@@ -82,6 +82,8 @@ export interface DetalheProcesso {
   movimentacoes: (typeof schema.movimentacoes.$inferSelect)[];
   documentos: (typeof schema.documentos.$inferSelect)[];
   anotacoes: (typeof schema.anotacoes.$inferSelect)[];
+  comunicacoes: (typeof schema.comunicacoes.$inferSelect)[];
+  pecas: (typeof schema.pecas.$inferSelect)[];
   partes: {
     parte: typeof schema.processoPartes.$inferSelect;
     cliente: typeof schema.clientes.$inferSelect | null;
@@ -137,12 +139,26 @@ export async function detalheProcesso(id: string): Promise<DetalheProcesso | nul
     .where(eq(schema.fasesProcesso.processoId, id))
     .orderBy(asc(schema.fasesProcesso.criadoEm));
 
+  const comunicacoes = await db
+    .select()
+    .from(schema.comunicacoes)
+    .where(eq(schema.comunicacoes.processoId, id))
+    .orderBy(desc(schema.comunicacoes.dataDisponibilizacao));
+
+  const pecas = await db
+    .select()
+    .from(schema.pecas)
+    .where(eq(schema.pecas.processoId, id))
+    .orderBy(desc(schema.pecas.criadoEm));
+
   return {
     processo,
     prazos,
     movimentacoes,
     documentos,
     anotacoes,
+    comunicacoes,
+    pecas,
     partes: partesRows,
     fases,
   };
@@ -465,4 +481,56 @@ export async function detalhePrazo(id: string): Promise<DetalhePrazo | null> {
     .orderBy(desc(schema.pecas.criadoEm));
 
   return { prazo, processo: processo ?? null, anotacoes, pecas };
+}
+
+// ============================================================================
+// Busca global (processos, clientes, prazos)
+// ============================================================================
+
+export interface BuscaResultado {
+  processos: { id: string; numeroCnj: string; clienteNome: string | null }[];
+  clientes: { id: string; nome: string }[];
+  prazos: { id: string; ato: string; dataFatal: string; numeroCnj: string | null }[];
+}
+
+/** Busca por número/parte de processo, nome de cliente e ato de prazo. */
+export async function buscaGlobal(termo: string): Promise<BuscaResultado> {
+  const vazio: BuscaResultado = { processos: [], clientes: [], prazos: [] };
+  if (!db || !termo.trim()) return vazio;
+  const q = `%${termo.trim()}%`;
+
+  const processos = await db
+    .select({
+      id: schema.processos.id,
+      numeroCnj: schema.processos.numeroCnj,
+      clienteNome: schema.processos.clienteNome,
+    })
+    .from(schema.processos)
+    .where(
+      and(
+        isNull(schema.processos.excluidoEm),
+        or(ilike(schema.processos.numeroCnj, q), ilike(schema.processos.clienteNome, q)),
+      ),
+    )
+    .limit(12);
+
+  const clientes = await db
+    .select({ id: schema.clientes.id, nome: schema.clientes.nome })
+    .from(schema.clientes)
+    .where(ilike(schema.clientes.nome, q))
+    .limit(12);
+
+  const prazos = await db
+    .select({
+      id: schema.prazos.id,
+      ato: schema.prazos.ato,
+      dataFatal: schema.prazos.dataFatal,
+      numeroCnj: schema.processos.numeroCnj,
+    })
+    .from(schema.prazos)
+    .leftJoin(schema.processos, eq(schema.prazos.processoId, schema.processos.id))
+    .where(and(ne(schema.prazos.status, "cancelado"), ilike(schema.prazos.ato, q)))
+    .limit(12);
+
+  return { processos, clientes, prazos };
 }

@@ -18,6 +18,7 @@ import {
   FilePlus2,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { BuscaGlobal } from "@/components/busca-global";
 import { fazerLogout } from "@/app/login/actions";
 import { cn } from "@/lib/utils";
 import type { UsuarioSessao } from "@/lib/auth";
@@ -69,6 +70,9 @@ function SidebarNav({ onNav }: { onNav?: () => void }) {
   const pathname = usePathname();
   return (
     <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
+      <div className="mb-1 px-0.5">
+        <BuscaGlobal onNav={onNav} />
+      </div>
       {SETORES.map((s) => {
         const ativo = s.exact ? pathname === s.href : pathname.startsWith(s.href);
         const Icon = s.icon;

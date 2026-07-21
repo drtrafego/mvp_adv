@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { toast } from "sonner";
 import {
   Archive,
@@ -21,6 +22,9 @@ import {
   Layers,
   Upload,
   ShieldCheck,
+  History,
+  Inbox,
+  Sparkles,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -130,6 +134,9 @@ export function ProcessoDetalhe({ detalhe }: { detalhe: DetalheProcesso }) {
             <TabsTrigger value="prazos">
               <Clock /> Prazos
             </TabsTrigger>
+            <TabsTrigger value="tudo">
+              <History /> Tudo
+            </TabsTrigger>
             <TabsTrigger value="estagio">
               <Cog /> Estágio
             </TabsTrigger>
@@ -149,6 +156,9 @@ export function ProcessoDetalhe({ detalhe }: { detalhe: DetalheProcesso }) {
 
           <TabsContent value="prazos">
             <AbaPrazos prazos={detalhe.prazos} />
+          </TabsContent>
+          <TabsContent value="tudo">
+            <AbaTudo detalhe={detalhe} />
           </TabsContent>
           <TabsContent value="estagio">
             <AbaEstagio processoId={processo.id} faseAtual={processo.fase} fases={detalhe.fases} />
@@ -402,6 +412,88 @@ function PrazoItem({ p }: { p: Prazo }) {
         </>
       )}
     </div>
+  );
+}
+
+// ============================================================================
+// Aba Tudo (timeline unificada: movimentações + intimações + peças + anotações)
+// ============================================================================
+
+function AbaTudo({ detalhe }: { detalhe: DetalheProcesso }) {
+  type Evento = {
+    data: Date | null;
+    tipo: string;
+    cor: string;
+    icone: React.ReactNode;
+    texto: string;
+    href?: string;
+  };
+  const eventos: Evento[] = [];
+
+  for (const m of detalhe.movimentacoes) {
+    eventos.push({
+      data: m.dataHora ? new Date(m.dataHora) : null,
+      tipo: m.fonte === "manual" ? "andamento" : "DataJud",
+      cor: "bg-indigo-brand",
+      icone: m.fonte === "manual" ? <User className="h-3 w-3" /> : <Bot className="h-3 w-3" />,
+      texto: m.descricao,
+    });
+  }
+  for (const c of detalhe.comunicacoes) {
+    eventos.push({
+      data: c.dataDisponibilizacao ? new Date(c.dataDisponibilizacao) : null,
+      tipo: "intimação",
+      cor: "bg-amber-brand",
+      icone: <Inbox className="h-3 w-3" />,
+      texto: (c.tipo ?? "Comunicação") + (c.inteiroTeor ? ` — ${c.inteiroTeor.slice(0, 140)}` : ""),
+    });
+  }
+  for (const p of detalhe.pecas) {
+    eventos.push({
+      data: p.criadoEm ? new Date(p.criadoEm) : null,
+      tipo: "peça",
+      cor: "bg-moss-brand",
+      icone: <Sparkles className="h-3 w-3" />,
+      texto: p.titulo ?? `Rascunho de ${p.tipo}`,
+      href: `/pe/${p.id}`,
+    });
+  }
+  for (const a of detalhe.anotacoes) {
+    eventos.push({
+      data: a.criadoEm ? new Date(a.criadoEm) : null,
+      tipo: "anotação",
+      cor: "bg-muted-foreground",
+      icone: <StickyNote className="h-3 w-3" />,
+      texto: a.texto,
+    });
+  }
+
+  eventos.sort((x, y) => (y.data?.getTime() ?? 0) - (x.data?.getTime() ?? 0));
+
+  if (eventos.length === 0) {
+    return (
+      <Vazio texto="Sem eventos ainda. Movimentações, intimações, peças e anotações aparecem aqui juntas, em ordem." />
+    );
+  }
+
+  return (
+    <ol className="space-y-3 border-l border-border pl-4">
+      {eventos.map((e, i) => (
+        <li key={i} className="relative">
+          <span className={`absolute -left-[1.30rem] top-1 h-2 w-2 rounded-full ${e.cor}`} />
+          <div className="flex items-center gap-1.5 font-mono text-[0.7rem] text-muted-foreground">
+            {e.icone} {formatarDataHora(e.data)} · {e.tipo}
+          </div>
+          {e.href ? (
+            <Link href={e.href} className="mt-0.5 block text-sm hover:underline">
+              {e.texto}
+            </Link>
+          ) : (
+            <p className="mt-0.5 whitespace-pre-wrap text-sm">{e.texto}</p>
+          )}
+        </li>
+      ))}
+    </ol>
   );
 }
 
