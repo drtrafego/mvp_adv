@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { toast } from "sonner";
-import { Check, Pencil, X, RefreshCw, CalendarDays, Inbox, ShieldCheck } from "lucide-react";
+import { Check, Pencil, X, CalendarDays, Inbox, ShieldCheck, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,10 +68,10 @@ export function PrazosBoard({ prazos }: { prazos: PrazoRow[] }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-card/50 px-3 py-2 text-xs text-muted-foreground">
-        <RefreshCw className={`h-3.5 w-3.5 text-indigo-brand ${pending ? "animate-spin" : ""}`} />
+        <CalendarDays className="h-3.5 w-3.5 text-indigo-brand" />
         <span>
-          atualiza sozinho a cada 30s · <span className="text-amber-brand">●</span> sugerido (máquina)
-          · <span className="text-moss-brand">●</span> confirmado/editado (humano)
+          coleta diária (o robô roda 1x/dia) · <span className="text-amber-brand">●</span> sugerido
+          (máquina) · <span className="text-moss-brand">●</span> confirmado/editado (humano)
         </span>
       </div>
       <StaggerGroup className="grid gap-3">
@@ -157,6 +158,9 @@ function PrazoCard({
           </Button>
         )}
         <EditarPrazoDialog p={p} />
+        <Button size="sm" variant="outline" render={<Link href={`/pz/${p.id}`} />}>
+          <Sparkles className="mr-1 h-4 w-4" /> Abrir / gerar peça
+        </Button>
         <Button
           size="sm"
           variant="ghost"

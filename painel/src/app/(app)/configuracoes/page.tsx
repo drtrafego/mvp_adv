@@ -1,13 +1,15 @@
-import { Scale, Mail, IdCard, ShieldCheck, LogOut, Users } from "lucide-react";
+import { Scale, Mail, IdCard, ShieldCheck, LogOut, Users, FileStack } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { ImportarClientes } from "@/components/importar-clientes";
+import { ImportarModelos } from "@/components/importar-modelos";
 import { getUsuarioAtual } from "@/lib/auth";
+import { listarModelos } from "@/db/queries";
 import { fazerLogout } from "@/app/login/actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function ConfiguracoesPage() {
-  const usuario = await getUsuarioAtual();
+  const [usuario, modelos] = await Promise.all([getUsuarioAtual(), listarModelos()]);
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-8">
@@ -49,6 +51,18 @@ export default async function ConfiguracoesPage() {
           Suba uma planilha e traga sua carteira de clientes de uma vez. Quem já existe não é duplicado.
         </p>
         <ImportarClientes />
+      </section>
+
+      <section className="mt-6 rounded-xl border bg-card p-6 shadow-sm">
+        <h2 className="flex items-center gap-2 font-serif text-lg font-semibold">
+          <FileStack className="h-5 w-5 text-indigo-brand" /> Banco de peças
+        </h2>
+        <p className="mt-1 mb-4 text-sm text-muted-foreground">
+          Suba as peças do seu escritório (inicial, contestação, recurso). O redator usa como base
+          de estrutura e estilo ao montar um rascunho. As citações nunca são copiadas do modelo:
+          vêm sempre verificadas em fonte oficial.
+        </p>
+        <ImportarModelos modelos={modelos} />
       </section>
 
       <section className="mt-6 rounded-xl border border-amber-brand/30 bg-amber-tint/40 p-6">

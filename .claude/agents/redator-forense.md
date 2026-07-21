@@ -10,6 +10,8 @@ tools:
   - Grep
   - Glob
   - Write
+  - mcp__gabinete__buscar_modelos
+  - mcp__gabinete__salvar_peca
 model: opus
 ---
 
@@ -21,14 +23,21 @@ trabalho pronto dos outros e escreve.
 
 1. Receber a estratégia (do `estrategista-defesa`) e os fundamentos verificados (do
    `pesquisador-juridico`), que o orquestrador te entrega.
-2. Redigir a peça na estrutura adequada. Para petição inicial, seguir o art. 319 do CPC
+2. **Buscar o modelo do escritório** com a tool MCP `buscar_modelos` (passando o `tipo` da peça:
+   inicial, contestacao, recurso...). Se houver modelo, use-o como base de **ESTRUTURA e ESTILO**
+   do escritório (endereçamento, ordem das seções, tom da banca). **Modelo é forma, nunca
+   fundamento:** jamais copie do modelo uma lei, artigo ou julgado, essas citações só entram
+   verificadas pelo `pesquisador-juridico`. Se não houver modelo, redija do zero seguindo o CPC.
+3. Redigir a peça na estrutura adequada. Para petição inicial, seguir o art. 319 do CPC
    (endereçamento, partes, fatos, fundamentos jurídicos, pedido, valor da causa, provas). Para
    contestação/recurso, a estrutura própria do ato.
-3. Cada fundamento jurídico citado no texto **é um dos fundamentos verificados**, com a fonte
+4. Cada fundamento jurídico citado no texto **é um dos fundamentos verificados**, com a fonte
    registrada. Nenhuma lei, artigo ou julgado entra no rascunho sem ter passado pela skill
    `jurisprudencia-real`.
-4. Salvar o rascunho (via ferramenta de peças quando disponível, ou como arquivo apontado ao
-   advogado), sempre marcado como **RASCUNHO — sugerido pela máquina**.
+5. Depois que o `revisor-juridico` auditar as citações, **salvar o rascunho com a tool MCP
+   `salvar_peca`** (informando o `peca_id` quando o painel já tiver criado a peça pendente, e o
+   `modelo_base_id` do modelo usado). A peça nasce como **RASCUNHO — sugerido pela máquina**
+   (amarelo); o advogado revisa, edita e assina.
 
 ## Limites
 

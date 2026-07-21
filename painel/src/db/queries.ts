@@ -230,25 +230,28 @@ export async function listarAnalises(): Promise<AnaliseRow[]> {
 
 export interface ClienteRow {
   nome: string;
+  clienteId: string | null;
   totalProcessos: number;
 }
 
 /**
  * Clientes da carteira: une os cadastrados na tabela `clientes` (ex.: importados de planilha) com
- * os nomes que aparecem nos processos, sem duplicar, e conta os processos de cada um.
+ * os nomes que aparecem só nos processos, sem duplicar, conta os processos de cada um e traz o
+ * `clienteId` quando o cliente tem cadastro (necessário para abrir o detalhe em /c/[id]).
  */
 export async function listarClientes(): Promise<ClienteRow[]> {
   if (!db) return [];
   const res = await db.execute(sql`
-    SELECT todos.nome AS nome, count(p.id)::int AS "totalProcessos"
+    SELECT todos.nome AS nome, todos.cliente_id AS "clienteId", count(p.id)::int AS "totalProcessos"
     FROM (
-      SELECT nome FROM clientes WHERE nome IS NOT NULL AND nome <> ''
-      UNION
-      SELECT DISTINCT cliente_nome AS nome FROM processos
+      SELECT nome, id AS cliente_id FROM clientes WHERE nome IS NOT NULL AND nome <> ''
+      UNION ALL
+      SELECT DISTINCT cliente_nome AS nome, NULL::uuid AS cliente_id FROM processos
         WHERE cliente_nome IS NOT NULL AND cliente_nome <> '' AND excluido_em IS NULL
+          AND cliente_nome NOT IN (SELECT nome FROM clientes WHERE nome IS NOT NULL AND nome <> '')
     ) todos
     LEFT JOIN processos p ON p.cliente_nome = todos.nome AND p.excluido_em IS NULL
-    GROUP BY todos.nome
+    GROUP BY todos.nome, todos.cliente_id
     ORDER BY todos.nome
   `);
   const rows = (Array.isArray(res) ? res : (res as { rows?: unknown[] }).rows) ?? [];
@@ -291,4 +294,175 @@ export async function resumo(): Promise<Resumo> {
     sugeridos: sg?.n ?? 0,
     venceEm7Dias: v7?.n ?? 0,
   };
+}
+
+// ============================================================================
+// Modelos-peça (banco de peças) e peças geradas
+// ============================================================================
+
+export interface ModeloRow {
+  id: string;
+  tipo: string;
+  titulo: string;
+  tags: string[] | null;
+  criadoEm: Date | null;
+}
+
+/** Modelos-peça ativos do escritório, do mais recente ao mais antigo. */
+export async function listarModelos(): Promise<ModeloRow[]> {
+  if (!db) return [];
+  const rows = await db
+    .select({
+      id: schema.modelosPeca.id,
+      tipo: schema.modelosPeca.tipo,
+      titulo: schema.modelosPeca.titulo,
+      tags: schema.modelosPeca.tags,
+      criadoEm: schema.modelosPeca.criadoEm,
+    })
+    .from(schema.modelosPeca)
+    .where(eq(schema.modelosPeca.ativo, true))
+    .orderBy(desc(schema.modelosPeca.criadoEm));
+  return rows as ModeloRow[];
+}
+
+export interface PecaRow {
+  id: string;
+  tipo: string;
+  titulo: string | null;
+  status: string | null;
+  origem: string | null;
+  criadoEm: Date | null;
+  atualizadoEm: Date | null;
+  processoId: string | null;
+  numeroCnj: string | null;
+  clienteNome: string | null;
+}
+
+/** Peças não arquivadas, da mais recente para a mais antiga. */
+export async function listarPecas(): Promise<PecaRow[]> {
+  if (!db) return [];
+  const rows = await db
+    .select({
+      id: schema.pecas.id,
+      tipo: schema.pecas.tipo,
+      titulo: schema.pecas.titulo,
+      status: schema.pecas.status,
+      origem: schema.pecas.origem,
+      criadoEm: schema.pecas.criadoEm,
+      atualizadoEm: schema.pecas.atualizadoEm,
+      processoId: schema.pecas.processoId,
+      numeroCnj: schema.processos.numeroCnj,
+      clienteNome: schema.processos.clienteNome,
+    })
+    .from(schema.pecas)
+    .leftJoin(schema.processos, eq(schema.pecas.processoId, schema.processos.id))
+    .where(ne(schema.pecas.status, "arquivado"))
+    .orderBy(desc(schema.pecas.criadoEm))
+    .limit(100);
+  return rows as PecaRow[];
+}
+
+/** Carrega uma peça e o processo/prazo a que se liga, para o modal de detalhe. */
+export async function detalhePeca(id: string) {
+  if (!db) return null;
+  const [peca] = await db.select().from(schema.pecas).where(eq(schema.pecas.id, id)).limit(1);
+  if (!peca) return null;
+  let processo: typeof schema.processos.$inferSelect | null = null;
+  if (peca.processoId) {
+    [processo] = await db
+      .select()
+      .from(schema.processos)
+      .where(eq(schema.processos.id, peca.processoId))
+      .limit(1);
+  }
+  return { peca, processo: processo ?? null };
+}
+
+// ============================================================================
+// Detalhe de cliente e de prazo (modais)
+// ============================================================================
+
+export interface DetalheCliente {
+  cliente: typeof schema.clientes.$inferSelect;
+  processos: ProcessoRow[];
+  anotacoes: (typeof schema.anotacoes.$inferSelect)[];
+  pecas: (typeof schema.pecas.$inferSelect)[];
+}
+
+/** Cliente + processos vinculados (por nome) + anotações + peças, para o modal. */
+export async function detalheCliente(id: string): Promise<DetalheCliente | null> {
+  if (!db) return null;
+  const [cliente] = await db
+    .select()
+    .from(schema.clientes)
+    .where(eq(schema.clientes.id, id))
+    .limit(1);
+  if (!cliente) return null;
+
+  const processos = (await db
+    .select({
+      id: schema.processos.id,
+      numeroCnj: schema.processos.numeroCnj,
+      clienteNome: schema.processos.clienteNome,
+      classe: schema.processos.classe,
+      tribunal: schema.processos.tribunal,
+      fase: schema.processos.fase,
+      status: schema.processos.status,
+      ultimaSincronizacao: schema.processos.ultimaSincronizacao,
+      arquivadoEm: schema.processos.arquivadoEm,
+    })
+    .from(schema.processos)
+    .where(and(isNull(schema.processos.excluidoEm), eq(schema.processos.clienteNome, cliente.nome)))
+    .orderBy(desc(schema.processos.ultimaSincronizacao))) as ProcessoRow[];
+
+  const anotacoes = await db
+    .select()
+    .from(schema.anotacoes)
+    .where(eq(schema.anotacoes.clienteId, id))
+    .orderBy(desc(schema.anotacoes.criadoEm));
+
+  const pecas = await db
+    .select()
+    .from(schema.pecas)
+    .where(eq(schema.pecas.clienteId, id))
+    .orderBy(desc(schema.pecas.criadoEm));
+
+  return { cliente, processos, anotacoes, pecas };
+}
+
+export interface DetalhePrazo {
+  prazo: typeof schema.prazos.$inferSelect;
+  processo: typeof schema.processos.$inferSelect | null;
+  anotacoes: (typeof schema.anotacoes.$inferSelect)[];
+  pecas: (typeof schema.pecas.$inferSelect)[];
+}
+
+/** Prazo + processo vinculado + anotações + peças, para o modal. */
+export async function detalhePrazo(id: string): Promise<DetalhePrazo | null> {
+  if (!db) return null;
+  const [prazo] = await db.select().from(schema.prazos).where(eq(schema.prazos.id, id)).limit(1);
+  if (!prazo) return null;
+
+  let processo: typeof schema.processos.$inferSelect | null = null;
+  if (prazo.processoId) {
+    [processo] = await db
+      .select()
+      .from(schema.processos)
+      .where(eq(schema.processos.id, prazo.processoId))
+      .limit(1);
+  }
+
+  const anotacoes = await db
+    .select()
+    .from(schema.anotacoes)
+    .where(eq(schema.anotacoes.prazoId, id))
+    .orderBy(desc(schema.anotacoes.criadoEm));
+
+  const pecas = await db
+    .select()
+    .from(schema.pecas)
+    .where(eq(schema.pecas.prazoId, id))
+    .orderBy(desc(schema.pecas.criadoEm));
+
+  return { prazo, processo: processo ?? null, anotacoes, pecas };
 }

@@ -14,6 +14,8 @@ import {
   LogOut,
   Menu,
   X,
+  FileSignature,
+  FilePlus2,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { fazerLogout } from "@/app/login/actions";
@@ -24,6 +26,8 @@ const SETORES = [
   { href: "/", label: "Início", icon: LayoutDashboard, exact: true },
   { href: "/prazos", label: "Prazos", icon: CalendarClock },
   { href: "/processos", label: "Processos", icon: Scale },
+  { href: "/pecas", label: "Peças", icon: FileSignature },
+  { href: "/inicial", label: "Inicial", icon: FilePlus2 },
   { href: "/intimacoes", label: "Intimações", icon: Inbox },
   { href: "/analises", label: "Análises", icon: FileSearch },
   { href: "/clientes", label: "Clientes", icon: Users },
