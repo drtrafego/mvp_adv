@@ -1,8 +1,12 @@
 /**
  * Alerta de prazos que vencem em breve.
  *
+ * NOTA: a forma primária deste alerta agora é o Vercel Cron
+ * (painel/src/app/api/cron/alertar-prazos), que NÃO precisa de IP do Brasil.
+ * Este script fica como alternativa manual (ou para quem quiser rodar tudo na
+ * própria máquina). A VPS deve ficar só com a coleta de intimações (DJEN).
+ *
  * Uso: node scripts/alertar_prazos.mjs [dias]   (padrão: 3)
- * Cron no VPS, junto da coleta (todo dia às 7h):  0 7 * * *
  *
  * Detecta os prazos NÃO cancelados cuja data fatal cai entre hoje e hoje+dias e
  * monta a mensagem. O ENVIO é plugável: se `ALERTA_WEBHOOK_URL` estiver no .env,

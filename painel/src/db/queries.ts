@@ -484,6 +484,44 @@ export async function detalhePrazo(id: string): Promise<DetalhePrazo | null> {
 }
 
 // ============================================================================
+// Prazos vencendo (para o alerta via Vercel Cron)
+// ============================================================================
+
+export interface PrazoVencendo {
+  ato: string;
+  dataFatal: string;
+  origem: string | null;
+  numeroCnj: string | null;
+  clienteNome: string | null;
+}
+
+/** Prazos não cancelados cuja data fatal cai entre hoje e hoje+dias. */
+export async function prazosVencendo(dias: number): Promise<PrazoVencendo[]> {
+  if (!db) return [];
+  const hoje = new Date().toISOString().slice(0, 10);
+  const limite = new Date(Date.now() + dias * 86400000).toISOString().slice(0, 10);
+  const rows = await db
+    .select({
+      ato: schema.prazos.ato,
+      dataFatal: schema.prazos.dataFatal,
+      origem: schema.prazos.origem,
+      numeroCnj: schema.processos.numeroCnj,
+      clienteNome: schema.processos.clienteNome,
+    })
+    .from(schema.prazos)
+    .leftJoin(schema.processos, eq(schema.prazos.processoId, schema.processos.id))
+    .where(
+      and(
+        ne(schema.prazos.status, "cancelado"),
+        gte(schema.prazos.dataFatal, hoje),
+        lte(schema.prazos.dataFatal, limite),
+      ),
+    )
+    .orderBy(schema.prazos.dataFatal);
+  return rows as PrazoVencendo[];
+}
+
+// ============================================================================
 // Busca global (processos, clientes, prazos)
 // ============================================================================
 
