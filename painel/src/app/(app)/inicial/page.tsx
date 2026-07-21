@@ -1,3 +1,4 @@
+import { FilePlus2 } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { InicialForm } from "@/components/inicial-form";
 
@@ -9,6 +10,7 @@ export default function InicialPage() {
       <PageHeader
         rotulo="caso novo"
         titulo="Inicial"
+        icone={FilePlus2}
         descricao="Comece um caso do zero. Descreva os fatos; o squad monta a tese (construtor-tese), verifica os fundamentos (pesquisador) e redige o rascunho da petição inicial (redator), sob a trava de citações."
       />
       <InicialForm />

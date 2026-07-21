@@ -1,3 +1,4 @@
+import { Inbox } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { IntimacoesList } from "@/components/intimacoes-list";
 import { listarIntimacoes } from "@/db/queries";
@@ -11,6 +12,7 @@ export default async function IntimacoesPage() {
       <PageHeader
         rotulo="a fonte oficial dos prazos"
         titulo="Intimações"
+        icone={Inbox}
         descricao="Comunicações do DJEN pela sua OAB, com inteiro teor. É daqui que nascem os prazos."
       />
       <IntimacoesList intimacoes={intimacoes} />

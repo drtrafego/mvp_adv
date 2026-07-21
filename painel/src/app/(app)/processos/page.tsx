@@ -1,3 +1,4 @@
+import { Scale } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { ProcessosList } from "@/components/processos-list";
 import { listarProcessos } from "@/db/queries";
@@ -11,6 +12,7 @@ export default async function ProcessosPage() {
       <PageHeader
         rotulo="sua carteira"
         titulo="Processos"
+        icone={Scale}
         descricao={`${processos.length} ${processos.length === 1 ? "processo" : "processos"} na carteira. Clique para ver prazos, movimentações, documentos e anotações.`}
       />
       <ProcessosList processos={processos} />

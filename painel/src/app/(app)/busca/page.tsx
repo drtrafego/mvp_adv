@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Scale, Users, CalendarClock, SearchX } from "lucide-react";
+import { Scale, Users, CalendarClock, SearchX, Search } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { buscaGlobal } from "@/db/queries";
 import { formatarData } from "@/lib/prazo-ui";
@@ -23,6 +23,7 @@ export default async function BuscaPage({
       <PageHeader
         rotulo="busca"
         titulo={termo ? `Resultados para "${termo}"` : "Busca"}
+        icone={Search}
         descricao={
           termo
             ? `${total} ${total === 1 ? "resultado" : "resultados"} em processos, clientes e prazos.`

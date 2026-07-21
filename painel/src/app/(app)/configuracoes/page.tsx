@@ -1,4 +1,4 @@
-import { Scale, Mail, IdCard, ShieldCheck, LogOut, Users, FileStack } from "lucide-react";
+import { Scale, Mail, IdCard, ShieldCheck, LogOut, Users, FileStack, SlidersHorizontal } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { ImportarClientes } from "@/components/importar-clientes";
 import { ImportarModelos } from "@/components/importar-modelos";
@@ -16,6 +16,7 @@ export default async function ConfiguracoesPage() {
       <PageHeader
         rotulo="preferências e acesso"
         titulo="Configurações"
+        icone={SlidersHorizontal}
         descricao="Este sistema é de um único advogado. Aqui ficam seus dados de acesso e a fronteira do sistema."
       />
 

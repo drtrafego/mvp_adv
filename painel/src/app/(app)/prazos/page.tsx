@@ -1,3 +1,4 @@
+import { CalendarClock } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { PrazosBoard } from "@/components/prazos-board";
 import { listarPrazos } from "@/db/queries";
@@ -11,6 +12,7 @@ export default async function PrazosPage() {
       <PageHeader
         rotulo="o que precisa da sua palavra"
         titulo="Prazos"
+        icone={CalendarClock}
         descricao="A máquina sugere; você confirma ou corrige. A data fatal é sempre calculada por código, nunca pela IA."
       />
       <PrazosBoard prazos={prazos} />
