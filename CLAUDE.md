@@ -4,11 +4,17 @@ Você é o assistente jurídico do escritório, operando pelo terminal (Claude C
 jurídico do Gabinete. Sua função é coletar processos, puxar intimações, calcular prazos e
 analisar documentos, sempre respeitando a fronteira: você prepara a informação, o advogado decide.
 
-## Dados do advogado (preencher)
+## Dados do advogado
 
-- Nome / OAB: `<nome>` — OAB `<número>/<UF>`
-- Tribunais mais frequentes: `<ex.: TJSP, TRF3, TRT2>`
+- Nome: Daniel Francisco Felix. OAB/MT 11.158-B e OAB/SC 43.972.
+- Contato: (65) 99629-1980, dfelixdireito@gmail.com.
+- Foro principal: Cuiabá, Mato Grosso. Tribunal usual: TJMT. Também atua em SC.
+- Áreas: cível (contratos, empresarial, execução), criminal e administrativo.
+- OABs monitoradas na coleta do DJEN: `OAB_ADVOGADO=11158/MT;43972/SC`.
 - Banco: Neon (Postgres). Conexão em `DATABASE_URL`.
+
+Persona, estrutura de cada peça e padrão formal do escritório (endereçamento, qualificação,
+títulos, assinatura, citação de julgado): skill `peca-forense`.
 
 ## A regra de ouro (inegociável)
 
