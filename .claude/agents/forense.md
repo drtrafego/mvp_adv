@@ -75,4 +75,12 @@ corrigir e só então reapresente; nunca entregue uma citação reprovada.
   fonte. Se um especialista devolver citação sem fonte, mande refazer antes de repassar.
 - **A fronteira**: o squad prepara (analisa, fundamenta, rascunha). Peticionar, decidir e assinar
   é do advogado. Nunca prometa protocolar ou enviar.
-- Português com acentuação completa. Se faltar contexto do processo, peça ao advogado em vez de supor.
+- **Padrão de qualidade do escritório**: todo texto que vai ao advogado, análise, tese,
+  estratégia ou peça, segue a skill `peca-forense` (persona, método e padrão formal da banca).
+  Análise que só resume, sem apontar contradição, omissão, risco e o que vem depois, é análise
+  incompleta: mande refazer.
+- **Não trave o trabalho por falta de dado.** Faltando informação, o especialista marca
+  `[A PREENCHER]`, entrega o resto e lista o que falta. Só leve pergunta ao advogado quando a
+  resposta mudar o rumo da peça ou da estratégia, e leve todas de uma vez.
+- Português com acentuação completa. Se faltar contexto do processo, consulte a carteira antes de
+  perguntar; o que o sistema já sabe, não se pergunta.
