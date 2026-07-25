@@ -10,9 +10,36 @@
  * Uso: configurado no ~/.claude/mcp.json ou no .mcp.json do projeto como um servidor stdio.
  */
 
+import { readFileSync } from "node:fs";
+
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+
+/**
+ * Carrega o .env do mcp-server quando a variável não veio do ambiente.
+ *
+ * Necessário porque o `.mcp.json` declara `"DATABASE_URL": "${DATABASE_URL}"`, que só é
+ * substituído se a variável existir no shell que abriu o Claude Code. Sem isso o servidor subia
+ * com a string literal "${DATABASE_URL}" e TODA tool de banco falhava. Mesmo mecanismo que os
+ * scripts de coleta já usavam.
+ */
+function carregarEnvLocal(): void {
+  const faltando = (v?: string) => !v || v.startsWith("${");
+  if (!faltando(process.env.DATABASE_URL) && !faltando(process.env.OAB_ADVOGADO)) return;
+  try {
+    const env = readFileSync(new URL("../.env", import.meta.url), "utf8");
+    for (const linha of env.split("\n")) {
+      const m = linha.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/);
+      if (m && faltando(process.env[m[1]])) {
+        process.env[m[1]] = m[2].replace(/^["']|["']$/g, "");
+      }
+    }
+  } catch {
+    // Sem .env: segue com o que veio do ambiente. bancoConfigurado() trata a ausência.
+  }
+}
+carregarEnvLocal();
 
 import { consultarProcesso } from "./lib/datajud.js";
 import { buscarIntimacoes, oabsDoAmbiente } from "./lib/comunica.js";
@@ -64,6 +91,18 @@ function formatarSincronizacao(fonte: string, reg: RegistroSincronizacao | null)
   const marca = reg.status === "ok" ? "🟢" : reg.status === "parcial" ? "🟡" : "🔴";
   const extra = reg.status === "ok" ? `${reg.itens ?? 0} item(ns)` : reg.mensagem ?? "";
   return `Última sincronização ${fonte}: ${marca} ${quando} (${reg.status})${extra ? ` — ${extra}` : ""}`;
+}
+
+/**
+ * Rodapé informativo de "quando foi a última coleta". Nunca derruba a operação principal, mas
+ * também não finge que está tudo bem: se a consulta falhar, diz que falhou.
+ */
+async function rodapeSincronizacao(rotulo: string, fonte: string): Promise<string> {
+  try {
+    return formatarSincronizacao(rotulo, await ultimaSincronizacao(fonte));
+  } catch (e) {
+    return `Última sincronização ${rotulo}: ⚠️ não foi possível consultar (${(e as Error).message}).`;
+  }
 }
 
 /**
@@ -237,7 +276,7 @@ server.registerTool(
         novos: gravadas,
         mensagem: comuns.length === 0 ? "sem intimação no período" : undefined,
       });
-      const rodape = `\n\n${formatarSincronizacao("DJEN", await ultimaSincronizacao("djen"))}`;
+      const rodape = `\n\n${await rodapeSincronizacao("DJEN", "djen")}`;
       if (comuns.length === 0) return texto("Nenhuma intimação no período informado." + rodape);
       const lista = comuns
         .slice(0, 15)

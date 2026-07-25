@@ -21,14 +21,17 @@ import { formatarCNJ } from "./cnj.js";
 let db: NeonHttpDatabase<typeof schema> | null = null;
 
 export function bancoConfigurado(): boolean {
-  return Boolean(process.env.DATABASE_URL);
+  const url = process.env.DATABASE_URL;
+  // "${DATABASE_URL}" não substituído pelo .mcp.json conta como NÃO configurado: se passasse
+  // adiante, o erro só apareceria lá na frente, disfarçado de "nenhum dado encontrado".
+  return Boolean(url) && !url!.startsWith("${");
 }
 
 export function getDb(): NeonHttpDatabase<typeof schema> {
   if (!bancoConfigurado()) {
     throw new Error(
       "Banco não configurado. Defina DATABASE_URL (string de conexão do Neon) no ambiente " +
-        "para persistir processos, movimentações e prazos.",
+        "ou no arquivo mcp-server/.env para persistir processos, movimentações e prazos.",
     );
   }
   if (!db) {
@@ -466,12 +469,24 @@ export async function registrarSincronizacao(
   }
 }
 
-// Última sincronização de uma fonte. Retorna null se banco ausente ou sem registros.
+/**
+ * Última sincronização de uma fonte.
+ *
+ * Retorna null só quando REALMENTE não há registro. Falha de conexão sobe como exceção: antes
+ * ela virava null e o painel dizia "nenhuma coleta registrada ainda", que é a mentira mais
+ * perigosa que este sistema pode contar ao advogado. Não coletar nada e não conseguir perguntar
+ * são coisas diferentes, e ele precisa saber qual das duas está acontecendo.
+ */
 export async function ultimaSincronizacao(
   fonte: string,
 ): Promise<RegistroSincronizacao | null> {
-  if (!bancoConfigurado()) return null;
-  try {
+  if (!bancoConfigurado()) {
+    throw new Error(
+      "Banco não configurado: não é possível saber quando foi a última coleta. Defina " +
+        "DATABASE_URL no ambiente ou em mcp-server/.env.",
+    );
+  }
+  {
     const d = getDb();
     const [row] = await d
       .select()
@@ -490,8 +505,6 @@ export async function ultimaSincronizacao(
       iniciadoEm: row.iniciadoEm,
       concluidoEm: row.concluidoEm,
     };
-  } catch {
-    return null;
   }
 }
 

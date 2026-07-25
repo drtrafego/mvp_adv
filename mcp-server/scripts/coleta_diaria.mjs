@@ -59,14 +59,16 @@ const oabs = oabsDoAmbiente();
 if (oabs.length === 0) {
   console.log("[intimacoes] OAB_ADVOGADO nao configurada; pulando.");
 } else {
-  let intNovas = 0, criados = 0, vinculados = 0;
+  let intEncontradas = 0, intNovas = 0, criados = 0, vinculados = 0;
   let bloqueado = false;
+  const falhas = [];
   for (const oab of oabs) {
     try {
       const comuns = await buscarIntimacoes({
         numeroOab: String(oab.numero), ufOab: oab.uf,
         dataInicio, dataFim, oabsAlvo: oabs,
       });
+      intEncontradas += comuns.length;
       intNovas += await upsertComunicacoes(comuns);
       const r = await autocadastrarDeComunicacoes(comuns);
       criados += r.criados; vinculados += r.vinculados;
@@ -74,16 +76,25 @@ if (oabs.length === 0) {
     } catch (e) {
       const msg = String(e.message || e);
       if (msg.includes("403") || /WAF|Forbidden|bloque/i.test(msg)) bloqueado = true;
+      // Qualquer falha entra no registro. Antes, erro que não fosse 403 era engolido e a coleta
+      // gravava "ok, 0 novas" — indistinguível de "não havia intimação nenhuma".
+      falhas.push(`${oab.numero}/${oab.uf}: ${msg.slice(0, 90)}`);
       console.log(`[intimacoes] OAB ${oab.numero}/${oab.uf}: ERRO ${msg.slice(0, 70)}`);
     }
   }
+  const houveSucesso = falhas.length < oabs.length;
   await registrarSincronizacao("djen", {
     escopo: "coleta diaria",
-    status: bloqueado ? "erro" : "ok",
+    status: bloqueado || !houveSucesso ? "erro" : falhas.length > 0 ? "parcial" : "ok",
+    // itens = quantas o DJEN devolveu no período; novos = quantas eram inéditas no banco.
+    // Sem separar as duas, "0 novas" some com a diferença entre "nada publicado" e "tudo repetido".
+    itens: intEncontradas,
     novos: intNovas,
     mensagem: bloqueado
       ? "DJEN bloqueou (403). Rode a coleta de um IP brasileiro (VPS/maquina no Brasil)."
-      : `${intNovas} novas, ${criados} processos cadastrados, ${vinculados} vinculados`,
+      : falhas.length > 0
+        ? `falha em ${falhas.length} de ${oabs.length} OAB(s): ${falhas.join(" | ")}`
+        : `${intEncontradas} no periodo, ${intNovas} novas, ${criados} processos cadastrados, ${vinculados} vinculados`,
   });
   console.log(`[intimacoes] ${intNovas} novas, ${criados} cadastrados, ${vinculados} vinculados`);
   if (bloqueado)
