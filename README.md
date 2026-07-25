@@ -20,15 +20,21 @@ código determinístico, nunca por LLM.
                                    [painel (Next.js/Vercel)] --> vê e edita, atualiza sozinho
 ```
 
-- **`mcp-server/`** — servidor MCP (stdio, TypeScript). 11 tools: `consultar_processo`,
-  `adicionar_processo`, `sincronizar_carteira`, `buscar_intimacoes`, `calcular_prazo`,
-  `listar_prazos`, `confirmar_prazo`, `editar_prazo`, `pesquisar_carteira`, `registrar_feriado`,
-  `baixar_autos`. Motor de prazos determinístico (dias úteis CPC art. 219) com testes.
+- **`mcp-server/`** — servidor MCP (stdio, TypeScript). 18 tools: `consultar_processo`,
+  `adicionar_processo`, `sincronizar_carteira`, `pesquisar_carteira`, `status_sincronizacao`,
+  `buscar_intimacoes`, `processar_intimacoes`, `reconciliar_intimacoes`, `catalogo_prazos`,
+  `calcular_prazo`, `listar_prazos`, `confirmar_prazo`, `editar_prazo`, `registrar_feriado`,
+  `salvar_analise`, `buscar_modelos`, `salvar_peca`, `baixar_autos`.
+  Motor de prazos determinístico com catálogo por rito
+  (`lib/catalogo-prazos.ts`): dias úteis no cível (CPC art. 219) e no trabalhista (CLT art. 775),
+  dias corridos e contínuos no penal (CPP art. 798) e na recuperação judicial (Lei 11.101
+  art. 189 §1º I). Com testes.
 - **`painel/`** — Next.js 16 + shadcn/ui + Tailwind v4 + Drizzle/Neon. Lista de prazos com cores
   por estado, edição inline (vira humana), atualização automática a cada 30s.
 - **`supabase/schema.sql`** e **`painel/drizzle/`** — schema do banco (7 tabelas). O nome da pasta
   é histórico; o banco é Neon (Postgres puro).
-- **`skills/prazos-cpc/`** — skill que ancora a classificação de atos no CPC.
+- **`.claude/skills/prazos-cpc/`** — skill que ancora a classificação do ato ao RITO (cível,
+  penal, trabalhista, juizado, recuperação judicial, execução fiscal, prazo material).
 - **`docs/01_APIS_JUDICIARIO.md`** — pesquisa das APIs do judiciário e requisitos de acesso.
 - **`CLAUDE.md`** — contexto do escritório para o agente.
 

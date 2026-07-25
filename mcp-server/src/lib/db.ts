@@ -308,6 +308,9 @@ export async function inserirPrazoSugerido(p: NovoPrazo): Promise<{ id: string }
       status: "sugerido",
       origem: "maquina",
       justificativaIa: p.justificativaIA ?? p.calculo.memoria.join(" "),
+      // Pendências [CONFERIR] do cálculo (divergência de rito, termo inicial incerto, dobro
+      // recusado). O painel mostra ao advogado antes da confirmação.
+      divergencia: p.calculo.alertas.length > 0 ? { conferir: p.calculo.alertas } : null,
     })
     .returning({ id: schema.prazos.id });
   return { id: row.id };

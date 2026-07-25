@@ -24,13 +24,18 @@ for (const it of recentes) {
     .from(schema.processos)
     .where(eq(schema.processos.numeroCnj, cnj));
   if (!proc) continue;
-  const r = calcularPrazo({ dataDisponibilizacao: it.data_disp, dias: 15 });
+  // Intimação de demonstração sem ato identificado: o prazo residual da lei é de 5 dias
+  // (CPC art. 218 §3º), não 15. A demo precisa nascer coerente com o motor.
+  const r = calcularPrazo({
+    dataDisponibilizacao: it.data_disp,
+    atoChave: "manifestacao-generica",
+  });
   await db.insert(schema.prazos).values({
     processoId: proc.id,
     ato: `Manifestação — ${it.orgao?.split(" DE ")[0] ?? it.sigla_tribunal}`,
-    regraAplicada: "prazo estimado 15 dias úteis (demo)",
-    dias: 15,
-    contagem: "uteis",
+    regraAplicada: `${r.dispositivo} (demo)`,
+    dias: r.dias,
+    contagem: r.contagem,
     dataPublicacao: r.dataPublicacao,
     dataInicio: r.dataInicioContagem,
     dataFatalSugerida: r.dataFatal,

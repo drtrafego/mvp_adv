@@ -19,6 +19,12 @@ import { buscarIntimacoes, oabsDoAmbiente } from "./lib/comunica.js";
 import { parseOab, type IdentidadeOab } from "./lib/oab.js";
 import { autocadastrarDeComunicacoes } from "./lib/auto-cadastro.js";
 import { calcularPrazo } from "./lib/prazos.js";
+import {
+  CATALOGO_PRAZOS,
+  CHAVES_ATO,
+  ROTULO_RITO,
+  buscarAto,
+} from "./lib/catalogo-prazos.js";
 import { formatarCNJ, validarCNJ } from "./lib/cnj.js";
 import {
   bancoConfigurado,
@@ -326,17 +332,47 @@ server.registerTool(
   {
     title: "Calcular prazo",
     description:
-      "Calcula a data fatal de um prazo de forma determinística (dias úteis CPC art. 219, " +
-      "recesso art. 220, publicação Lei 11.419). VOCÊ classifica o ato (quantos dias, se em dobro); " +
-      "o código calcula a data. Se informar processo e ato, grava como prazo SUGERIDO (amarelo) " +
-      "para o advogado confirmar.",
+      "Calcula a data fatal de um prazo de forma determinística. VOCÊ classifica o ATO (escolhe " +
+      "a chave em ato_chave); o código deriva os dias, o regime de contagem (úteis ou corridos) e " +
+      "a suspensão aplicável ao rito, e calcula a data. NÃO existe prazo padrão de 15 dias: no " +
+      "penal a contagem é corrida e não para no recesso (CPP art. 798), na recuperação judicial é " +
+      "corrida (Lei 11.101 art. 189 §1º I), no trabalhista o recurso é de 8 dias (CLT art. 775), " +
+      "no juizado o recurso inominado é de 10 dias, e quando a lei silencia o prazo é de 5 dias " +
+      "(CPC art. 218 §3º, chave 'manifestacao-generica'). Use 'dias' avulso apenas quando o juiz " +
+      "fixar prazo diverso do legal. Se informar processo e ato, grava como prazo SUGERIDO " +
+      "(amarelo) para o advogado confirmar.",
     inputSchema: {
       data_disponibilizacao: z.string().describe("Data de disponibilização no DJEN, YYYY-MM-DD."),
-      dias: z.number().int().positive().describe("Número de dias do prazo (antes de dobro)."),
-      contagem: z.enum(["uteis", "corridos"]).optional(),
-      dobro: z.boolean().optional().describe("Aplica prazo em dobro (Fazenda, MP, litisconsortes...)."),
-      data_publicacao_conhecida: z.string().optional(),
-      ato: z.string().optional().describe("Descrição do ato (ex.: 'Contestação', 'Apelação')."),
+      ato_chave: z
+        .enum(CHAVES_ATO)
+        .optional()
+        .describe(
+          "Chave do ato no catálogo por rito. É o caminho correto: define dias, contagem e " +
+            "suspensão. Se não identificar o ato e a lei silenciar, use 'manifestacao-generica' " +
+            "(5 dias, CPC art. 218 §3º), nunca 15 dias.",
+        ),
+      dias: z
+        .number()
+        .int()
+        .positive()
+        .optional()
+        .describe(
+          "Só quando o ato não está no catálogo ou o juiz fixou prazo diverso do legal. " +
+            "Sobrepõe o catálogo e gera alerta de conferência.",
+        ),
+      contagem: z
+        .enum(["uteis", "corridos"])
+        .optional()
+        .describe("Sobrepõe a contagem do rito. Use apenas com justificativa."),
+      dobro: z.boolean().optional().describe("Aplica prazo em dobro (Fazenda, MP, Defensoria, litisconsortes em autos físicos)."),
+      data_publicacao_conhecida: z
+        .string()
+        .optional()
+        .describe(
+          "Publicação já conhecida (ciência pessoal, carga dos autos). Em prazo material é a " +
+            "data da CIÊNCIA do ato, e é obrigatória.",
+        ),
+      ato: z.string().optional().describe("Descrição livre do ato, para gravar no painel."),
       tribunal: z.string().optional().describe("Sigla do tribunal, para carregar feriados forenses locais."),
       processo_id: z.string().optional().describe("ID do processo no Neon, para vincular o prazo."),
       persistir: z.boolean().optional().describe("Gravar como prazo sugerido (padrão false)."),
@@ -347,33 +383,99 @@ server.registerTool(
       const feriadosForenses = a.tribunal ? await carregarFeriadosForenses(a.tribunal) : [];
       const r = calcularPrazo({
         dataDisponibilizacao: a.data_disponibilizacao,
+        atoChave: a.ato_chave,
         dias: a.dias,
         contagem: a.contagem,
         dobro: a.dobro,
         dataPublicacaoConhecida: a.data_publicacao_conhecida,
         calendario: { feriadosForenses },
       });
+      const doCatalogo = a.ato_chave ? buscarAto(a.ato_chave) : undefined;
+      const rotuloAto = a.ato ?? doCatalogo?.rotulo ?? "Prazo";
       let gravado = "";
-      if (a.persistir && a.ato && bancoConfigurado()) {
+      if (a.persistir && bancoConfigurado()) {
         const { id } = await inserirPrazoSugerido({
           processoId: a.processo_id ?? null,
-          ato: a.ato,
-          regraAplicada: a.dobro ? "prazo em dobro" : undefined,
+          ato: rotuloAto,
+          regraAplicada: [r.dispositivo, r.dobro ? "prazo em dobro" : null]
+            .filter(Boolean)
+            .join(" | ") || undefined,
           calculo: r,
         });
         gravado = `\n\n💾 Gravado como prazo SUGERIDO (id ${id}). Confirme no painel para virar humana.`;
       }
+      const cabecalhoRito = r.rito ? ` — rito ${ROTULO_RITO[r.rito]}` : "";
+      const base = r.dispositivo ? `\nBase: ${r.dispositivo}${r.fonte ? ` (${r.fonte})` : ""}` : "";
+      const pendencias = r.alertas.length
+        ? `\n\nPendências para o advogado:\n${r.alertas.map((x) => "  ⚠️ " + x).join("\n")}`
+        : "";
       return texto(
-        `⏱️ ${a.ato ?? "Prazo"}${a.dobro ? " (em dobro)" : ""}\n` +
+        `⏱️ ${rotuloAto}${r.dobro ? " (em dobro)" : ""}${cabecalhoRito}\n` +
           `Disponibilização: ${r.dataDisponibilizacao ?? "-"}\n` +
           `Publicação: ${r.dataPublicacao}\nInício da contagem: ${r.dataInicioContagem}\n` +
-          `➡️ DATA FATAL: ${r.dataFatal} (${r.diasEfetivos} dias ${r.contagem})\n\n` +
-          `Memória de cálculo:\n${r.memoria.map((m) => "  - " + m).join("\n")}` +
+          `➡️ DATA FATAL: ${r.dataFatal} (${r.diasEfetivos} dias ${r.contagem})` +
+          base +
+          `\n\nMemória de cálculo:\n${r.memoria.map((m) => "  - " + m).join("\n")}` +
+          pendencias +
           gravado,
       );
     } catch (e) {
       return erro((e as Error).message);
     }
+  },
+);
+
+// ---------------------------------------------------------------------------
+// catalogo_prazos — a IA consulta os atos e regras de cada rito antes de classificar
+// ---------------------------------------------------------------------------
+server.registerTool(
+  "catalogo_prazos",
+  {
+    title: "Catálogo de prazos por rito",
+    description:
+      "Lista os atos processuais do catálogo com prazo, regime de contagem e dispositivo legal. " +
+      "Consulte antes de classificar uma intimação, para escolher a chave certa em calcular_prazo.",
+    inputSchema: {
+      rito: z
+        .enum(["civel", "penal", "trabalhista", "jec", "recuperacao", "fiscal", "material"])
+        .optional()
+        .describe("Filtra por rito. Sem filtro, devolve o catálogo inteiro."),
+      busca: z.string().optional().describe("Filtra por termo no rótulo, chave ou sinônimos."),
+    },
+  },
+  async ({ rito, busca }) => {
+    const termo = busca?.toLowerCase().trim();
+    const itens = CATALOGO_PRAZOS.filter((x) => {
+      if (rito && x.rito !== rito) return false;
+      if (!termo) return true;
+      return (
+        x.chave.includes(termo) ||
+        x.rotulo.toLowerCase().includes(termo) ||
+        x.sinonimos.some((s) => s.toLowerCase().includes(termo))
+      );
+    });
+    if (itens.length === 0) return texto("Nenhum ato no filtro informado.");
+    const porRito = new Map<string, typeof itens>();
+    for (const i of itens) {
+      const lista = porRito.get(i.rito) ?? [];
+      lista.push(i);
+      porRito.set(i.rito, lista);
+    }
+    const blocos = [...porRito.entries()].map(([r, lista]) => {
+      const linhas = lista.map(
+        (i) =>
+          `  • ${i.chave} — ${i.rotulo}: ${i.dias} dia(s) ${i.contagem === "uteis" ? "úteis" : "CORRIDOS"} ` +
+          `(${i.dispositivo})` +
+          (i.dobroAdmitido ? "" : " | não admite dobro") +
+          (i.aplicaRecesso ? "" : " | recesso 20/12-20/01 não incide") +
+          (i.conferir ? `\n      ⚠️ ${i.conferir}` : ""),
+      );
+      return `${ROTULO_RITO[r as keyof typeof ROTULO_RITO].toUpperCase()}\n${linhas.join("\n")}`;
+    });
+    return texto(
+      blocos.join("\n\n") +
+        "\n\nSem ato identificado e lei silente: 'manifestacao-generica' (5 dias, CPC art. 218 §3º).",
+    );
   },
 );
 

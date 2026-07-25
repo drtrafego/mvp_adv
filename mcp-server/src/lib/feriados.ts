@@ -105,15 +105,24 @@ export interface CalendarioOptions {
   feriadosForenses?: string[];
   /** Considerar feriados forenses móveis (Carnaval, Corpus Christi) como não-úteis. Padrão: true. */
   incluirForensesMoveis?: boolean;
+  /**
+   * Aplicar a suspensão de 20/12 a 20/01 (CPC art. 220). Padrão: true.
+   *
+   * Falso no processo penal: o art. 798 do CPP manda os prazos correrem contínuos, sem se
+   * interromper por férias, domingo ou feriado. Aplicar o recesso ali empurraria a data fatal
+   * para depois de 20/01 e o prazo já teria vencido.
+   */
+  aplicarRecesso?: boolean;
 }
 
 /**
  * Constrói um verificador de dia útil para uso na contagem.
  * Um dia é útil quando não é sábado, domingo, feriado nacional, forense móvel,
- * feriado forense local, nem recesso do art. 220.
+ * feriado forense local, nem recesso do art. 220 (quando este se aplica).
  */
 export function criarCalendario(opts: CalendarioOptions = {}) {
   const incluirForensesMoveis = opts.incluirForensesMoveis ?? true;
+  const aplicarRecesso = opts.aplicarRecesso ?? true;
   const forensesLocais = new Set(opts.feriadosForenses ?? []);
 
   // cache de feriados móveis por ano
@@ -135,7 +144,7 @@ export function criarCalendario(opts: CalendarioOptions = {}) {
     const dow = date.getUTCDay(); // 0 domingo, 6 sábado
     if (dow === 0 || dow === 6) return false;
     if (FERIADOS_FIXOS.has(mmdd(date))) return false;
-    if (ehRecessoForense(date)) return false;
+    if (aplicarRecesso && ehRecessoForense(date)) return false;
     if (moveisDoAno(date.getUTCFullYear()).has(formatISODate(date))) return false;
     if (forensesLocais.has(formatISODate(date))) return false;
     return true;

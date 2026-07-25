@@ -97,6 +97,14 @@ export function PrazoDetalhe({ detalhe }: { detalhe: DetalhePrazo }) {
           </p>
         )}
 
+        <PendenciasConferir divergencia={prazo.divergencia} />
+        {!isHumano && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Prazo sugerido pela máquina. A contagem e a data fatal são responsabilidade sua:
+            confira o rito antes de confirmar.
+          </p>
+        )}
+
         <div className="mt-4 flex flex-wrap gap-2">
           {!isHumano && <ConfirmarBtn id={prazo.id} />}
           <GerarPecaDialog prazoId={prazo.id} processoId={prazo.processoId} />
@@ -128,6 +136,32 @@ export function PrazoDetalhe({ detalhe }: { detalhe: DetalhePrazo }) {
           />
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+/**
+ * Pontos [CONFERIR] gravados pelo motor de prazos: divergência de rito, termo inicial incerto,
+ * prazo em dobro recusado. O advogado precisa ver isso ANTES de confirmar.
+ */
+function PendenciasConferir({ divergencia }: { divergencia: unknown }) {
+  const itens =
+    divergencia && typeof divergencia === "object" && "conferir" in divergencia
+      ? ((divergencia as { conferir?: unknown }).conferir ?? [])
+      : [];
+  if (!Array.isArray(itens) || itens.length === 0) return null;
+  return (
+    <div className="mt-2 rounded-md border border-amber-brand/30 bg-amber-tint px-2.5 py-2">
+      <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-amber-brand">
+        Conferir antes de confirmar
+      </p>
+      <ul className="mt-1 space-y-1">
+        {itens.map((item, i) => (
+          <li key={i} className="text-xs leading-snug text-amber-brand">
+            {String(item)}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

@@ -122,7 +122,8 @@ for (const [cnj, its] of porProcesso) {
   }
 }
 
-// 5. prazos: para as ~10 intimações mais recentes que são "Intimação", calcula 15 dias úteis
+// 5. prazos: para as ~10 intimações mais recentes que são "Intimação". Sem ato identificado, o
+// prazo da lei é o residual de 5 dias (CPC art. 218 §3º), nunca 15.
 const recentes = [...intimacoes]
   .filter((i) => /intima/i.test(i.tipo))
   .sort((a, b) => (a.data_disp < b.data_disp ? 1 : -1))
@@ -135,13 +136,16 @@ for (const it of recentes) {
     .from(schema.processos)
     .where(eqNumero(cnj));
   if (!proc) continue;
-  const r = calcularPrazo({ dataDisponibilizacao: it.data_disp, dias: 15 });
+  const r = calcularPrazo({
+    dataDisponibilizacao: it.data_disp,
+    atoChave: "manifestacao-generica",
+  });
   await db.insert(schema.prazos).values({
     processoId: proc.id,
-    ato: "Manifestação (prazo estimado 15 dias úteis)",
-    regraAplicada: "CPC art. 219 (demo)",
-    dias: 15,
-    contagem: "uteis",
+    ato: "Manifestação (prazo residual da lei)",
+    regraAplicada: `${r.dispositivo} (demo)`,
+    dias: r.dias,
+    contagem: r.contagem,
     dataPublicacao: r.dataPublicacao,
     dataInicio: r.dataInicioContagem,
     dataFatalSugerida: r.dataFatal,
