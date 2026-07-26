@@ -33,13 +33,23 @@ function dbg(msg: string): void {
   if (process.env.COMUNICA_DEBUG) console.error(`[comunica-browser] ${msg}`);
 }
 
-/** userDataDir do contexto persistente: env COMUNICA_PROFILE_DIR ou %LOCALAPPDATA%/gabinete/comunica-profile. */
-function userDataDir(): string {
+/**
+ * userDataDir do contexto persistente. É onde mora o desafio resolvido do WAF: se o caminho
+ * mudar entre execuções, cada rodada começa do zero e tende a apanhar do bloqueio.
+ *
+ * Cuidado com cron: ele roda com ambiente mínimo, muitas vezes SEM HOME. Antes, nesse caso, a
+ * base virava "." (relativa ao diretório atual), então o perfil dependia de onde o processo foi
+ * lançado. Agora, sem HOME, cai num caminho absoluto fixo dentro do próprio projeto, para o
+ * perfil ser sempre o mesmo. Defina COMUNICA_PROFILE_DIR para escolher explicitamente.
+ */
+export function userDataDir(): string {
   if (process.env.COMUNICA_PROFILE_DIR) return process.env.COMUNICA_PROFILE_DIR;
   const base =
     process.env.LOCALAPPDATA ??
     process.env.APPDATA ??
-    path.join(process.env.HOME ?? process.env.USERPROFILE ?? ".", ".local", "share");
+    (process.env.HOME || process.env.USERPROFILE
+      ? path.join((process.env.HOME ?? process.env.USERPROFILE) as string, ".local", "share")
+      : path.resolve(new URL("../..", import.meta.url).pathname, ".perfil-navegador"));
   return path.join(base, "gabinete", "comunica-profile");
 }
 

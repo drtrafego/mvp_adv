@@ -19,6 +19,35 @@ try {
 } catch {}
 
 const { buscarIntimacoes, oabsDoAmbiente } = await import("../dist/lib/comunica.js");
+const { userDataDir } = await import("../dist/lib/comunica-browser.js");
+
+/**
+ * Checagem de ambiente. A coleta manual funcionou e a automática nunca: quando isso acontece, a
+ * diferença costuma estar no ambiente do cron (sem HOME, sem navegador instalado, perfil noutro
+ * caminho), não na lógica. Então o diagnóstico começa mostrando o ambiente real.
+ */
+async function ambiente() {
+  const { existsSync, readdirSync } = await import("node:fs");
+  console.log("--- ambiente ---");
+  console.log(`  cwd:      ${process.cwd()}`);
+  console.log(`  HOME:     ${process.env.HOME ?? "(não definido: típico de cron)"}`);
+  const perfil = userDataDir();
+  const temPerfil = existsSync(perfil);
+  console.log(`  perfil do navegador: ${perfil}`);
+  console.log(
+    `    ${temPerfil ? "existe" : "NÃO EXISTE (cada execução recomeça o desafio do WAF)"}`,
+  );
+  try {
+    const { chromium } = await import("playwright");
+    const exe = chromium.executablePath();
+    console.log(`  chromium: ${exe}`);
+    console.log(`    ${existsSync(exe) ? "instalado" : "NÃO INSTALADO -> npx playwright install chromium"}`);
+  } catch (e) {
+    console.log(`  chromium: falha ao localizar (${String(e.message).slice(0, 80)})`);
+  }
+  console.log();
+}
+await ambiente();
 
 const dias = Number(process.argv[2] ?? 30);
 const iso = (d) => d.toISOString().slice(0, 10);
