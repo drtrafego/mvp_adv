@@ -20,7 +20,7 @@ Pré-requisitos: **Node 20+** e **pnpm** instalados.
 2. Criar o arquivo `mcp-server/.env` com:
    ```
    DATABASE_URL=postgresql://...        # a string do Neon (a mesma do painel)
-   OAB_ADVOGADO=11158/MT;43972/SC       # as OABs do advogado, separadas por ";"
+   OAB_ADVOGADO=11158-B/MT;43972/SC       # as OABs do advogado, separadas por ";"
    ```
 3. Instalar e compilar:
    ```

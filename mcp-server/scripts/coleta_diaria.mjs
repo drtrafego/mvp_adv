@@ -65,7 +65,7 @@ if (oabs.length === 0) {
   for (const oab of oabs) {
     try {
       const comuns = await buscarIntimacoes({
-        numeroOab: String(oab.numero), ufOab: oab.uf,
+        numeroOab: String(oab.numero), ufOab: oab.uf, letraOab: oab.letra,
         dataInicio, dataFim, oabsAlvo: oabs,
       });
       intEncontradas += comuns.length;

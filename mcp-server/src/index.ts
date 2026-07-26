@@ -130,6 +130,18 @@ async function rodapeSincronizacao(rotulo: string, fonte: string): Promise<strin
  * ter várias seccionais, ex.: "11158/MT;43972/SC"); se ausente, cai na própria OAB consultada.
  * Vazio = sem filtro (comportamento antigo).
  */
+/**
+ * Letra da inscrição (o "B" de 11.158-B) a partir do OAB_ADVOGADO, quando quem chamou a tool
+ * digitou só os dígitos. Sem a letra, a consulta ao DJEN perde as intimações estaduais.
+ */
+function letraDoAmbiente(numeroOab: string, ufOab: string): string | null {
+  const digitos = numeroOab.replace(/\D/g, "").replace(/^0+/, "");
+  const uf = ufOab.toUpperCase();
+  return (
+    oabsDoAmbiente().find((o) => o.numero === digitos && o.uf === uf)?.letra ?? null
+  );
+}
+
 function montarOabsAlvo(numeroOab: string, ufOab: string): IdentidadeOab[] {
   const doAmbiente = oabsDoAmbiente();
   if (doAmbiente.length > 0) return doAmbiente;
@@ -280,6 +292,7 @@ server.registerTool(
       const comuns = await buscarIntimacoes({
         numeroOab: numero_oab,
         ufOab: uf_oab,
+        letraOab: parseOab(`${numero_oab}/${uf_oab}`)?.letra ?? letraDoAmbiente(numero_oab, uf_oab),
         dataInicio: data_inicio,
         dataFim: data_fim,
         siglaTribunal: sigla_tribunal,
@@ -350,6 +363,7 @@ server.registerTool(
       const comuns = await buscarIntimacoes({
         numeroOab: numero_oab,
         ufOab: uf_oab,
+        letraOab: parseOab(`${numero_oab}/${uf_oab}`)?.letra ?? letraDoAmbiente(numero_oab, uf_oab),
         dataInicio: data_inicio,
         dataFim: data_fim,
         siglaTribunal: sigla_tribunal,

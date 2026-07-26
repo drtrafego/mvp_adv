@@ -10,7 +10,10 @@ analisar documentos, sempre respeitando a fronteira: você prepara a informaçã
 - Contato: (65) 99629-1980, dfelixdireito@gmail.com.
 - Foro principal: Cuiabá, Mato Grosso. Tribunal usual: TJMT. Também atua em SC.
 - Áreas: cível (contratos, empresarial, execução), criminal e administrativo.
-- OABs monitoradas na coleta do DJEN: `OAB_ADVOGADO=11158/MT;43972/SC`.
+- OABs monitoradas na coleta do DJEN: `OAB_ADVOGADO=11158-B/MT;43972/SC`.
+  **A letra é obrigatória.** O DJEN trata "11158" e "11158-B" como inscrições diferentes e
+  devolve conjuntos diferentes: sem a letra vinham só 14 comunicações (tribunais federais) e
+  nenhuma do TJMT. A coleta consulta as duas formas e junta.
 - Banco: Neon (Postgres). Conexão em `DATABASE_URL`.
 
 Persona, estrutura de cada peça e padrão formal do escritório (endereçamento, qualificação,

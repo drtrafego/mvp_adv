@@ -47,10 +47,17 @@ export interface BuscarIntimacoesParams {
   pagina?: number;
   itensPorPagina?: number;
   /**
+   * Letra da OAB (o "B" de 11.158-B). NÃO é detalhe cosmético: a API do DJEN trata
+   * "11158" e "11158-B" como inscrições DIFERENTES, e devolve conjuntos diferentes.
+   * Medido na carteira do escritório em 26/07/2026: "11158" devolve 14 comunicações (só
+   * tribunais federais) e "11158-B" devolve 849 (as do TJMT). Consultar só os dígitos
+   * escondia praticamente todas as intimações estaduais.
+   */
+  letraOab?: string | null;
+  /**
    * Identidades do advogado (número + UF). Se informado, filtra o resultado mantendo só as
    * comunicações que têm algum advogado destinatário batendo por número+UF (junta os vários
-   * formatos da mesma OAB e corta homônimos). A query ao DJEN em si continua usando só
-   * dígitos + UF, porque a API não aceita a letra.
+   * formatos da mesma OAB e corta homônimos).
    */
   oabsAlvo?: IdentidadeOab[];
 }
@@ -144,11 +151,45 @@ export function oabsDoAmbiente(): IdentidadeOab[] {
  * Se `params.oabsAlvo` estiver presente, filtra o resultado pela identidade do advogado
  * (número + UF), juntando os vários formatos da OAB e cortando homônimos.
  */
+/**
+ * Formas de inscrição a consultar. Com letra, consulta as DUAS ("11158-B" e "11158"): a API
+ * indexa cada forma separadamente e cada uma devolve tribunais diferentes, então só a união
+ * cobre a carteira inteira. Sem letra, uma consulta só.
+ */
+function variantesDeOab(numero: string, letra?: string | null): string[] {
+  const limpo = numero.replace(/\D/g, "");
+  const comLetra = letra ? `${limpo}-${letra.toUpperCase()}` : null;
+  return comLetra ? [comLetra, limpo] : [limpo];
+}
+
 export async function buscarIntimacoes(
   params: BuscarIntimacoesParams,
   tentativas = 3,
 ): Promise<ComunicacaoDJEN[]> {
-  const itens = await buscarIntimacoesRaw(params, tentativas);
+  const variantes = variantesDeOab(params.numeroOab, params.letraOab);
+
+  // União das variantes, deduplicada pelo hash do DJEN (a mesma comunicação pode aparecer
+  // nas duas consultas). Sem hash, cai para processo + data como chave.
+  const porChave = new Map<string, ComunicacaoDJEN>();
+  let ultimoErro: unknown = null;
+  let algumaOk = false;
+  for (const numeroOab of variantes) {
+    try {
+      const itens = await buscarIntimacoesRaw({ ...params, numeroOab }, tentativas);
+      algumaOk = true;
+      for (const c of itens) {
+        const chave = c.hash ?? `${c.numeroProcesso ?? "?"}|${c.dataDisponibilizacao ?? "?"}|${c.texto.slice(0, 40)}`;
+        if (!porChave.has(chave)) porChave.set(chave, c);
+      }
+    } catch (e) {
+      ultimoErro = e;
+    }
+  }
+  // Se NENHUMA variante respondeu, é falha: não devolver lista vazia, que se confunde com
+  // "não há intimação".
+  if (!algumaOk && ultimoErro) throw ultimoErro;
+
+  const itens = [...porChave.values()];
   const alvos = params.oabsAlvo;
   if (!alvos || alvos.length === 0) return itens;
   return itens.filter((c) => c.advogados.some((a) => a.oab != null && ehDoAdvogado(a.oab, alvos)));
