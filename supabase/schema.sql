@@ -258,3 +258,35 @@ end $$;
 -- alter table processos enable row level security;
 -- alter table prazos enable row level security;
 -- (definir policies por auth.uid()/escritorio_id quando for multiusuário)
+
+-- ============================================================================
+-- Camada de documentos do processo (upload pelo painel e pelo terminal).
+-- O binário mora no Vercel Blob (privado); aqui ficam metadado, hash e o texto
+-- extraído, que é o que o squad forense lê para analisar.
+-- ============================================================================
+alter table documentos add column if not exists arquivo_nome text;
+alter table documentos add column if not exists mime_type text;
+alter table documentos add column if not exists tamanho_bytes bigint;
+alter table documentos add column if not exists texto text;
+alter table documentos add column if not exists extracao_status text default 'pendente';
+alter table documentos add column if not exists extraido_em timestamptz;
+alter table documentos add column if not exists enviado_por text;
+alter table documentos add column if not exists excluido_em timestamptz;
+
+comment on column documentos.categoria is
+  'Funcao processual: inicial | procuracao | contestacao | replica | decisao | despacho | sentenca | acordao | recurso | contrarrazoes | prova | laudo | contrato | comprovante | ata_audiencia | certidao | outro';
+comment on column documentos.tipo is 'Formato normalizado: pdf | docx | imagem | texto';
+comment on column documentos.fonte is 'Canal de origem: upload_painel | upload_terminal | mni | escavador';
+comment on column documentos.texto_extraido is 'Flag: tem texto utilizavel. O conteudo fica na coluna texto.';
+comment on column documentos.extracao_status is 'pendente | ok | sem_texto | falhou | nao_aplica';
+comment on column documentos.storage_path is
+  'Pathname imutavel no Blob: processos/<cnj-digitos>/<categoria>/<data>-<slug>-<hash8>.<ext>';
+
+-- Dedup por processo: o mesmo arquivo nao entra duas vezes no mesmo processo
+-- (mas pode existir em processos diferentes, o que e legitimo).
+create unique index if not exists documentos_hash_unico
+  on documentos (processo_id, hash_sha256)
+  where hash_sha256 is not null and excluido_em is null;
+
+create index if not exists idx_docs_proc
+  on documentos (processo_id, categoria, created_at desc);

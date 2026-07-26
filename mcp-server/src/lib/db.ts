@@ -10,7 +10,7 @@
 
 import { neon } from "@neondatabase/serverless";
 import { drizzle, type NeonHttpDatabase } from "drizzle-orm/neon-http";
-import { and, desc, eq, gte, ilike, lte, ne, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, isNull, lte, ne, or, sql } from "drizzle-orm";
 import * as schema from "./schema.js";
 import type { ProcessoDataJud } from "./datajud.js";
 import type { ComunicacaoDJEN } from "./comunica.js";
@@ -513,4 +513,217 @@ export async function ping(): Promise<boolean> {
   const d = getDb();
   await d.execute(sql`select 1`);
   return true;
+}
+
+// ---------------------------------------------------------------------------
+// Documentos do processo (upload pelo painel e pelo terminal)
+// ---------------------------------------------------------------------------
+
+export interface NovoDocumento {
+  processoId: string;
+  titulo: string;
+  tipo: string;
+  categoria: string;
+  storagePath: string;
+  arquivoNome: string;
+  mimeType: string;
+  tamanhoBytes: number;
+  hashSha256: string;
+  paginas?: number | null;
+  texto?: string | null;
+  extracaoStatus: string;
+  fonte: string;
+  enviadoPor: string;
+  descricao?: string | null;
+  dataDocumento?: string | null;
+}
+
+export async function inserirDocumento(doc: NovoDocumento): Promise<{ id: string }> {
+  const d = getDb();
+  const [row] = await d
+    .insert(schema.documentos)
+    .values({
+      processoId: doc.processoId,
+      titulo: doc.titulo,
+      tipo: doc.tipo,
+      categoria: doc.categoria,
+      storagePath: doc.storagePath,
+      arquivoNome: doc.arquivoNome,
+      mimeType: doc.mimeType,
+      tamanhoBytes: doc.tamanhoBytes,
+      hashSha256: doc.hashSha256,
+      paginas: doc.paginas ?? null,
+      texto: doc.texto ?? null,
+      textoExtraido: doc.extracaoStatus === "ok",
+      extracaoStatus: doc.extracaoStatus,
+      extraidoEm: doc.extracaoStatus === "pendente" ? null : new Date(),
+      fonte: doc.fonte,
+      enviadoPor: doc.enviadoPor,
+      descricao: doc.descricao ?? null,
+      dataDocumento: doc.dataDocumento ?? null,
+    })
+    .returning({ id: schema.documentos.id });
+  return { id: row.id };
+}
+
+/** Dedup por processo: o mesmo arquivo não entra duas vezes no mesmo processo. */
+export async function documentoPorHash(
+  processoId: string,
+  hashSha256: string,
+): Promise<{ id: string; titulo: string | null; categoria: string | null; createdAt: Date | null } | null> {
+  const d = getDb();
+  const [row] = await d
+    .select({
+      id: schema.documentos.id,
+      titulo: schema.documentos.titulo,
+      categoria: schema.documentos.categoria,
+      createdAt: schema.documentos.createdAt,
+    })
+    .from(schema.documentos)
+    .where(
+      and(
+        eq(schema.documentos.processoId, processoId),
+        eq(schema.documentos.hashSha256, hashSha256),
+        isNull(schema.documentos.excluidoEm),
+      ),
+    )
+    .limit(1);
+  return row ?? null;
+}
+
+/** Lista os documentos de um processo. NÃO traz a coluna `texto` (pesada). */
+export async function listarDocumentos(processoId: string, categoria?: string) {
+  const d = getDb();
+  const filtros = [eq(schema.documentos.processoId, processoId), isNull(schema.documentos.excluidoEm)];
+  if (categoria) filtros.push(eq(schema.documentos.categoria, categoria));
+  return d
+    .select({
+      id: schema.documentos.id,
+      titulo: schema.documentos.titulo,
+      categoria: schema.documentos.categoria,
+      tipo: schema.documentos.tipo,
+      paginas: schema.documentos.paginas,
+      tamanhoBytes: schema.documentos.tamanhoBytes,
+      extracaoStatus: schema.documentos.extracaoStatus,
+      fonte: schema.documentos.fonte,
+      dataDocumento: schema.documentos.dataDocumento,
+      createdAt: schema.documentos.createdAt,
+    })
+    .from(schema.documentos)
+    .where(and(...filtros))
+    .orderBy(desc(schema.documentos.createdAt));
+}
+
+/** Texto extraído de um documento, paginado (ele pode ser grande). */
+export async function textoDocumento(documentoId: string) {
+  const d = getDb();
+  const [row] = await d
+    .select({
+      id: schema.documentos.id,
+      titulo: schema.documentos.titulo,
+      categoria: schema.documentos.categoria,
+      paginas: schema.documentos.paginas,
+      texto: schema.documentos.texto,
+      extracaoStatus: schema.documentos.extracaoStatus,
+      storagePath: schema.documentos.storagePath,
+    })
+    .from(schema.documentos)
+    .where(and(eq(schema.documentos.id, documentoId), isNull(schema.documentos.excluidoEm)))
+    .limit(1);
+  return row ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// Clientes e partes do processo
+//
+// O DataJud NÃO devolve as partes (a API pública não expõe nome de parte), então o nome do
+// cliente não vem da coleta: ou o advogado informa, ou é lido do TEOR da intimação, que traz a
+// qualificação. Por isso a extração é feita pelo Claude lendo o texto, não por regex.
+// ---------------------------------------------------------------------------
+
+/**
+ * Processos sem cliente definido, com o teor das intimações vinculadas, para o Claude ler e
+ * identificar as partes. Traz só um pedaço do texto: o suficiente para achar a qualificação.
+ */
+export async function processosSemCliente(limite = 30): Promise<
+  Array<{ id: string; numeroCnj: string; classe: string | null; teores: string[] }>
+> {
+  const d = getDb();
+  const procs = await d
+    .select({
+      id: schema.processos.id,
+      numeroCnj: schema.processos.numeroCnj,
+      classe: schema.processos.classe,
+    })
+    .from(schema.processos)
+    .where(and(isNull(schema.processos.clienteNome), ne(schema.processos.status, "arquivado")))
+    .limit(limite);
+
+  const saida = [];
+  for (const p of procs) {
+    const coms = await d
+      .select({ inteiroTeor: schema.comunicacoes.inteiroTeor })
+      .from(schema.comunicacoes)
+      .where(eq(schema.comunicacoes.processoId, p.id))
+      .orderBy(desc(schema.comunicacoes.dataDisponibilizacao))
+      // Três intimações: nem toda peça nomeia as partes (na amostra do escritório, menos da
+      // metade nomeia), então olhar mais de uma aumenta a chance de achar a qualificação.
+      .limit(3);
+    saida.push({
+      ...p,
+      teores: coms
+        .map((c) => (c.inteiroTeor ?? "").replace(/\s+/g, " ").slice(0, 1800))
+        .filter(Boolean),
+    });
+  }
+  return saida;
+}
+
+/**
+ * Cadastra (ou reaproveita) o cliente, vincula ao processo com o papel e atualiza o cache
+ * `processos.clienteNome`. Reaproveita pelo documento (CPF/CNPJ) quando houver; senão, pelo nome.
+ */
+export async function definirClienteProcesso(p: {
+  numeroCnj: string;
+  nome: string;
+  papel: string;
+  documento?: string | null;
+}): Promise<{ processoId: string; clienteId: string } | null> {
+  const d = getDb();
+  const processoId = await processoExistente(p.numeroCnj);
+  if (!processoId) return null;
+
+  const nome = p.nome.trim();
+  const documento = p.documento?.replace(/\D/g, "") || null;
+
+  const [existente] = await d
+    .select({ id: schema.clientes.id })
+    .from(schema.clientes)
+    .where(documento ? eq(schema.clientes.documento, documento) : eq(schema.clientes.nome, nome))
+    .limit(1);
+
+  let clienteId = existente?.id;
+  if (!clienteId) {
+    const [novo] = await d
+      .insert(schema.clientes)
+      .values({
+        nome,
+        documento,
+        tipoDocumento: documento ? (documento.length > 11 ? "CNPJ" : "CPF") : null,
+      })
+      .returning({ id: schema.clientes.id });
+    clienteId = novo.id;
+  }
+
+  await d
+    .insert(schema.processoPartes)
+    .values({ processoId, clienteId, papel: p.papel, principal: true })
+    .onConflictDoNothing();
+
+  await d
+    .update(schema.processos)
+    .set({ clienteNome: nome })
+    .where(eq(schema.processos.id, processoId));
+
+  return { processoId, clienteId };
 }

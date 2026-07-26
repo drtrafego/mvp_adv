@@ -203,10 +203,19 @@ export async function listarIntimacoes(): Promise<IntimacaoRow[]> {
 export interface AnaliseConteudo {
   tipo_ato?: string;
   resultado?: string;
+  /** Polo do cliente (exequente, executado, réu). Sem isso não se sabe se a decisão é boa. */
+  posicao_cliente?: string;
   resumo?: string;
+  /** Ato concreto a praticar, nomeado e com dispositivo. */
   acao_necessaria?: string;
+  /** Prazo com a data fatal já calculada pela tool. */
   prazo?: string | null;
+  /** O que acontece se o advogado não agir (preclusão, trânsito, multa). */
+  consequencia?: string;
+  severidade?: "critico" | "alto" | "medio" | "baixo";
   pontos?: string[];
+  /** Trecho literal do documento que sustenta a conclusão. */
+  trecho_fonte?: string;
   atencao?: string;
 }
 

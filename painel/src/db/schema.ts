@@ -8,6 +8,7 @@ import {
   uuid,
   text,
   integer,
+  bigint,
   numeric,
   boolean,
   timestamp,
@@ -94,21 +95,46 @@ export const comunicacoes = pgTable(
   (t) => ({ idxProc: index("idx_comunic_proc").on(t.processada) }),
 );
 
-export const documentos = pgTable("documentos", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  processoId: uuid("processo_id").references(() => processos.id, { onDelete: "cascade" }),
-  titulo: text("titulo"),
-  tipo: text("tipo"),
-  categoria: text("categoria"),
-  storagePath: text("storage_path").notNull(),
-  paginas: integer("paginas"),
-  hashSha256: text("hash_sha256"),
-  textoExtraido: boolean("texto_extraido").default(false),
-  fonte: text("fonte"),
-  descricao: text("descricao"),
-  dataDocumento: date("data_documento"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-});
+// Arquivos DO processo, vindos de fora (autos, provas, contratos, decisões). O binário mora no
+// Vercel Blob (privado); aqui ficam metadado, hash e o texto extraído para o squad ler.
+// Distinção: `documentos` é o que ENTRA; `pecas` é o que o escritório PRODUZ; `modelos_peca` é
+// forma e estilo, sem caso. Quando o advogado protocola uma peça, o PDF protocolado entra aqui
+// com `pecaId` apontando para a peça que o originou.
+export const documentos = pgTable(
+  "documentos",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    processoId: uuid("processo_id").references(() => processos.id, { onDelete: "cascade" }),
+    titulo: text("titulo"),
+    /** Formato normalizado: pdf | docx | imagem | texto. */
+    tipo: text("tipo"),
+    /** Função processual: inicial, contestacao, decisao, sentenca, prova... (ver lib/documentos). */
+    categoria: text("categoria"),
+    /** Pathname imutável no Blob: processos/<cnj>/<categoria>/<data>-<slug>-<hash8>.<ext> */
+    storagePath: text("storage_path").notNull(),
+    arquivoNome: text("arquivo_nome"),
+    mimeType: text("mime_type"),
+    tamanhoBytes: bigint("tamanho_bytes", { mode: "number" }),
+    paginas: integer("paginas"),
+    hashSha256: text("hash_sha256"),
+    /** Flag: tem texto utilizável. O conteúdo fica na coluna `texto`. */
+    textoExtraido: boolean("texto_extraido").default(false),
+    texto: text("texto"),
+    /** pendente | ok | sem_texto (PDF escaneado) | falhou | nao_aplica */
+    extracaoStatus: text("extracao_status").default("pendente"),
+    extraidoEm: timestamp("extraido_em", { withTimezone: true }),
+    /** Canal de origem: upload_painel | upload_terminal | mni | escavador. */
+    fonte: text("fonte"),
+    enviadoPor: text("enviado_por"),
+    descricao: text("descricao"),
+    dataDocumento: date("data_documento"),
+    excluidoEm: timestamp("excluido_em", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    idxProc: index("idx_docs_proc").on(t.processoId, t.categoria, t.createdAt),
+  }),
+);
 
 export const analises = pgTable("analises", {
   id: uuid("id").primaryKey().defaultRandom(),

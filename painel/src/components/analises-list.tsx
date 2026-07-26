@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileSearch, TriangleAlert, ArrowRight, Clock } from "lucide-react";
+import { FileSearch, TriangleAlert, ArrowRight, Clock, ShieldAlert } from "lucide-react";
 import type { AnaliseRow } from "@/db/queries";
 
 function selo(resultado?: string) {
@@ -8,6 +8,14 @@ function selo(resultado?: string) {
   if (r.includes("desfavor")) return { txt: "desfavorável", cls: "bg-amber-tint text-amber-brand" };
   return { txt: "neutro", cls: "bg-muted text-muted-foreground" };
 }
+
+/** Severidade do risco, conforme a skill saida-forense. */
+const SEVERIDADE: Record<string, { txt: string; cls: string; borda: string }> = {
+  critico: { txt: "crítico", cls: "bg-destructive/10 text-destructive", borda: "border-destructive" },
+  alto: { txt: "alto", cls: "bg-amber-tint text-amber-brand", borda: "border-amber-brand" },
+  medio: { txt: "médio", cls: "bg-amber-tint/60 text-amber-brand", borda: "border-amber-brand/60" },
+  baixo: { txt: "baixo", cls: "bg-muted text-muted-foreground", borda: "border-border" },
+};
 
 export function AnalisesList({ analises }: { analises: AnaliseRow[] }) {
   if (analises.length === 0) {
@@ -48,6 +56,11 @@ export function AnalisesList({ analises }: { analises: AnaliseRow[] }) {
                     {a.numeroCnj}{a.clienteNome ? ` · ${a.clienteNome}` : ""}
                   </Link>
                 )}
+                {c.posicao_cliente && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Cliente no polo: <span className="font-medium text-foreground">{c.posicao_cliente}</span>
+                  </p>
+                )}
               </div>
             </div>
 
@@ -80,10 +93,47 @@ export function AnalisesList({ analises }: { analises: AnaliseRow[] }) {
               </ul>
             )}
 
+            {c.trecho_fonte && (
+              <blockquote className="mt-3 border-l-2 border-border pl-3 text-sm italic text-muted-foreground">
+                <span className="block font-mono text-[0.6rem] not-italic uppercase tracking-wide text-ink-faint" style={{ color: "var(--ink-faint)" }}>
+                  trecho do documento
+                </span>
+                {c.trecho_fonte}
+              </blockquote>
+            )}
+
+            {/* O que acontece se NÃO agir. É o que transforma a análise em decisão. */}
+            {c.consequencia && (
+              <div className="mt-3 flex items-start gap-2 rounded-lg bg-muted/60 px-3 py-2.5">
+                <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                <div>
+                  <div className="font-mono text-[0.6rem] uppercase tracking-wide text-muted-foreground">
+                    se não agir
+                  </div>
+                  <div className="text-sm">{c.consequencia}</div>
+                </div>
+              </div>
+            )}
+
             {c.atencao && (
-              <div className="mt-3 flex items-start gap-2 rounded-lg border-l-2 border-amber-brand bg-amber-tint/30 px-3 py-2 text-sm text-muted-foreground">
+              <div
+                className={`mt-3 flex items-start gap-2 rounded-lg border-l-2 bg-amber-tint/30 px-3 py-2 text-sm text-muted-foreground ${
+                  SEVERIDADE[c.severidade ?? ""]?.borda ?? "border-amber-brand"
+                }`}
+              >
                 <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-brand" />
-                <span>{c.atencao}</span>
+                <span>
+                  {c.severidade && (
+                    <span
+                      className={`mr-2 inline-block rounded-full px-2 py-0.5 font-mono text-[0.6rem] font-semibold uppercase tracking-wide ${
+                        SEVERIDADE[c.severidade]?.cls ?? ""
+                      }`}
+                    >
+                      risco {SEVERIDADE[c.severidade]?.txt ?? c.severidade}
+                    </span>
+                  )}
+                  {c.atencao}
+                </span>
               </div>
             )}
 

@@ -68,6 +68,8 @@ import {
   carregarFeriadosForenses,
   registrarSincronizacao,
   ultimaSincronizacao,
+  processosSemCliente,
+  definirClienteProcesso,
   buscarModelos,
   salvarModelo,
   salvarPeca,
@@ -762,7 +764,12 @@ server.registerTool(
     description:
       "Grava no painel a análise de uma intimação ou documento. Você (Claude) lê o teor, produz a " +
       "análise estruturada e chama esta ferramenta para persistir. A análise nasce como SUGESTÃO " +
-      "(máquina); o advogado revisa e tem a palavra final. Ligada ao processo pelo número CNJ.",
+      "(máquina); o advogado revisa e tem a palavra final. Ligada ao processo pelo número CNJ.\n\n" +
+      "EXIGÊNCIA DE QUALIDADE: análise que só resume não serve. Diga de que lado o cliente está e " +
+      "o que o ato provoca PARA ELE; nomeie o ato processual cabível com o dispositivo (não " +
+      "'avaliar o cabimento de recurso'); se abre prazo, calcule a data fatal com calcular_prazo " +
+      "antes e informe aqui; e diga o que acontece se o advogado não agir. Cada ponto traz " +
+      "informação nova, com o trecho do documento que a sustenta.",
     inputSchema: {
       numero_cnj: z.string().describe("Número CNJ do processo já cadastrado na carteira."),
       tipo: z
@@ -774,18 +781,82 @@ server.registerTool(
         .enum(["favoravel", "desfavoravel", "neutro"])
         .optional()
         .describe("Como o ato impacta o cliente."),
-      resumo: z.string().describe("Resumo objetivo do que o documento diz."),
-      acao_necessaria: z.string().optional().describe("O que o advogado precisa fazer, se algo."),
-      prazo: z.string().optional().describe("Prazo mencionado, se houver (ex.: '5 dias úteis')."),
-      pontos: z.array(z.string()).optional().describe("Pontos-chave, um por item."),
+      posicao_cliente: z
+        .string()
+        .optional()
+        .describe(
+          "Polo do cliente no processo (ex.: 'exequente', 'executado', 'réu'). Sem isso não dá " +
+            "para dizer se a decisão é boa ou ruim para ele. Se o documento não permitir saber, " +
+            "escreva 'não identificado no documento'.",
+        ),
+      resumo: z.string().describe("O que o documento decidiu ou determinou, em linguagem direta."),
+      acao_necessaria: z
+        .string()
+        .optional()
+        .describe(
+          "O ato concreto a praticar, nomeado, com o dispositivo. Ex.: 'Agravo de instrumento " +
+            "(CPC art. 1.015, II)'. Não use fórmula vazia como 'avaliar o cabimento'.",
+        ),
+      prazo: z
+        .string()
+        .optional()
+        .describe(
+          "Prazo do ato, com a data fatal já calculada por calcular_prazo. Ex.: '15 dias úteis, " +
+            "fatal 18/08/2026'. Nunca escreva data que não veio da tool.",
+        ),
+      consequencia: z
+        .string()
+        .optional()
+        .describe(
+          "O que acontece se o advogado NÃO agir (preclusão, trânsito em julgado, multa, " +
+            "penhora). É o que transforma a análise em decisão.",
+        ),
+      severidade: z
+        .enum(["critico", "alto", "medio", "baixo"])
+        .optional()
+        .describe("Gravidade do risco, conforme a skill saida-forense."),
+      pontos: z
+        .array(z.string())
+        .optional()
+        .describe("Pontos-chave. Cada um traz informação NOVA, não repete o resumo."),
+      trecho_fonte: z
+        .string()
+        .optional()
+        .describe("Trecho literal do documento que sustenta a conclusão principal."),
       atencao: z.string().optional().describe("Alerta ou risco a destacar."),
     },
   },
-  async ({ numero_cnj, tipo, tipo_ato, resultado, resumo, acao_necessaria, prazo, pontos, atencao }) => {
+  async ({
+    numero_cnj,
+    tipo,
+    tipo_ato,
+    resultado,
+    posicao_cliente,
+    resumo,
+    acao_necessaria,
+    prazo,
+    consequencia,
+    severidade,
+    pontos,
+    trecho_fonte,
+    atencao,
+  }) => {
     if (!bancoConfigurado())
       return erro("Banco (Neon) não configurado. Defina DATABASE_URL para salvar análises.");
     try {
-      const conteudo = { tipo_ato, resultado, resumo, acao_necessaria, prazo: prazo ?? null, pontos, atencao };
+      const conteudo = {
+        tipo_ato,
+        resultado,
+        posicao_cliente,
+        resumo,
+        acao_necessaria,
+        prazo: prazo ?? null,
+        consequencia,
+        severidade,
+        pontos,
+        trecho_fonte,
+        atencao,
+      };
       const r = await salvarAnalise({ numeroCnj: numero_cnj, tipo, conteudo, modelo: "claude (análise assistida)" });
       if (!r)
         return erro(
@@ -875,6 +946,83 @@ server.registerTool(
       return texto(
         `✅ Rascunho de peça salvo no painel (setor Peças). Nasce como sugestão; o advogado revisa e ` +
           `assina. id=${r.id}`,
+      );
+    } catch (e) {
+      return erro((e as Error).message);
+    }
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Clientes: quem é a parte de cada processo
+//
+// O DataJud não devolve as partes, então o nome do cliente não vem da coleta. Ele é lido do
+// TEOR da intimação (que traz a qualificação) por VOCÊ, não por regex: regex em texto de
+// intimação erra a maior parte e ainda gruda a palavra seguinte no nome.
+// ---------------------------------------------------------------------------
+server.registerTool(
+  "processos_sem_cliente",
+  {
+    title: "Processos sem cliente identificado",
+    description:
+      "Lista os processos da carteira que ainda não têm cliente, junto com o teor das intimações " +
+      "vinculadas. Leia o teor, identifique a parte que o escritório representa (é a que tem o " +
+      "advogado do escritório na qualificação) e grave com definir_cliente. Se o teor não " +
+      "permitir concluir com segurança, NÃO invente: deixe para o advogado.",
+    inputSchema: {
+      limite: z.number().int().positive().max(100).optional().describe("Máximo de processos (padrão 30)."),
+    },
+  },
+  async ({ limite }) => {
+    if (!bancoConfigurado()) return erro("Banco (Neon) não configurado.");
+    try {
+      const lista = await processosSemCliente(limite ?? 30);
+      if (lista.length === 0) return texto("Todos os processos da carteira já têm cliente definido.");
+      const blocos = lista.map((p) => {
+        const teor = p.teores.length
+          ? p.teores.map((t, i) => `    [intimação ${i + 1}] ${t}`).join("\n")
+          : "    (sem intimação vinculada: não há de onde ler as partes)";
+        return `  • ${p.numeroCnj} — ${p.classe ?? "classe não informada"}\n${teor}`;
+      });
+      return texto(
+        `${lista.length} processo(s) sem cliente:\n\n${blocos.join("\n\n")}\n\n` +
+          `Para cada um que você conseguir identificar, chame definir_cliente. O nome nasce como ` +
+          `sugestão: o advogado confere no painel.`,
+      );
+    } catch (e) {
+      return erro((e as Error).message);
+    }
+  },
+);
+
+server.registerTool(
+  "definir_cliente",
+  {
+    title: "Definir o cliente de um processo",
+    description:
+      "Cadastra o cliente (ou reaproveita um já existente), vincula ao processo com o papel e " +
+      "passa a exibir o nome na carteira e nos alertas de prazo. Use o nome COMO ESTÁ no " +
+      "documento, sem abreviar nem corrigir.",
+    inputSchema: {
+      numero_cnj: z.string().describe("Número CNJ do processo já cadastrado na carteira."),
+      nome: z.string().describe("Nome da parte, exatamente como consta no documento."),
+      papel: z
+        .string()
+        .describe("Papel no processo: autor, réu, exequente, executado, agravante, impetrante..."),
+      documento: z.string().optional().describe("CPF ou CNPJ, se constar no documento."),
+    },
+  },
+  async ({ numero_cnj, nome, papel, documento }) => {
+    if (!bancoConfigurado()) return erro("Banco (Neon) não configurado.");
+    try {
+      const r = await definirClienteProcesso({ numeroCnj: numero_cnj, nome, papel, documento });
+      if (!r)
+        return erro(
+          `Processo ${numero_cnj} não está na carteira. Cadastre com adicionar_processo antes.`,
+        );
+      return texto(
+        `✅ ${nome} vinculado ao processo ${formatarCNJ(numero_cnj)} como ${papel}.\n` +
+          `O nome já aparece na carteira, na busca e nos alertas de prazo. Confira no painel.`,
       );
     } catch (e) {
       return erro((e as Error).message);

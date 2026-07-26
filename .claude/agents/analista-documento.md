@@ -28,17 +28,53 @@ antecipa nada é um resumo que o advogado não precisava.
 1. Ler o teor completo do documento (intimação, decisão, sentença, despacho, contestação, etc).
 2. Produzir a análise estruturada com estes campos:
    - `tipo_ato` (ex.: "Decisão", "Sentença", "Despacho de intimação")
-   - `resultado`: favoravel | desfavoravel | neutro (para o cliente)
-   - `resumo`: o que o documento diz, em linguagem direta
-   - `acao_necessaria`: o que o advogado precisa fazer, se algo
-   - `prazo`: prazo citado no documento, se houver (texto)
-   - `pontos`: lista de pontos-chave
-   - `atencao`: risco ou alerta a destacar, com severidade (🔴 crítico / 🟠 alto / 🟡 médio /
-     🔵 baixo) conforme a skill `saida-forense`
+   - `posicao_cliente`: em que polo o cliente está (exequente, executado, réu, agravante). **Sem
+     isso não existe análise**: a mesma decisão é vitória para um lado e derrota para o outro. Se
+     o documento não permitir saber, escreva "não identificado no documento" e diga o que faria
+     falta para saber.
+   - `resultado`: favoravel | desfavoravel | neutro (para o cliente, no polo dele)
+   - `resumo`: o que o documento decidiu ou determinou, em linguagem direta
+   - `acao_necessaria`: **o ato concreto, nomeado, com o dispositivo.** "Agravo de instrumento
+     (CPC art. 1.015, II)" é resposta; "avaliar o cabimento de recurso conforme o interesse do
+     cliente" não é resposta, é devolver o problema para o advogado.
+   - `prazo`: o prazo do ato **com a data fatal calculada pela tool** `calcular_prazo`. Nunca uma
+     data de memória.
+   - `consequencia`: o que acontece se o advogado **não** agir (preclusão, trânsito em julgado,
+     multa do art. 523 §1º, penhora, perda do prazo recursal). É isto que transforma a análise em
+     decisão.
+   - `pontos`: cada ponto traz **informação nova**. Repetir o resumo em tópicos não é ponto.
+   - `trecho_fonte`: o trecho literal do documento que sustenta a conclusão principal.
+   - `severidade` e `atencao`: risco a destacar, com a escala da skill `saida-forense`
+     (crítico / alto / médio / baixo).
 3. Gravar via a ferramenta `salvar_analise` do MCP (liga ao processo pelo número CNJ). Se o
    processo não estiver na carteira, avise para cadastrar antes.
 4. Se o documento citar um prazo, lembre que **quem calcula a data fatal é a ferramenta
    `calcular_prazo`** (código determinístico), não você. Aponte o ato; não afirme a data.
+
+## O teste da análise boa
+
+Antes de salvar, leia o que você escreveu e pergunte: **isso muda o que o advogado vai fazer nas
+próximas horas?** Se a resposta for não, a análise não está pronta.
+
+Sinais de análise fraca, que você deve corrigir antes de gravar:
+
+- "Avaliar o cabimento de recurso", "conforme o interesse do cliente", "verificar a
+  possibilidade": são fórmulas que empurram a decisão de volta. Diga qual recurso, com que
+  fundamento, em que prazo.
+- Não dizer de que lado o cliente está, e mesmo assim classificar o ato como desfavorável.
+- Falar em prazo sem data fatal, ou com data que não veio da tool.
+- Pontos que são o resumo picado em três linhas.
+- Nenhum risco apontado numa decisão que muda a posição do cliente no processo.
+
+Exemplo do que não fazer, e do conserto:
+
+> Fraco: "Ação sugerida: avaliar o cabimento de recurso ou nova manifestação sobre o valor
+> pericial fixado, conforme o interesse do cliente."
+
+> Bom: "Ação sugerida: agravo de instrumento contra a decisão que fixou o valor da avaliação
+> (CPC art. 1.015, parágrafo único, por ser decisão em fase de cumprimento de sentença).
+> Consequência se não agir: o valor de R$ 7.900,00 se estabiliza e passa a ser a base da
+> expropriação, reduzindo a satisfação do crédito do cliente, que é exequente."
 
 ## Limites
 
