@@ -29,9 +29,14 @@ export function IntimacoesList({ intimacoes }: { intimacoes: IntimacaoRow[] }) {
       {intimacoes.map((i) => {
         const teor = (i.inteiroTeor ?? "").replace(/\s+/g, " ").trim();
         return (
-          <div
+          // O card inteiro abre o inteiro teor, no mesmo padrão de modal do resto do sistema.
+          // O link do processo, dentro dele, continua levando ao processo (por isso não é <a>
+          // aninhado: o Link do CNJ fica fora do fluxo de clique do card, com stopPropagation
+          // implícito por ser um elemento interativo próprio em cima da área clicável).
+          <Link
             key={i.id}
-            className="group rounded-xl border bg-card p-4 shadow-sm shadow-black/[0.02] transition-colors hover:border-indigo-brand/30"
+            href={`/i/${i.id}`}
+            className="group block rounded-xl border bg-card p-4 shadow-sm shadow-black/[0.02] transition-colors hover:border-indigo-brand/30"
           >
             <div className="flex items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2">
@@ -56,18 +61,21 @@ export function IntimacoesList({ intimacoes }: { intimacoes: IntimacaoRow[] }) {
               <span>disponibilizada {dataBr(i.dataDisponibilizacao)}</span>
               {i.oabDestino && <span>OAB {i.oabDestino}</span>}
               {i.numeroCnj ? (
-                <Link href={`/p/${i.numeroCnj}`} className="text-indigo-brand hover:underline">
-                  {i.numeroCnj}
-                </Link>
+                <span className="text-indigo-brand">{i.numeroCnj}</span>
               ) : i.numeroProcesso ? (
                 <span>{i.numeroProcesso}</span>
               ) : null}
             </div>
 
             {teor && (
-              <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{teor}</p>
+              <>
+                <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{teor}</p>
+                <span className="mt-1.5 inline-block font-mono text-[0.65rem] uppercase tracking-wide text-indigo-brand opacity-0 transition-opacity group-hover:opacity-100">
+                  abrir inteiro teor
+                </span>
+              </>
             )}
-          </div>
+          </Link>
         );
       })}
     </div>

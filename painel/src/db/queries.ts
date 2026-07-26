@@ -666,3 +666,37 @@ export async function diasSemIntimacaoNova(): Promise<number | null> {
   if (!row?.ultima) return null;
   return Math.floor((Date.now() - new Date(row.ultima).getTime()) / 86400000);
 }
+
+export interface DetalheIntimacao {
+  intimacao: typeof schema.comunicacoes.$inferSelect;
+  processo: typeof schema.processos.$inferSelect | null;
+  prazos: (typeof schema.prazos.$inferSelect)[];
+}
+
+/** Intimação com o inteiro teor, o processo vinculado e os prazos que nasceram dela. */
+export async function detalheIntimacao(id: string): Promise<DetalheIntimacao | null> {
+  if (!db) return null;
+  const [intimacao] = await db
+    .select()
+    .from(schema.comunicacoes)
+    .where(eq(schema.comunicacoes.id, id))
+    .limit(1);
+  if (!intimacao) return null;
+
+  let processo: typeof schema.processos.$inferSelect | null = null;
+  if (intimacao.processoId) {
+    [processo] = await db
+      .select()
+      .from(schema.processos)
+      .where(eq(schema.processos.id, intimacao.processoId))
+      .limit(1);
+  }
+
+  const prazos = await db
+    .select()
+    .from(schema.prazos)
+    .where(eq(schema.prazos.comunicacaoId, id))
+    .orderBy(schema.prazos.dataFatal);
+
+  return { intimacao, processo: processo ?? null, prazos };
+}
