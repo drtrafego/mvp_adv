@@ -603,3 +603,66 @@ export async function buscaGlobal(termo: string): Promise<BuscaResultado> {
 
   return { processos, clientes, prazos };
 }
+
+export interface SaudeColeta {
+  fonte: string;
+  status: string | null;
+  itens: number | null;
+  novos: number | null;
+  mensagem: string | null;
+  quando: Date | null;
+  horasAtras: number | null;
+}
+
+/**
+ * Última coleta de cada fonte, para o alerta diário vigiar a saúde da captação.
+ *
+ * Existe porque o problema real não foi a coleta falhar: foi ela falhar em silêncio por dez
+ * dias, reportando "ok, 0 intimações". Prazo corre enquanto ninguém percebe.
+ */
+export async function saudeColeta(): Promise<SaudeColeta[]> {
+  if (!db) return [];
+  const fontes = ["djen", "datajud"];
+  const saida: SaudeColeta[] = [];
+  for (const fonte of fontes) {
+    const [row] = await db
+      .select({
+        fonte: schema.sincronizacoes.fonte,
+        status: schema.sincronizacoes.status,
+        itens: schema.sincronizacoes.itens,
+        novos: schema.sincronizacoes.novos,
+        mensagem: schema.sincronizacoes.mensagem,
+        iniciadoEm: schema.sincronizacoes.iniciadoEm,
+        concluidoEm: schema.sincronizacoes.concluidoEm,
+      })
+      .from(schema.sincronizacoes)
+      .where(eq(schema.sincronizacoes.fonte, fonte))
+      .orderBy(desc(schema.sincronizacoes.iniciadoEm))
+      .limit(1);
+    const quando = row ? (row.concluidoEm ?? row.iniciadoEm) : null;
+    saida.push({
+      fonte,
+      status: row?.status ?? null,
+      itens: row?.itens ?? null,
+      novos: row?.novos ?? null,
+      mensagem: row?.mensagem ?? null,
+      quando,
+      horasAtras: quando ? Math.round((Date.now() - new Date(quando).getTime()) / 3600000) : null,
+    });
+  }
+  return saida;
+}
+
+/**
+ * Dias desde a última intimação NOVA gravada. É o sinal mais honesto de que a captação parou:
+ * a coleta pode rodar todo dia, reportar "ok" e mesmo assim não trazer nada há semanas, que foi
+ * exatamente o que aconteceu. Null quando nunca houve comunicação.
+ */
+export async function diasSemIntimacaoNova(): Promise<number | null> {
+  if (!db) return null;
+  const [row] = await db
+    .select({ ultima: sql<Date | null>`max(${schema.comunicacoes.createdAt})` })
+    .from(schema.comunicacoes);
+  if (!row?.ultima) return null;
+  return Math.floor((Date.now() - new Date(row.ultima).getTime()) / 86400000);
+}
