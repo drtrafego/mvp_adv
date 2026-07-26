@@ -49,6 +49,10 @@ export const MIMES: Record<string, string> = {
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
   ".png": "image/png",
+  ".webp": "image/webp",
+  // iPhone salva foto em HEIC por padrão; o advogado fotografa documento o tempo todo.
+  ".heic": "image/heic",
+  ".heif": "image/heif",
 };
 
 /** Formato normalizado gravado em `documentos.tipo`. */
@@ -56,13 +60,17 @@ export function formatoDeExtensao(ext: string): "pdf" | "docx" | "imagem" | "tex
   const e = ext.toLowerCase();
   if (e === ".pdf") return "pdf";
   if (e === ".docx" || e === ".doc") return "docx";
-  if (e === ".jpg" || e === ".jpeg" || e === ".png") return "imagem";
+  if ([".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"].includes(e)) return "imagem";
   return "texto";
 }
 
-/** Teto de tamanho. Freio de sanidade e de custo de storage. */
-export const TAMANHO_MAX_PAINEL = 50 * 1024 * 1024;
-export const TAMANHO_MAX_TERMINAL = 100 * 1024 * 1024;
+/**
+ * Teto de tamanho. Autos completos e fotos de documento passam fácil de dezenas de MB, e o
+ * arquivo não trafega pelo servidor (vai do navegador direto para o storage), então o limite
+ * aqui é de sanidade e de custo, não uma restrição técnica.
+ */
+export const TAMANHO_MAX_PAINEL = 200 * 1024 * 1024;
+export const TAMANHO_MAX_TERMINAL = 500 * 1024 * 1024;
 
 /** Texto extraído por documento. Ele viaja para o contexto do modelo, então tem teto. */
 export const TEXTO_MAX = 2 * 1024 * 1024;

@@ -40,6 +40,9 @@ export async function enviarParaBlob(
     contentType,
     addRandomSuffix: false,
     allowOverwrite: true,
+    // Acima de 10 MB sobe em pedaços paralelos, com retentativa por pedaço: autos digitalizados
+    // chegam a centenas de MB e uma oscilação de rede não pode custar o upload inteiro.
+    multipart: corpo.byteLength > 10 * 1024 * 1024,
     token: exigirToken(),
   });
 }

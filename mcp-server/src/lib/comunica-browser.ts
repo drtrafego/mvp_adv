@@ -8,9 +8,9 @@
  * (fetch same-origin), para o navegador anexar cookies e assinatura sozinho.
  *
  * Contexto persistente (userDataDir fixo) para o token e o desafio do WAF sobreviverem
- * entre execuções. Se o fetch interno falhar, tenta raspar a tabela do SPA. Se tudo falhar,
- * lança ComunicaError(bloqueadoPorWAF=true): NUNCA devolve array vazio numa falha
- * (vazio = "não havia intimação"; falha = erro visível).
+ * entre execuções. Se o fetch interno falhar, é FALHA: lança ComunicaError(bloqueadoPorWAF=true).
+ * NUNCA devolve array vazio numa falha (vazio = "não havia intimação"; falha = erro visível).
+ * Numa ferramenta de prazo, "não achei nada" e "não consegui perguntar" não podem se parecer.
  */
 
 import path from "node:path";
@@ -107,47 +107,6 @@ async function consultarPorDentro(page: Page, url: string): Promise<ResultadoFet
   }, url);
 }
 
-/**
- * Fallback: raspa a tabela de resultados do SPA. Best-effort. Só retorna um array quando
- * consegue identificar positivamente o estado da tela (linhas de resultado OU mensagem de
- * "nenhum resultado"). Se não conseguir ler a tela com confiança, retorna null para o
- * chamador tratar como falha, nunca como "sem intimação".
- */
-async function rasparTabela(page: Page): Promise<ComunicacaoDJEN[] | null> {
-  try {
-    // Estado de vazio explícito do Angular Material.
-    const textoPagina = (await page.locator("body").innerText().catch(() => "")) || "";
-    const semResultado = /nenhum(a)?\s+(resultado|comunica|registro)/i.test(textoPagina);
-
-    const cards = page.locator("mat-card, .lista-comunicacao, table tbody tr");
-    const total = await cards.count();
-    if (total === 0) {
-      return semResultado ? [] : null;
-    }
-
-    const itens: ComunicacaoDJEN[] = [];
-    for (let i = 0; i < total; i++) {
-      const bruto = (await cards.nth(i).innerText().catch(() => "")).replace(/\s+/g, " ").trim();
-      if (!bruto) continue;
-      itens.push({
-        hash: null,
-        numeroProcesso: (bruto.match(/\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4}/) ?? [null])[0],
-        siglaTribunal: null,
-        tipoComunicacao: null,
-        nomeOrgao: null,
-        texto: bruto,
-        dataDisponibilizacao: (bruto.match(/\d{2}\/\d{2}\/\d{4}/) ?? [null])[0],
-        meio: "DJEN",
-        link: null,
-        destinatarios: [],
-        advogados: [],
-      });
-    }
-    return itens.length > 0 ? itens : semResultado ? [] : null;
-  } catch {
-    return null;
-  }
-}
 
 /**
  * Consulta as intimações via navegador. Até 2 ciclos completos (contexto novo por ciclo).
@@ -178,14 +137,16 @@ export async function consultarViaBrowser(params: BuscarIntimacoesParams): Promi
         return resultado.items.map(normalizar);
       }
 
-      // fetch interno falhou: tenta o fallback de raspagem do SPA.
-      const raspado = await rasparTabela(page);
-      if (raspado !== null) return raspado;
-
+      // O fetch interno falhou. NÃO caímos mais na raspagem da tela: a página aberta é o
+      // formulário de consulta, onde nenhuma busca foi submetida (a consulta é feita por
+      // fetch, não pela UI). Uma tabela vazia ali significa "ninguém pesquisou", e não
+      // "não há intimação" — e devolver [] nesse ponto produz exatamente o pior resultado
+      // possível: a coleta grava "ok, 0 intimações" todo dia enquanto o advogado é intimado.
+      // Falha tem que aparecer como falha.
       ultimoErro = new ComunicaError(
         `Consulta por dentro do SPA falhou (HTTP ${resultado.status})${
           resultado.erro ? `: ${resultado.erro}` : ""
-        } e a raspagem da tabela não foi conclusiva.`,
+        }.`,
         resultado.status > 0 ? resultado.status : undefined,
         true,
       );

@@ -122,6 +122,9 @@ export function UploadDocumento({
         access: "private",
         handleUploadUrl: "/api/documentos/upload",
         contentType: mime,
+        // Autos e fotos passam de dezenas de MB: parte em pedaços, sobe em paralelo e refaz
+        // só o pedaço que falhar, em vez de perder o upload inteiro numa oscilação de rede.
+        multipart: arquivo.size > 10 * 1024 * 1024,
         clientPayload: JSON.stringify({
           processoId,
           categoria,
