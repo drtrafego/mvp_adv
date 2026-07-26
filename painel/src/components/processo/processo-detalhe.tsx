@@ -21,6 +21,7 @@ import {
   Clock,
   Layers,
   Upload,
+  Download,
   ShieldCheck,
   History,
   Inbox,
@@ -70,6 +71,9 @@ import {
   editarPrazoAction,
   cancelarPrazoAction,
 } from "@/app/actions";
+import { UploadDocumento } from "@/components/processo/upload-documento";
+import { CATEGORIAS } from "@/lib/documentos";
+import { excluirDocumentoAction } from "@/app/(app)/p/[id]/documentos/actions";
 import type { DetalheProcesso } from "@/db/queries";
 
 type Prazo = DetalheProcesso["prazos"][number];
@@ -167,7 +171,7 @@ export function ProcessoDetalhe({ detalhe }: { detalhe: DetalheProcesso }) {
             <AbaTimeline processoId={processo.id} movimentacoes={detalhe.movimentacoes} />
           </TabsContent>
           <TabsContent value="documentos">
-            <AbaDocumentos documentos={detalhe.documentos} />
+            <AbaDocumentos processoId={processo.id} numeroCnj={processo.numeroCnj} documentos={detalhe.documentos} />
           </TabsContent>
           <TabsContent value="anotacoes">
             <AbaAnotacoes processoId={processo.id} anotacoes={detalhe.anotacoes} />
@@ -725,51 +729,113 @@ function MovimentacaoItem({ m }: { m: Movimentacao }) {
 // Aba Documentos
 // ============================================================================
 
-function AbaDocumentos({ documentos }: { documentos: Documento[] }) {
+function AbaDocumentos({
+  processoId,
+  numeroCnj,
+  documentos,
+}: {
+  processoId: string;
+  numeroCnj: string;
+  documentos: Documento[];
+}) {
+  // Agrupa por categoria na ordem processual: é a divisão das peças por tipo dentro do processo.
+  const grupos = CATEGORIAS.map((c) => ({
+    categoria: c,
+    itens: documentos.filter((d) => (d.categoria ?? "outro") === c.valor),
+  })).filter((g) => g.itens.length > 0);
+  const semCategoria = documentos.filter(
+    (d) => !CATEGORIAS.some((c) => c.valor === (d.categoria ?? "outro")),
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
         <span className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
           {documentos.length} documento{documentos.length === 1 ? "" : "s"}
         </span>
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button size="sm" variant="outline" disabled>
-                <Upload /> Enviar
-              </Button>
-            }
-          />
-          <TooltipContent>Upload em breve. Por ora, suba pelo terminal.</TooltipContent>
-        </Tooltip>
+        <UploadDocumento processoId={processoId} numeroCnj={numeroCnj} />
       </div>
 
       {documentos.length === 0 ? (
-        <Vazio texto="Nenhum documento. Suba pelo terminal (peça ao Claude Code) ou aqui, em breve." />
+        <Vazio texto="Nenhum documento. Envie aqui, ou peça no terminal: anexa esse PDF no processo." />
       ) : (
-        <ul className="space-y-2">
-          {documentos.map((d) => (
-            <li key={d.id} className="flex items-start gap-3 rounded-xl border bg-card p-3">
-              <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
-                <FileText className="h-4 w-4" />
-              </span>
-              <div className="min-w-0">
-                <div className="truncate text-sm font-medium">{d.titulo ?? "documento sem título"}</div>
-                <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                  {d.categoria && (
-                    <Badge variant="outline" className="text-[0.6rem] uppercase">
-                      {d.categoria}
-                    </Badge>
-                  )}
-                  <span>{formatarData(d.dataDocumento) !== "-" ? formatarData(d.dataDocumento) : formatarDataHora(d.createdAt)}</span>
-                </div>
-                {d.descricao && <p className="mt-1 text-xs text-muted-foreground">{d.descricao}</p>}
-              </div>
-            </li>
-          ))}
-        </ul>
+        <div className="space-y-5">
+          {[...grupos, ...(semCategoria.length ? [{ categoria: null, itens: semCategoria }] : [])].map(
+            (g) => (
+              <section key={g.categoria?.valor ?? "sem-categoria"}>
+                <h4 className="mb-2 font-mono text-[0.65rem] uppercase tracking-wide text-muted-foreground">
+                  {g.categoria?.rotulo ?? "Sem categoria"} · {g.itens.length}
+                </h4>
+                <ul className="space-y-2">
+                  {g.itens.map((d) => (
+                    <ItemDocumento key={d.id} processoId={processoId} documento={d} />
+                  ))}
+                </ul>
+              </section>
+            ),
+          )}
+        </div>
       )}
     </div>
+  );
+}
+
+/** Estado do texto extraído: é o que diz se o squad consegue ler o documento. */
+function chipTexto(status: string | null) {
+  if (status === "ok") return { txt: "texto ok", cls: "bg-moss-tint text-moss-brand" };
+  if (status === "sem_texto") return { txt: "sem texto (OCR)", cls: "bg-amber-tint text-amber-brand" };
+  if (status === "falhou") return { txt: "falha na leitura", cls: "bg-destructive/10 text-destructive" };
+  if (status === "nao_aplica") return null;
+  return { txt: "processando", cls: "bg-muted text-muted-foreground" };
+}
+
+function ItemDocumento({ processoId, documento: d }: { processoId: string; documento: Documento }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const chip = chipTexto(d.extracaoStatus ?? null);
+
+  function excluir() {
+    startTransition(async () => {
+      const r = await excluirDocumentoAction(d.id, processoId);
+      if (r.ok) toast.success("Documento removido da lista.");
+      else toast.error(r.erro ?? "Falha.");
+      router.refresh();
+    });
+  }
+
+  return (
+    <li className="flex items-start gap-3 rounded-xl border bg-card p-3">
+      <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+        <FileText className="h-4 w-4" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm font-medium">{d.titulo ?? "documento sem título"}</div>
+        <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+          {d.tamanhoBytes ? <span>{(d.tamanhoBytes / 1024).toFixed(0)} KB</span> : null}
+          {d.paginas ? <span>· {d.paginas} p.</span> : null}
+          <span>
+            ·{" "}
+            {formatarData(d.dataDocumento) !== "-"
+              ? formatarData(d.dataDocumento)
+              : formatarDataHora(d.createdAt)}
+          </span>
+          {chip && (
+            <span className={`rounded-full px-2 py-0.5 font-mono text-[0.6rem] uppercase ${chip.cls}`}>
+              {chip.txt}
+            </span>
+          )}
+        </div>
+        {d.descricao && <p className="mt-1 text-xs text-muted-foreground">{d.descricao}</p>}
+      </div>
+      <div className="flex shrink-0 items-center gap-1">
+        <Button size="sm" variant="ghost" render={<a href={`/p/${processoId}/doc/${d.id}`} />}>
+          <Download className="h-4 w-4" />
+        </Button>
+        <Button size="sm" variant="ghost" onClick={excluir} disabled={pending}>
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </li>
   );
 }
 

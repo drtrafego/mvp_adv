@@ -80,7 +80,7 @@ export interface DetalheProcesso {
   processo: typeof schema.processos.$inferSelect;
   prazos: (typeof schema.prazos.$inferSelect)[];
   movimentacoes: (typeof schema.movimentacoes.$inferSelect)[];
-  documentos: (typeof schema.documentos.$inferSelect)[];
+  documentos: Omit<typeof schema.documentos.$inferSelect, "texto" | "excluidoEm">[];
   anotacoes: (typeof schema.anotacoes.$inferSelect)[];
   comunicacoes: (typeof schema.comunicacoes.$inferSelect)[];
   pecas: (typeof schema.pecas.$inferSelect)[];
@@ -114,10 +114,32 @@ export async function detalheProcesso(id: string): Promise<DetalheProcesso | nul
     .where(eq(schema.movimentacoes.processoId, id))
     .orderBy(desc(schema.movimentacoes.dataHora));
 
+  // Colunas explícitas, SEM a coluna `texto`: ela pode ter megabytes e viajaria para a tela em
+  // toda visita ao processo. O texto é lido sob demanda (pela tool ler_documento).
   const documentos = await db
-    .select()
+    .select({
+      id: schema.documentos.id,
+      processoId: schema.documentos.processoId,
+      titulo: schema.documentos.titulo,
+      tipo: schema.documentos.tipo,
+      categoria: schema.documentos.categoria,
+      storagePath: schema.documentos.storagePath,
+      arquivoNome: schema.documentos.arquivoNome,
+      mimeType: schema.documentos.mimeType,
+      tamanhoBytes: schema.documentos.tamanhoBytes,
+      paginas: schema.documentos.paginas,
+      hashSha256: schema.documentos.hashSha256,
+      textoExtraido: schema.documentos.textoExtraido,
+      extracaoStatus: schema.documentos.extracaoStatus,
+      extraidoEm: schema.documentos.extraidoEm,
+      fonte: schema.documentos.fonte,
+      enviadoPor: schema.documentos.enviadoPor,
+      descricao: schema.documentos.descricao,
+      dataDocumento: schema.documentos.dataDocumento,
+      createdAt: schema.documentos.createdAt,
+    })
     .from(schema.documentos)
-    .where(eq(schema.documentos.processoId, id))
+    .where(and(eq(schema.documentos.processoId, id), isNull(schema.documentos.excluidoEm)))
     .orderBy(desc(schema.documentos.createdAt));
 
   const anotacoes = await db

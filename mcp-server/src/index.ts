@@ -11,6 +11,9 @@
  */
 
 import { readFileSync } from "node:fs";
+import { readFile, stat } from "node:fs/promises";
+import path from "node:path";
+import { createHash } from "node:crypto";
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -68,6 +71,11 @@ import {
   carregarFeriadosForenses,
   registrarSincronizacao,
   ultimaSincronizacao,
+  inserirDocumento,
+  documentoPorHash,
+  listarDocumentos,
+  textoDocumento,
+  processoExistente,
   processosSemCliente,
   definirClienteProcesso,
   buscarModelos,
@@ -75,6 +83,16 @@ import {
   salvarPeca,
   type RegistroSincronizacao,
 } from "./lib/db.js";
+import {
+  VALORES_CATEGORIA,
+  MIMES,
+  TAMANHO_MAX_TERMINAL,
+  formatoDeExtensao,
+  montarStoragePath,
+  rotuloCategoria,
+} from "./lib/documentos.js";
+import { blobConfigurado, enviarParaBlob } from "./lib/blob.js";
+import { extrairTexto } from "./lib/extrair-texto.js";
 import { reconciliarIntimacoes } from "./lib/reconciliacao.js";
 
 const server = new McpServer({ name: "gabinete", version: "0.1.0" });
@@ -946,6 +964,215 @@ server.registerTool(
       return texto(
         `✅ Rascunho de peça salvo no painel (setor Peças). Nasce como sugestão; o advogado revisa e ` +
           `assina. id=${r.id}`,
+      );
+    } catch (e) {
+      return erro((e as Error).message);
+    }
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Documentos do processo: anexar pelo terminal, listar e ler
+//
+// O binário vai para o Vercel Blob (privado) e o texto extraído fica no banco, para o squad
+// forense poder LER a peça sem baixar arquivo. Mesmo storage e mesma convenção de caminho do
+// upload feito pelo painel: os dois caminhos convergem no mesmo lugar.
+// ---------------------------------------------------------------------------
+server.registerTool(
+  "anexar_documento",
+  {
+    title: "Anexar documento ao processo",
+    description:
+      "Sobe um arquivo da máquina do advogado (PDF, imagem, texto) e vincula ao processo, na " +
+      "categoria informada. Calcula o hash e NÃO sobe duas vezes o mesmo arquivo no mesmo " +
+      "processo. Se for PDF, extrai o texto para o squad poder analisar sem abrir o arquivo.",
+    inputSchema: {
+      numero_cnj: z.string().describe("Número CNJ do processo já cadastrado na carteira."),
+      caminho_arquivo: z.string().describe("Caminho do arquivo na máquina do advogado."),
+      categoria: z
+        .enum(VALORES_CATEGORIA)
+        .describe("Função processual do documento (inicial, contestacao, decisao, prova...)."),
+      titulo: z.string().optional().describe("Título. Padrão: nome do arquivo sem extensão."),
+      descricao: z.string().optional(),
+      data_documento: z.string().optional().describe("Data do documento, YYYY-MM-DD."),
+    },
+  },
+  async ({ numero_cnj, caminho_arquivo, categoria, titulo, descricao, data_documento }) => {
+    if (!bancoConfigurado()) return erro("Banco (Neon) não configurado.");
+    if (!validarCNJ(numero_cnj)) return erro(`Número CNJ inválido: ${numero_cnj}`);
+    try {
+      const processoId = await processoExistente(numero_cnj);
+      if (!processoId)
+        return erro(
+          `Processo ${formatarCNJ(numero_cnj)} não está na carteira. Use adicionar_processo antes.`,
+        );
+      if (!blobConfigurado())
+        return erro(
+          "Storage de documentos não configurado: defina BLOB_READ_WRITE_TOKEN em mcp-server/.env " +
+            "(token do Blob store do projeto na Vercel).",
+        );
+
+      const caminho = path.resolve(caminho_arquivo);
+      const info = await stat(caminho).catch(() => null);
+      if (!info || !info.isFile()) return erro(`Arquivo não encontrado: ${caminho}`);
+      if (info.size > TAMANHO_MAX_TERMINAL)
+        return erro(
+          `Arquivo de ${(info.size / 1048576).toFixed(1)} MB excede o limite de ` +
+            `${TAMANHO_MAX_TERMINAL / 1048576} MB.`,
+        );
+
+      const ext = path.extname(caminho).toLowerCase();
+      const mime = MIMES[ext];
+      if (!mime)
+        return erro(
+          `Extensão ${ext || "(sem extensão)"} não aceita. Aceitas: ${Object.keys(MIMES).join(", ")}.`,
+        );
+
+      const dados = await readFile(caminho);
+      const hash = createHash("sha256").update(dados).digest("hex");
+
+      const jaExiste = await documentoPorHash(processoId, hash);
+      if (jaExiste)
+        return texto(
+          `Este arquivo já está anexado a este processo: "${jaExiste.titulo}" ` +
+            `(${jaExiste.categoria}, id ${jaExiste.id}). Nada foi enviado.`,
+        );
+
+      const nomeArquivo = path.basename(caminho);
+      const tituloFinal = titulo?.trim() || nomeArquivo.replace(/\.[^.]+$/, "");
+      const formato = formatoDeExtensao(ext);
+      const extracao = await extrairTexto(dados, formato);
+
+      const storagePath = montarStoragePath({
+        numeroCnj: numero_cnj,
+        categoria,
+        titulo: tituloFinal,
+        hashSha256: hash,
+        extensao: ext,
+        data: data_documento,
+      });
+      await enviarParaBlob(storagePath, dados, mime);
+
+      const { id } = await inserirDocumento({
+        processoId,
+        titulo: tituloFinal,
+        tipo: formato,
+        categoria,
+        storagePath,
+        arquivoNome: nomeArquivo,
+        mimeType: mime,
+        tamanhoBytes: info.size,
+        hashSha256: hash,
+        paginas: extracao.paginas,
+        texto: extracao.texto,
+        extracaoStatus: extracao.status,
+        fonte: "upload_terminal",
+        enviadoPor: "terminal",
+        descricao,
+        dataDocumento: data_documento,
+      });
+
+      const sobreTexto =
+        extracao.status === "ok"
+          ? `Texto extraído (${extracao.paginas ?? "?"} página(s)); use ler_documento para analisar.`
+          : `⚠️ Sem texto utilizável: ${extracao.motivo ?? extracao.status}`;
+      return texto(
+        `✅ "${tituloFinal}" anexado ao processo ${formatarCNJ(numero_cnj)} como ` +
+          `${rotuloCategoria(categoria)}.\n` +
+          `Tamanho: ${(info.size / 1024).toFixed(0)} KB | id: ${id}\n${sobreTexto}\n` +
+          `Já aparece na aba Documentos do processo, no painel.`,
+      );
+    } catch (e) {
+      return erro((e as Error).message);
+    }
+  },
+);
+
+server.registerTool(
+  "listar_documentos",
+  {
+    title: "Documentos de um processo",
+    description:
+      "Lista os documentos anexados ao processo, agrupados por categoria, com o estado do texto. " +
+      "É por aqui que você descobre o que existe antes de pedir a leitura de um documento.",
+    inputSchema: {
+      numero_cnj: z.string(),
+      categoria: z.enum(VALORES_CATEGORIA).optional(),
+    },
+  },
+  async ({ numero_cnj, categoria }) => {
+    if (!bancoConfigurado()) return erro("Banco (Neon) não configurado.");
+    try {
+      const processoId = await processoExistente(numero_cnj);
+      if (!processoId) return erro(`Processo ${formatarCNJ(numero_cnj)} não está na carteira.`);
+      const docs = await listarDocumentos(processoId, categoria);
+      if (docs.length === 0)
+        return texto(
+          `Nenhum documento anexado a ${formatarCNJ(numero_cnj)}` +
+            `${categoria ? ` na categoria ${rotuloCategoria(categoria)}` : ""}. ` +
+            `Use anexar_documento (terminal) ou a aba Documentos do processo (painel).`,
+        );
+      const porCategoria = new Map<string, typeof docs>();
+      for (const d of docs) {
+        const k = d.categoria ?? "outro";
+        porCategoria.set(k, [...(porCategoria.get(k) ?? []), d]);
+      }
+      const blocos = [...porCategoria.entries()].map(([cat, lista]) => {
+        const linhas = lista.map((d) => {
+          const kb = d.tamanhoBytes ? `${(d.tamanhoBytes / 1024).toFixed(0)} KB` : "?";
+          const txt =
+            d.extracaoStatus === "ok"
+              ? "texto ok"
+              : d.extracaoStatus === "sem_texto"
+                ? "sem texto (precisa de OCR)"
+                : d.extracaoStatus ?? "?";
+          return `    • ${d.titulo} — ${kb}${d.paginas ? `, ${d.paginas} p.` : ""} [${txt}] id:${d.id}`;
+        });
+        return `  ${rotuloCategoria(cat).toUpperCase()}\n${linhas.join("\n")}`;
+      });
+      return texto(`📁 ${docs.length} documento(s) em ${formatarCNJ(numero_cnj)}\n\n${blocos.join("\n\n")}`);
+    } catch (e) {
+      return erro((e as Error).message);
+    }
+  },
+);
+
+server.registerTool(
+  "ler_documento",
+  {
+    title: "Ler o texto de um documento",
+    description:
+      "Devolve o texto extraído do documento, paginado. É assim que o squad forense lê a peça " +
+      "para analisar, sem precisar abrir o arquivo.",
+    inputSchema: {
+      documento_id: z.string().describe("id do documento (vem de listar_documentos)."),
+      offset: z.number().int().min(0).optional().describe("Caractere inicial (padrão 0)."),
+      limite: z.number().int().positive().max(80000).optional().describe("Padrão 40000."),
+    },
+  },
+  async ({ documento_id, offset, limite }) => {
+    if (!bancoConfigurado()) return erro("Banco (Neon) não configurado.");
+    try {
+      const doc = await textoDocumento(documento_id);
+      if (!doc) return erro(`Documento ${documento_id} não encontrado.`);
+      if (!doc.texto) {
+        return texto(
+          `"${doc.titulo}" não tem texto extraído (estado: ${doc.extracaoStatus}).\n` +
+            (doc.extracaoStatus === "sem_texto"
+              ? "É um PDF digitalizado, sem camada de texto. Precisa de OCR, ou abra o arquivo " +
+                "original com a ferramenta Read para ler as páginas."
+              : "Tente reprocessar a extração pelo painel."),
+        );
+      }
+      const ini = offset ?? 0;
+      const fim = ini + (limite ?? 40000);
+      const trecho = doc.texto.slice(ini, fim);
+      const restante = Math.max(0, doc.texto.length - fim);
+      return texto(
+        `📄 ${doc.titulo} (${rotuloCategoria(doc.categoria ?? "outro")})` +
+          `${doc.paginas ? ` — ${doc.paginas} página(s)` : ""}\n` +
+          `Caracteres ${ini} a ${Math.min(fim, doc.texto.length)} de ${doc.texto.length}.\n\n${trecho}` +
+          (restante > 0 ? `\n\n[...] Faltam ${restante} caracteres: chame de novo com offset=${fim}.` : ""),
       );
     } catch (e) {
       return erro((e as Error).message);

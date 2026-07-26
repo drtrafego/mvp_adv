@@ -88,3 +88,23 @@ acaba e começa a do advogado.
 Português com acentuação completa. Objetivo e direto. Quando houver incerteza jurídica (termo
 inicial, suspensão local, rito especial), marque `[CONFERIR]` e peça confirmação ao advogado em
 vez de supor.
+
+## Documentos do processo
+
+Os arquivos do processo (autos, provas, contratos, decisões) ficam vinculados ao processo, com o
+binário no Vercel Blob (privado) e o texto extraído no banco. Dois caminhos, mesmo destino:
+
+- **Terminal**: `anexar_documento` (caminho do arquivo + processo + categoria). Calcula o hash e
+  não sobe duas vezes o mesmo arquivo no mesmo processo. Se for PDF, extrai o texto na hora.
+- **Painel**: aba Documentos do processo, botão Enviar.
+
+Para ler um documento na análise: `listar_documentos` para descobrir o que existe e
+`ler_documento` para o texto. PDF digitalizado não tem camada de texto: aparece como
+`sem_texto` e só com OCR (fora do MVP) ou lendo o arquivo original.
+
+**Nota de sigilo:** ao analisar um documento, o teor vai para a API do modelo. Vale para
+intimação e vale aqui, mas com documento em segredo de justiça a decisão pesa mais. É escolha do
+advogado, não efeito colateral.
+
+Configuração necessária: `BLOB_READ_WRITE_TOKEN` no Vercel (criado ao conectar um Blob store ao
+projeto) e no `mcp-server/.env`.
