@@ -119,6 +119,8 @@ export async function upsertComunicacoes(comuns: ComunicacaoDJEN[]): Promise<num
               .filter((x): x is string => Boolean(x)),
           ),
         ).join(", ") || null,
+      // Guarda as partes destinatárias: é por elas que se descobre o cliente do escritório.
+      destinatarios: (c.destinatarios ?? []) as any,
       processada: false,
     }));
   if (linhas.length === 0) return 0;

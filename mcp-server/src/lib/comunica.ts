@@ -33,7 +33,9 @@ export interface ComunicacaoDJEN {
   dataDisponibilizacao: string | null;
   meio: string | null;
   link: string | null;
-  destinatarios: string[];
+  /** Partes destinatárias da comunicação, com o polo (A = ativo, P = passivo). É a fonte
+   * mais confiável de QUEM é a parte do escritório: o DJEN dirige a intimação a ela. */
+  destinatarios: Array<{ nome: string; polo: string | null }>;
   advogados: Array<{ nome: string; oab: string | null }>;
 }
 
@@ -85,7 +87,7 @@ export interface ComunicaRawItem {
   meiocompleto?: string;
   meio?: string;
   link?: string;
-  destinatarios?: Array<{ nome?: string }>;
+  destinatarios?: Array<{ nome?: string; polo?: string }>;
   destinatarioadvogados?: Array<{ advogado?: { nome?: string; numero_oab?: string; uf_oab?: string } }>;
 }
 
@@ -126,7 +128,9 @@ export function normalizar(item: ComunicaRawItem): ComunicacaoDJEN {
     dataDisponibilizacao: item.data_disponibilizacao ?? null,
     meio: item.meiocompleto ?? item.meio ?? null,
     link: item.link ?? null,
-    destinatarios: (item.destinatarios ?? []).map((d) => d.nome ?? "").filter(Boolean),
+    destinatarios: (item.destinatarios ?? [])
+      .map((d) => ({ nome: d.nome ?? "", polo: d.polo ?? null }))
+      .filter((d) => d.nome),
     advogados,
   };
 }

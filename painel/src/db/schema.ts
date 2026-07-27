@@ -89,6 +89,8 @@ export const comunicacoes = pgTable(
     dataDisponibilizacao: date("data_disponibilizacao"),
     dataPublicacao: date("data_publicacao"),
     oabDestino: text("oab_destino"),
+    /** Partes destinatárias: [{nome, polo}] (A = ativo, P = passivo), como o DJEN devolve. */
+    destinatarios: jsonb("destinatarios"),
     processada: boolean("processada").default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },

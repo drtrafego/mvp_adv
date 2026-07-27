@@ -302,3 +302,8 @@ comment on column documentos.peca_id is
 create unique index if not exists documentos_hash_peca_unico
   on documentos (peca_id, hash_sha256)
   where peca_id is not null and hash_sha256 is not null and excluido_em is null;
+
+-- Partes destinatárias da comunicação, como o DJEN devolve: [{nome, polo}] (A = ativo,
+-- P = passivo). É a fonte mais confiável de quem é a parte do escritório, porque a intimação
+-- é dirigida a ela. Antes esse dado era descartado na normalização.
+alter table comunicacoes add column if not exists destinatarios jsonb;
