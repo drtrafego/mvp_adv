@@ -80,7 +80,7 @@ export interface DetalheProcesso {
   processo: typeof schema.processos.$inferSelect;
   prazos: (typeof schema.prazos.$inferSelect)[];
   movimentacoes: (typeof schema.movimentacoes.$inferSelect)[];
-  documentos: Omit<typeof schema.documentos.$inferSelect, "texto" | "excluidoEm">[];
+  documentos: Omit<typeof schema.documentos.$inferSelect, "texto" | "excluidoEm" | "pecaId">[];
   anotacoes: (typeof schema.anotacoes.$inferSelect)[];
   comunicacoes: (typeof schema.comunicacoes.$inferSelect)[];
   pecas: (typeof schema.pecas.$inferSelect)[];
@@ -422,7 +422,27 @@ export async function detalhePeca(id: string) {
       .where(eq(schema.processos.id, peca.processoId))
       .limit(1);
   }
-  return { peca, processo: processo ?? null };
+
+  // Documentos do CASO, presos à peça: numa inicial ainda não existe processo, mas já existe
+  // contrato, comprovante e procuração para o squad usar. Sem a coluna `texto` (pesada).
+  const documentos = await db
+    .select({
+      id: schema.documentos.id,
+      titulo: schema.documentos.titulo,
+      tipo: schema.documentos.tipo,
+      categoria: schema.documentos.categoria,
+      tamanhoBytes: schema.documentos.tamanhoBytes,
+      paginas: schema.documentos.paginas,
+      extracaoStatus: schema.documentos.extracaoStatus,
+      descricao: schema.documentos.descricao,
+      dataDocumento: schema.documentos.dataDocumento,
+      createdAt: schema.documentos.createdAt,
+    })
+    .from(schema.documentos)
+    .where(and(eq(schema.documentos.pecaId, id), isNull(schema.documentos.excluidoEm)))
+    .orderBy(desc(schema.documentos.createdAt));
+
+  return { peca, processo: processo ?? null, documentos };
 }
 
 // ============================================================================

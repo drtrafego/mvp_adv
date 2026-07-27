@@ -128,11 +128,14 @@ export const documentos = pgTable(
     enviadoPor: text("enviado_por"),
     descricao: text("descricao"),
     dataDocumento: date("data_documento"),
+    /** Caso NOVO: a inicial ainda não tem processo, então o documento fica preso à peça. */
+    pecaId: uuid("peca_id"),
     excluidoEm: timestamp("excluido_em", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   (t) => ({
     idxProc: index("idx_docs_proc").on(t.processoId, t.categoria, t.createdAt),
+    idxPeca: index("idx_docs_peca").on(t.pecaId, t.categoria, t.createdAt),
   }),
 );
 

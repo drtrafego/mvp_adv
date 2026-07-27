@@ -98,16 +98,24 @@ export function slug(s: string): string {
  * divisão das peças por tipo, legível para quem abrir o storage direto.
  */
 export function montarStoragePath(params: {
-  numeroCnj: string;
+  /** CNJ do processo. Vazio quando o documento é de caso novo, preso a uma peça. */
+  numeroCnj?: string;
+  /** Id da peça, quando ainda não há processo (petição inicial de caso novo). */
+  pecaId?: string;
   categoria: string;
   titulo: string;
   hashSha256: string;
   extensao: string;
   data?: string;
 }): string {
-  const cnj = params.numeroCnj.replace(/\D/g, "");
   const data = params.data ?? new Date().toISOString().slice(0, 10);
   const hash8 = params.hashSha256.slice(0, 8);
   const ext = params.extensao.toLowerCase().replace(/^\.?/, ".");
-  return `processos/${cnj}/${params.categoria}/${data}-${slug(params.titulo)}-${hash8}${ext}`;
+  const nome = `${data}-${slug(params.titulo)}-${hash8}${ext}`;
+  const cnj = (params.numeroCnj ?? "").replace(/\D/g, "");
+  // Caso novo ainda não tem número de processo, então o documento fica sob a peça. Quando o
+  // processo for distribuído, o vínculo passa a ser o processo; o arquivo não precisa mudar
+  // de lugar, porque o caminho é só um espelho legível do banco.
+  const prefixo = cnj ? `processos/${cnj}` : `pecas/${params.pecaId ?? "sem-peca"}`;
+  return `${prefixo}/${params.categoria}/${nome}`;
 }

@@ -45,12 +45,18 @@ async function hashArquivo(file: File): Promise<string> {
     .join("");
 }
 
+/**
+ * Upload de documento. O alvo é o processo (caso em curso) OU a peça (caso novo: a petição
+ * inicial ainda não tem número de processo, mas já tem contrato e comprovante para juntar).
+ */
 export function UploadDocumento({
   processoId,
   numeroCnj,
+  pecaId,
 }: {
-  processoId: string;
-  numeroCnj: string;
+  processoId?: string;
+  numeroCnj?: string;
+  pecaId?: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -96,10 +102,10 @@ export function UploadDocumento({
     try {
       const hash = await hashArquivo(arquivo);
 
-      const dup = await verificarHashAction(processoId, hash);
+      const dup = await verificarHashAction({ processoId, pecaId }, hash);
       if (dup.ok && dup.existente) {
         toast.error(
-          `Este arquivo já está neste processo: "${dup.existente.titulo}" (${dup.existente.categoria}).`,
+          `Este arquivo já está anexado aqui: "${dup.existente.titulo}" (${dup.existente.categoria}).`,
         );
         setEnviando(false);
         return;
@@ -108,6 +114,7 @@ export function UploadDocumento({
       const tituloFinal = titulo.trim() || arquivo.name.replace(/\.[^.]+$/, "");
       const storagePath = montarStoragePath({
         numeroCnj,
+        pecaId,
         categoria,
         titulo: tituloFinal,
         hashSha256: hash,
@@ -127,6 +134,7 @@ export function UploadDocumento({
         multipart: arquivo.size > 10 * 1024 * 1024,
         clientPayload: JSON.stringify({
           processoId,
+          pecaId,
           categoria,
           titulo: tituloFinal,
           hash,
@@ -135,6 +143,7 @@ export function UploadDocumento({
 
       const reg = await registrarDocumentoAction({
         processoId,
+        pecaId,
         titulo: tituloFinal,
         categoria,
         storagePath,
@@ -181,10 +190,13 @@ export function UploadDocumento({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="font-serif">Anexar documento ao processo</DialogTitle>
+          <DialogTitle className="font-serif">
+            {pecaId && !processoId ? "Anexar documento ao caso" : "Anexar documento ao processo"}
+          </DialogTitle>
           <DialogDescription>
-            O arquivo fica guardado com o processo. Se for PDF com texto, o conteúdo passa a ser
-            legível pelo squad na análise.
+            {pecaId && !processoId
+              ? "O caso ainda não tem número de processo, então o arquivo fica guardado com a peça. Se for PDF com texto, o squad consegue ler o conteúdo ao montar a inicial."
+              : "O arquivo fica guardado com o processo. Se for PDF com texto, o conteúdo passa a ser legível pelo squad na análise."}
           </DialogDescription>
         </DialogHeader>
 

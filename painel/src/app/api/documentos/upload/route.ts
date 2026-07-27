@@ -35,27 +35,42 @@ export async function POST(request: Request): Promise<Response> {
       onBeforeGenerateToken: async (pathname, clientPayload) => {
         const p = JSON.parse(clientPayload ?? "{}") as {
           processoId?: string;
+          pecaId?: string;
           categoria?: string;
           titulo?: string;
           hash?: string;
         };
-        if (!p.processoId || !p.categoria || !p.hash || !p.titulo) {
+        if ((!p.processoId && !p.pecaId) || !p.categoria || !p.hash || !p.titulo) {
           throw new Error("Dados do upload incompletos.");
         }
         if (!ehCategoria(p.categoria)) throw new Error(`Categoria inválida: ${p.categoria}`);
 
-        const [processo] = await db!
-          .select({ id: schema.processos.id, numeroCnj: schema.processos.numeroCnj })
-          .from(schema.processos)
-          .where(eq(schema.processos.id, p.processoId))
-          .limit(1);
-        if (!processo) throw new Error("Processo não encontrado.");
+        // O alvo é o processo (caso em curso) ou a peça (caso novo, ainda sem CNJ). Nos dois,
+        // confere-se que existe antes de liberar escrita no storage.
+        let numeroCnj: string | undefined;
+        if (p.processoId) {
+          const [processo] = await db!
+            .select({ id: schema.processos.id, numeroCnj: schema.processos.numeroCnj })
+            .from(schema.processos)
+            .where(eq(schema.processos.id, p.processoId))
+            .limit(1);
+          if (!processo) throw new Error("Processo não encontrado.");
+          numeroCnj = processo.numeroCnj;
+        } else {
+          const [peca] = await db!
+            .select({ id: schema.pecas.id })
+            .from(schema.pecas)
+            .where(eq(schema.pecas.id, p.pecaId as string))
+            .limit(1);
+          if (!peca) throw new Error("Peça não encontrada.");
+        }
 
         // O caminho é derivado no servidor e comparado com o pedido: sem isso o cliente
         // escolheria onde gravar dentro do store.
         const extensao = (pathname.match(/\.[^.]+$/)?.[0] ?? "").toLowerCase();
         const esperado = montarStoragePath({
-          numeroCnj: processo.numeroCnj,
+          numeroCnj,
+          pecaId: p.pecaId,
           categoria: p.categoria,
           titulo: p.titulo,
           hashSha256: p.hash,
@@ -71,7 +86,7 @@ export async function POST(request: Request): Promise<Response> {
           addRandomSuffix: false,
           allowOverwrite: true,
           // O registro no banco é feito pela Server Action, depois que o upload conclui.
-          tokenPayload: JSON.stringify({ processoId: p.processoId }),
+          tokenPayload: JSON.stringify({ processoId: p.processoId, pecaId: p.pecaId }),
         };
       },
       onUploadCompleted: async () => {

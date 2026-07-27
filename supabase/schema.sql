@@ -290,3 +290,15 @@ create unique index if not exists documentos_hash_unico
 
 create index if not exists idx_docs_proc
   on documentos (processo_id, categoria, created_at desc);
+
+-- Documento anexado a uma PEÇA, não a um processo: a petição inicial de caso novo ainda não
+-- tem número CNJ, mas já tem contrato, comprovante e procuração para o squad usar.
+alter table documentos add column if not exists peca_id uuid references pecas(id) on delete cascade;
+create index if not exists idx_docs_peca on documentos (peca_id, categoria, created_at desc);
+comment on column documentos.peca_id is
+  'Documento preso a uma peça (caso novo, sem processo). Exatamente um entre processo_id e peca_id.';
+
+-- Dedup também para documento de peça (o índice anterior cobre só processo_id).
+create unique index if not exists documentos_hash_peca_unico
+  on documentos (peca_id, hash_sha256)
+  where peca_id is not null and hash_sha256 is not null and excluido_em is null;

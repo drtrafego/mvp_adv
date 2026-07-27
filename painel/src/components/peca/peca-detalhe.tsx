@@ -13,6 +13,7 @@ import {
   Trash2,
   Terminal,
   FileSignature,
+  FileText,
   Gavel,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +29,7 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { UploadDocumento } from "@/components/processo/upload-documento";
 import {
   editarPecaAction,
   confirmarPecaAction,
@@ -46,6 +48,18 @@ export type PecaDetalhe = {
     criadoEm: Date | string | null;
   };
   processo: { id: string; numeroCnj: string; clienteNome: string | null } | null;
+  documentos: Array<{
+    id: string;
+    titulo: string | null;
+    tipo: string | null;
+    categoria: string | null;
+    tamanhoBytes: number | null;
+    paginas: number | null;
+    extracaoStatus: string | null;
+    descricao: string | null;
+    dataDocumento: string | null;
+    createdAt: Date | string | null;
+  }>;
 };
 
 function comandoDaPeca(id: string, tipo: string): string {
@@ -244,7 +258,76 @@ export function PecaDetalhe({ detalhe }: { detalhe: PecaDetalhe }) {
             </p>
           </div>
         )}
+
+        <DocumentosDoCaso
+          pecaId={peca.id}
+          processoId={processo?.id}
+          numeroCnj={processo?.numeroCnj}
+          documentos={detalhe.documentos ?? []}
+        />
       </div>
+    </div>
+  );
+}
+
+/**
+ * Documentos do caso. Numa inicial ainda não existe processo, mas já existe contrato,
+ * comprovante e procuração: eles ficam presos à peça e o squad lê o texto deles ao redigir.
+ * Quando a inicial é protocolada e vira processo, os documentos novos passam a ir para o
+ * processo.
+ */
+function DocumentosDoCaso({
+  pecaId,
+  processoId,
+  numeroCnj,
+  documentos,
+}: {
+  pecaId: string;
+  processoId?: string;
+  numeroCnj?: string;
+  documentos: PecaDetalhe["documentos"];
+}) {
+  return (
+    <div className="mt-6 border-t pt-5">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h3 className="font-mono text-[0.65rem] uppercase tracking-wide text-muted-foreground">
+          Documentos do caso · {documentos.length}
+        </h3>
+        <UploadDocumento pecaId={pecaId} processoId={processoId} numeroCnj={numeroCnj} />
+      </div>
+
+      {documentos.length === 0 ? (
+        <p className="rounded-xl border border-dashed bg-card/40 px-4 py-6 text-center text-sm text-muted-foreground">
+          Nenhum documento anexado. Suba contrato, comprovantes e procuração aqui: o squad lê o
+          conteúdo ao montar a peça.
+        </p>
+      ) : (
+        <ul className="space-y-2">
+          {documentos.map((d) => (
+            <li key={d.id} className="flex items-start gap-3 rounded-xl border bg-card p-3">
+              <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+                <FileText className="h-4 w-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium">{d.titulo ?? "sem título"}</div>
+                <div className="mt-0.5 flex flex-wrap items-center gap-1.5 font-mono text-[0.65rem] text-muted-foreground">
+                  {d.categoria && <span className="uppercase">{d.categoria}</span>}
+                  {d.tamanhoBytes ? <span>· {(d.tamanhoBytes / 1024).toFixed(0)} KB</span> : null}
+                  {d.paginas ? <span>· {d.paginas} p.</span> : null}
+                  {d.extracaoStatus === "sem_texto" && (
+                    <span className="rounded-full bg-amber-tint px-2 py-0.5 text-amber-brand">
+                      sem texto (OCR)
+                    </span>
+                  )}
+                </div>
+                {d.descricao && (
+                  <p className="mt-1 text-xs text-muted-foreground">{d.descricao}</p>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

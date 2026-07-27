@@ -17,11 +17,19 @@ async function exigirUsuario() {
   return usuario;
 }
 
-/** O mesmo arquivo não entra duas vezes no mesmo processo. Checado antes de gastar o upload. */
-export async function verificarHashAction(processoId: string, hash: string) {
+/**
+ * O mesmo arquivo não entra duas vezes no mesmo lugar. Checado antes de gastar o upload.
+ * O alvo é o processo (caso em curso) ou a peça (caso novo, ainda sem CNJ).
+ */
+export async function verificarHashAction(
+  alvo: { processoId?: string; pecaId?: string },
+  hash: string,
+) {
   try {
     await exigirUsuario();
     if (!db) return { ok: false as const, erro: "Banco não conectado." };
+    if (!alvo.processoId && !alvo.pecaId)
+      return { ok: false as const, erro: "Informe o processo ou a peça." };
     const [existente] = await db
       .select({
         id: schema.documentos.id,
@@ -32,7 +40,9 @@ export async function verificarHashAction(processoId: string, hash: string) {
       .from(schema.documentos)
       .where(
         and(
-          eq(schema.documentos.processoId, processoId),
+          alvo.processoId
+            ? eq(schema.documentos.processoId, alvo.processoId)
+            : eq(schema.documentos.pecaId, alvo.pecaId as string),
           eq(schema.documentos.hashSha256, hash),
           isNull(schema.documentos.excluidoEm),
         ),
@@ -45,7 +55,9 @@ export async function verificarHashAction(processoId: string, hash: string) {
 }
 
 export interface DadosDocumento {
-  processoId: string;
+  /** Um dos dois: processo (caso em curso) ou peça (caso novo, ainda sem CNJ). */
+  processoId?: string;
+  pecaId?: string;
   titulo: string;
   categoria: string;
   storagePath: string;
@@ -69,7 +81,8 @@ export async function registrarDocumentoAction(dados: DadosDocumento) {
     const [row] = await db
       .insert(schema.documentos)
       .values({
-        processoId: dados.processoId,
+        processoId: dados.processoId ?? null,
+        pecaId: dados.pecaId ?? null,
         titulo: dados.titulo,
         tipo: dados.tipo,
         categoria: dados.categoria,
@@ -86,7 +99,7 @@ export async function registrarDocumentoAction(dados: DadosDocumento) {
       })
       .returning({ id: schema.documentos.id });
 
-    revalidatePath(`/p/${dados.processoId}`);
+    revalidatePath(dados.processoId ? `/p/${dados.processoId}` : `/pe/${dados.pecaId}`);
     return { ok: true as const, id: row.id };
   } catch (e) {
     return { ok: false as const, erro: (e as Error).message };
