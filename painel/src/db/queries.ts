@@ -720,3 +720,33 @@ export async function detalheIntimacao(id: string): Promise<DetalheIntimacao | n
 
   return { intimacao, processo: processo ?? null, prazos };
 }
+
+export interface AcessoRow {
+  id: string;
+  email: string;
+  nome: string | null;
+  oab: string | null;
+  criadoEm: string | null;
+  sessoesAtivas: number;
+}
+
+/** Lista quem tem acesso ao painel, com a contagem de sessões ainda válidas. */
+export async function listarAcessos(): Promise<AcessoRow[]> {
+  if (!db) return [];
+  const rows = await db
+    .select({
+      id: schema.usuarios.id,
+      email: schema.usuarios.email,
+      nome: schema.usuarios.nome,
+      oab: schema.usuarios.oab,
+      criadoEm: schema.usuarios.criadoEm,
+      sessoesAtivas: sql<number>`(
+        select count(*)::int from ${schema.sessoes}
+        where ${schema.sessoes.usuarioId} = ${schema.usuarios.id}
+          and ${schema.sessoes.expiraEm} > now()
+      )`,
+    })
+    .from(schema.usuarios)
+    .orderBy(asc(schema.usuarios.criadoEm));
+  return rows as unknown as AcessoRow[];
+}

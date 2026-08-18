@@ -1,11 +1,18 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { clientes } from "@/db/schema";
+import { clientes, usuarios } from "@/db/schema";
+import {
+  encerrarSessoes,
+  getUsuarioAtual,
+  hashSenha,
+  verificarSenha,
+} from "@/lib/auth";
 
 export type ImportState = { ok?: boolean; erro?: string; msg?: string };
+export type AcessoState = { ok?: boolean; erro?: string; msg?: string };
 
 // remove acentos e baixa caixa, para casar cabeçalhos independente da escrita
 function norm(s: string): string {
@@ -105,4 +112,147 @@ export async function importarClientes(_prev: ImportState, formData: FormData): 
     ok: true,
     msg: `${novos.length} cliente(s) importado(s)` + (jaExistiam > 0 ? `, ${jaExistiam} já estavam cadastrados.` : "."),
   };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Acesso ao sistema                                                           */
+/* -------------------------------------------------------------------------- */
+
+const MIN_SENHA = 8;
+
+// Toda ação de acesso exige estar logado: quem já tem acesso administra o acesso.
+async function exigirSessao() {
+  if (!db) return { erro: "Banco não conectado." as const };
+  const atual = await getUsuarioAtual();
+  if (!atual) return { erro: "Sessão expirada. Entre de novo." as const };
+  return { atual };
+}
+
+function validarSenha(nova: string, confirma: string): string | null {
+  if (nova.length < MIN_SENHA) return `A senha precisa ter pelo menos ${MIN_SENHA} caracteres.`;
+  if (nova !== confirma) return "A confirmação não bate com a nova senha.";
+  return null;
+}
+
+/** O próprio usuário troca a senha. Exige a senha atual e derruba os outros dispositivos. */
+export async function alterarMinhaSenha(
+  _prev: AcessoState,
+  formData: FormData,
+): Promise<AcessoState> {
+  const sessao = await exigirSessao();
+  if ("erro" in sessao) return { erro: sessao.erro };
+  const { atual } = sessao;
+
+  const senhaAtual = String(formData.get("senha_atual") ?? "");
+  const nova = String(formData.get("nova") ?? "");
+  const confirma = String(formData.get("confirma") ?? "");
+
+  const invalida = validarSenha(nova, confirma);
+  if (invalida) return { erro: invalida };
+
+  const registro = (
+    await db!.select().from(usuarios).where(eq(usuarios.id, atual.id)).limit(1)
+  )[0];
+  if (!registro || !(await verificarSenha(senhaAtual, registro.senhaHash))) {
+    return { erro: "Senha atual incorreta." };
+  }
+  if (await verificarSenha(nova, registro.senhaHash)) {
+    return { erro: "A nova senha é igual à atual." };
+  }
+
+  await db!
+    .update(usuarios)
+    .set({ senhaHash: await hashSenha(nova) })
+    .where(eq(usuarios.id, atual.id));
+  await encerrarSessoes(atual.id, true);
+
+  revalidatePath("/configuracoes");
+  return { ok: true, msg: "Senha alterada. Os outros dispositivos foram desconectados." };
+}
+
+/** Cria um acesso novo (o titular cadastra sócio, secretária ou estagiário). */
+export async function criarAcesso(
+  _prev: AcessoState,
+  formData: FormData,
+): Promise<AcessoState> {
+  const sessao = await exigirSessao();
+  if ("erro" in sessao) return { erro: sessao.erro };
+
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const nome = String(formData.get("nome") ?? "").trim();
+  const oab = String(formData.get("oab") ?? "").trim();
+  const senha = String(formData.get("senha") ?? "");
+  const confirma = String(formData.get("confirma") ?? "");
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { erro: "Informe um email válido." };
+  const invalida = validarSenha(senha, confirma);
+  if (invalida) return { erro: invalida };
+
+  const jaExiste = (
+    await db!.select({ id: usuarios.id }).from(usuarios).where(eq(usuarios.email, email)).limit(1)
+  )[0];
+  if (jaExiste) return { erro: "Já existe um acesso com esse email." };
+
+  await db!.insert(usuarios).values({
+    email,
+    senhaHash: await hashSenha(senha),
+    nome: nome || null,
+    oab: oab || null,
+  });
+
+  revalidatePath("/configuracoes");
+  return { ok: true, msg: `Acesso criado para ${email}. Passe a senha por um canal seguro.` };
+}
+
+/** Redefine a senha de outro acesso (esqueceu a senha). Derruba as sessões dele. */
+export async function redefinirSenha(
+  _prev: AcessoState,
+  formData: FormData,
+): Promise<AcessoState> {
+  const sessao = await exigirSessao();
+  if ("erro" in sessao) return { erro: sessao.erro };
+
+  const id = String(formData.get("id") ?? "");
+  const nova = String(formData.get("nova") ?? "");
+  const confirma = String(formData.get("confirma") ?? "");
+
+  const invalida = validarSenha(nova, confirma);
+  if (invalida) return { erro: invalida };
+
+  const alvo = (
+    await db!.select({ email: usuarios.email }).from(usuarios).where(eq(usuarios.id, id)).limit(1)
+  )[0];
+  if (!alvo) return { erro: "Acesso não encontrado." };
+
+  await db!.update(usuarios).set({ senhaHash: await hashSenha(nova) }).where(eq(usuarios.id, id));
+  await encerrarSessoes(id);
+
+  revalidatePath("/configuracoes");
+  return { ok: true, msg: `Senha de ${alvo.email} redefinida.` };
+}
+
+/** Remove um acesso. As sessões caem junto (ON DELETE CASCADE). */
+export async function removerAcesso(
+  _prev: AcessoState,
+  formData: FormData,
+): Promise<AcessoState> {
+  const sessao = await exigirSessao();
+  if ("erro" in sessao) return { erro: sessao.erro };
+  const { atual } = sessao;
+
+  const id = String(formData.get("id") ?? "");
+  if (id === atual.id) return { erro: "Você não pode remover o seu próprio acesso." };
+
+  const total = (await db!.select({ n: sql<number>`count(*)::int` }).from(usuarios))[0]?.n ?? 0;
+  if (total <= 1) return { erro: "Este é o último acesso do sistema. Crie outro antes de remover." };
+
+  const alvo = (
+    await db!.select({ email: usuarios.email }).from(usuarios).where(eq(usuarios.id, id)).limit(1)
+  )[0];
+  if (!alvo) return { erro: "Acesso não encontrado." };
+
+  await db!.delete(usuarios).where(eq(usuarios.id, id));
+
+  revalidatePath("/configuracoes");
+  return { ok: true, msg: `Acesso de ${alvo.email} removido.` };
 }

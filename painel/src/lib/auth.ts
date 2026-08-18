@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { randomBytes, createHash } from "node:crypto";
 import bcrypt from "bcryptjs";
-import { eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { db, bancoConectado } from "@/db";
 import { usuarios, sessoes } from "@/db/schema";
 
@@ -51,7 +51,11 @@ export const getUsuarioAtual = cache(async (): Promise<UsuarioSessao | null> => 
 
   const s = rows[0];
   if (!s) return null;
-  if (new Date(s.expiraEm) < new Date()) return null;
+  if (new Date(s.expiraEm) < new Date()) {
+    // sessão vencida não fica apodrecendo na tabela
+    await db.delete(sessoes).where(eq(sessoes.tokenHash, hashToken(token)));
+    return null;
+  }
 
   return { id: s.id, email: s.email, nome: s.nome, oab: s.oab };
 });
@@ -75,6 +79,26 @@ export async function criarSessao(usuarioId: string): Promise<void> {
     path: "/",
     expires: expiraEm,
   });
+}
+
+/**
+ * Derruba as sessões de um usuário. Ao trocar a própria senha, mantém o
+ * dispositivo atual logado (`manterAtual`) e desconecta todos os outros; ao
+ * redefinir a senha de outra pessoa, derruba tudo.
+ */
+export async function encerrarSessoes(
+  usuarioId: string,
+  manterAtual = false,
+): Promise<void> {
+  if (!db) return;
+  const token = manterAtual ? (await cookies()).get(COOKIE)?.value : undefined;
+  await db
+    .delete(sessoes)
+    .where(
+      token
+        ? and(eq(sessoes.usuarioId, usuarioId), ne(sessoes.tokenHash, hashToken(token)))
+        : eq(sessoes.usuarioId, usuarioId),
+    );
 }
 
 export async function destruirSessao(): Promise<void> {
