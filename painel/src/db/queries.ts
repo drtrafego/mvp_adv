@@ -38,7 +38,14 @@ export async function listarPrazos(): Promise<PrazoRow[]> {
     .from(schema.prazos)
     .leftJoin(schema.processos, eq(schema.prazos.processoId, schema.processos.id))
     .where(ne(schema.prazos.status, "cancelado"))
-    .orderBy(schema.prazos.dataFatal);
+    // O que ainda dá para cumprir vem primeiro, do mais urgente ao menos. O vencido desce para
+    // o fim, do mais recente ao mais antigo: ordenar tudo por data fatal crescente jogava um
+    // prazo perdido há meses acima do que vence amanhã.
+    .orderBy(
+      sql`(${schema.prazos.dataFatal} < current_date) asc`,
+      sql`case when ${schema.prazos.dataFatal} >= current_date then ${schema.prazos.dataFatal} end asc`,
+      sql`${schema.prazos.dataFatal} desc`,
+    );
   return rows as PrazoRow[];
 }
 
@@ -234,35 +241,6 @@ export async function listarIntimacoes(): Promise<IntimacaoRow[]> {
     .leftJoin(schema.processos, eq(schema.comunicacoes.processoId, schema.processos.id))
     .orderBy(desc(schema.comunicacoes.dataDisponibilizacao))
     .limit(100);
-  return rows as IntimacaoRow[];
-}
-
-/**
- * Intimações que ainda não viraram prazo. É o elo que faltava entre as abas: a coleta grava
- * a comunicação, mas o prazo só nasce quando o rito e o ato são identificados no terminal
- * (skill prazos-cpc). Até lá, a intimação fica aqui, visível na Início e na aba Prazos.
- */
-export async function listarIntimacoesSemPrazo(limite = 20): Promise<IntimacaoRow[]> {
-  if (!db) return [];
-  const rows = await db
-    .select({
-      id: schema.comunicacoes.id,
-      tipo: schema.comunicacoes.tipo,
-      meio: schema.comunicacoes.meio,
-      dataDisponibilizacao: schema.comunicacoes.dataDisponibilizacao,
-      dataPublicacao: schema.comunicacoes.dataPublicacao,
-      oabDestino: schema.comunicacoes.oabDestino,
-      inteiroTeor: schema.comunicacoes.inteiroTeor,
-      processada: schema.comunicacoes.processada,
-      numeroProcesso: schema.comunicacoes.numeroProcesso,
-      numeroCnj: schema.processos.numeroCnj,
-      temPrazo: sql<boolean>`false`,
-    })
-    .from(schema.comunicacoes)
-    .leftJoin(schema.processos, eq(schema.comunicacoes.processoId, schema.processos.id))
-    .where(pendenteSql)
-    .orderBy(desc(schema.comunicacoes.dataDisponibilizacao))
-    .limit(limite);
   return rows as IntimacaoRow[];
 }
 

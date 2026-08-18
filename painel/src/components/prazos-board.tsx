@@ -49,6 +49,12 @@ export function PrazosBoard({ prazos }: { prazos: PrazoRow[] }) {
     });
   }
 
+  // A lista já vem ordenada do banco (a cumprir primeiro). A separação aqui é visual: o que
+  // ainda dá para cumprir fica aberto; o que passou desce para um bloco recolhido, sem sumir.
+  const hoje = new Date().toISOString().slice(0, 10);
+  const aCumprir = prazos.filter((p) => p.dataFatal >= hoje);
+  const vencidos = prazos.filter((p) => p.dataFatal < hoje);
+
   if (prazos.length === 0) {
     return (
       <div className="flex flex-col items-center rounded-xl border border-dashed bg-card/40 px-6 py-14 text-center">
@@ -75,12 +81,31 @@ export function PrazosBoard({ prazos }: { prazos: PrazoRow[] }) {
         </span>
       </div>
       <StaggerGroup className="grid gap-3">
-        {prazos.map((p) => (
+        {aCumprir.map((p) => (
           <StaggerItem key={p.id}>
             <PrazoCard p={p} onConfirmar={confirmar} onCancelar={cancelar} pending={pending} />
           </StaggerItem>
         ))}
       </StaggerGroup>
+
+      {vencidos.length > 0 && (
+        <details className="rounded-lg border border-border/70 bg-card/50" open={aCumprir.length === 0}>
+          <summary className="cursor-pointer px-3 py-2 font-mono text-xs uppercase tracking-wide text-muted-foreground">
+            {vencidos.length} com a data fatal já passada
+          </summary>
+          <div className="grid gap-3 p-3 pt-0">
+            {vencidos.map((p) => (
+              <PrazoCard
+                key={p.id}
+                p={p}
+                onConfirmar={confirmar}
+                onCancelar={cancelar}
+                pending={pending}
+              />
+            ))}
+          </div>
+        </details>
+      )}
     </div>
   );
 }

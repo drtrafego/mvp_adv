@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { Inbox, BellRing } from "lucide-react";
+import { Inbox, BellRing, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { marcarCuidada } from "@/app/(app)/intimacoes/actions";
 import type { IntimacaoRow } from "@/db/queries";
 
 function dataBr(d: string | null): string {
@@ -30,14 +31,12 @@ export function IntimacoesList({ intimacoes }: { intimacoes: IntimacaoRow[] }) {
         const teor = (i.inteiroTeor ?? "").replace(/\s+/g, " ").trim();
         return (
           // O card inteiro abre o inteiro teor, no mesmo padrão de modal do resto do sistema.
-          // O link do processo, dentro dele, continua levando ao processo (por isso não é <a>
-          // aninhado: o Link do CNJ fica fora do fluxo de clique do card, com stopPropagation
-          // implícito por ser um elemento interativo próprio em cima da área clicável).
-          <Link
+          // O "cuidei" fica FORA do link (form não pode viver dentro de <a>), numa faixa própria.
+          <div
             key={i.id}
-            href={`/i/${i.id}`}
-            className="group block rounded-xl border bg-card p-4 shadow-sm shadow-black/[0.02] transition-colors hover:border-indigo-brand/30"
+            className="group rounded-xl border bg-card shadow-sm shadow-black/[0.02] transition-colors hover:border-indigo-brand/30"
           >
+          <Link href={`/i/${i.id}`} className="block p-4">
             <div className="flex items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2">
                 <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-indigo-tint text-indigo-brand">
@@ -85,6 +84,21 @@ export function IntimacoesList({ intimacoes }: { intimacoes: IntimacaoRow[] }) {
               </>
             )}
           </Link>
+
+          {/* Nem toda intimação gera prazo: ciência, mero expediente e juntada só pedem leitura. */}
+          {!i.temPrazo && i.processada !== true && (
+            <form action={marcarCuidada} className="border-t border-border/70 px-4 py-2">
+              <input type="hidden" name="id" value={i.id} />
+              <button
+                type="submit"
+                className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 font-mono text-[0.65rem] uppercase tracking-wide text-muted-foreground transition-colors hover:text-moss-brand"
+              >
+                <Check className="h-3 w-3" />
+                cuidei, não gera prazo
+              </button>
+            </form>
+          )}
+          </div>
         );
       })}
     </div>

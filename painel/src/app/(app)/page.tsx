@@ -6,17 +6,16 @@ import { ProcessosList } from "@/components/processos-list";
 import { IntimacoesSemPrazo } from "@/components/intimacoes-sem-prazo";
 import { Reveal } from "@/components/motion-primitives";
 import { bancoConectado } from "@/db";
-import { listarPrazos, listarProcessos, listarIntimacoesSemPrazo, resumo } from "@/db/queries";
+import { listarPrazos, listarProcessos, resumo } from "@/db/queries";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const conectado = bancoConectado();
-  const [dados, prazos, processos, semPrazo] = await Promise.all([
+  const [dados, prazos, processos] = await Promise.all([
     resumo(),
     listarPrazos(),
     listarProcessos(),
-    listarIntimacoesSemPrazo(),
   ]);
 
   return (
@@ -28,17 +27,12 @@ export default async function Home() {
 
         <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
           <Reveal as="section">
+            <SectionTitle icon={<Clock className="h-4 w-4" />} titulo="Prazos" subtitulo="o que precisa da sua palavra" />
             {dados.intimacoesSemPrazo > 0 && (
-              <div className="mb-8">
-                <IntimacoesSemPrazo
-                  intimacoes={semPrazo}
-                  total={dados.intimacoesSemPrazo}
-                  compacto
-                />
+              <div className="mb-3">
+                <IntimacoesSemPrazo total={dados.intimacoesSemPrazo} />
               </div>
             )}
-
-            <SectionTitle icon={<Clock className="h-4 w-4" />} titulo="Prazos" subtitulo="o que precisa da sua palavra" />
             <PrazosBoard prazos={prazos} />
           </Reveal>
 

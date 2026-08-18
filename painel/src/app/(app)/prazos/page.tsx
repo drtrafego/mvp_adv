@@ -2,16 +2,12 @@ import { CalendarClock } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { PrazosBoard } from "@/components/prazos-board";
 import { IntimacoesSemPrazo } from "@/components/intimacoes-sem-prazo";
-import { listarPrazos, listarIntimacoesSemPrazo, resumo } from "@/db/queries";
+import { listarPrazos, resumo } from "@/db/queries";
 
 export const dynamic = "force-dynamic";
 
 export default async function PrazosPage() {
-  const [prazos, semPrazo, dados] = await Promise.all([
-    listarPrazos(),
-    listarIntimacoesSemPrazo(),
-    resumo(),
-  ]);
+  const [prazos, dados] = await Promise.all([listarPrazos(), resumo()]);
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-8">
@@ -23,8 +19,8 @@ export default async function PrazosPage() {
       />
 
       {dados.intimacoesSemPrazo > 0 && (
-        <div className="mb-6">
-          <IntimacoesSemPrazo intimacoes={semPrazo} total={dados.intimacoesSemPrazo} compacto />
+        <div className="mb-4">
+          <IntimacoesSemPrazo total={dados.intimacoesSemPrazo} />
         </div>
       )}
 
