@@ -1,12 +1,18 @@
 import { CalendarClock } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { PrazosBoard } from "@/components/prazos-board";
-import { listarPrazos } from "@/db/queries";
+import { IntimacoesSemPrazo } from "@/components/intimacoes-sem-prazo";
+import { listarPrazos, listarIntimacoesSemPrazo, resumo } from "@/db/queries";
 
 export const dynamic = "force-dynamic";
 
 export default async function PrazosPage() {
-  const prazos = await listarPrazos();
+  const [prazos, semPrazo, dados] = await Promise.all([
+    listarPrazos(),
+    listarIntimacoesSemPrazo(),
+    resumo(),
+  ]);
+
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-8">
       <PageHeader
@@ -15,6 +21,13 @@ export default async function PrazosPage() {
         icone={CalendarClock}
         descricao="A máquina sugere; você confirma ou corrige. A data fatal é sempre calculada por código, nunca pela IA."
       />
+
+      {dados.intimacoesSemPrazo > 0 && (
+        <div className="mb-6">
+          <IntimacoesSemPrazo intimacoes={semPrazo} total={dados.intimacoesSemPrazo} compacto />
+        </div>
+      )}
+
       <PrazosBoard prazos={prazos} />
     </div>
   );

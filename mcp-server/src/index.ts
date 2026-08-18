@@ -63,6 +63,7 @@ import {
   upsertComunicacoes,
   salvarAnalise,
   inserirPrazoSugerido,
+  marcarComunicacaoProcessada,
   confirmarPrazo,
   editarPrazo,
   listarPrazos,
@@ -448,6 +449,13 @@ server.registerTool(
       ato: z.string().optional().describe("Descrição livre do ato, para gravar no painel."),
       tribunal: z.string().optional().describe("Sigla do tribunal, para carregar feriados forenses locais."),
       processo_id: z.string().optional().describe("ID do processo no Neon, para vincular o prazo."),
+      comunicacao_id: z
+        .string()
+        .optional()
+        .describe(
+          "ID da intimação que originou este prazo. Informe SEMPRE que o prazo nascer de uma " +
+            "intimação: é o que tira ela da fila de pendências do painel e liga o prazo à sua fonte.",
+        ),
       persistir: z.boolean().optional().describe("Gravar como prazo sugerido (padrão false)."),
     },
   },
@@ -469,6 +477,7 @@ server.registerTool(
       if (a.persistir && bancoConfigurado()) {
         const { id } = await inserirPrazoSugerido({
           processoId: a.processo_id ?? null,
+          comunicacaoId: a.comunicacao_id ?? null,
           ato: rotuloAto,
           regraAplicada: [r.dispositivo, r.dobro ? "prazo em dobro" : null]
             .filter(Boolean)
@@ -476,6 +485,11 @@ server.registerTool(
           calculo: r,
         });
         gravado = `\n\n💾 Gravado como prazo SUGERIDO (id ${id}). Confirme no painel para virar humana.`;
+        // Com o vínculo gravado, a intimação sai da fila "sem prazo" da Início e da aba Prazos.
+        if (a.comunicacao_id) {
+          await marcarComunicacaoProcessada(a.comunicacao_id);
+          gravado += `\nA intimação ${a.comunicacao_id} saiu da fila de pendências do painel.`;
+        }
       }
       const cabecalhoRito = r.rito ? ` — rito ${ROTULO_RITO[r.rito]}` : "";
       const base = r.dispositivo ? `\nBase: ${r.dispositivo}${r.fonte ? ` (${r.fonte})` : ""}` : "";

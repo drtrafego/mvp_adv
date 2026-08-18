@@ -45,6 +45,9 @@ prazo é de 5 dias, não 15** (CPC art. 218 §3º).
 5. **Chame `calcular_prazo`** com `ato_chave`, a `data_disponibilizacao` e `persistir: true`
    (grava como SUGERIDO, amarelo no painel). O código conta a data fatal, aplica o regime de
    contagem do rito e decide se o recesso incide.
+   Quando o prazo nascer de uma intimação, passe também `comunicacao_id` (e `processo_id`, se
+   houver). É esse vínculo que tira a intimação da fila "sem prazo" da Início e da aba Prazos;
+   sem ele, o painel continua cobrando a mesma intimação como pendente.
 6. **Repasse ao advogado todas as pendências** que a tool devolver em "Pendências para o
    advogado". Elas são `[CONFERIR]`: pontos de divergência real ou de termo inicial incerto.
 

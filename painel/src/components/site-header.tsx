@@ -1,12 +1,9 @@
 import Image from "next/image";
 import { StatGrid } from "@/components/stat-grid";
+import type { Resumo } from "@/db/queries";
 
 /** Hero do painel com o banner de advocacia (tira a cara de IA) e o resumo em números. */
-export function SiteHeader({
-  resumo,
-}: {
-  resumo: { totalProcessos: number; prazosAbertos: number; sugeridos: number; venceEm7Dias: number };
-}) {
+export function SiteHeader({ resumo }: { resumo: Resumo }) {
   return (
     <header className="relative isolate overflow-hidden border-b">
       <Image

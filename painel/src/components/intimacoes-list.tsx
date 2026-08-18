@@ -51,6 +51,15 @@ export function IntimacoesList({ intimacoes }: { intimacoes: IntimacaoRow[] }) {
                 {!i.processada && (
                   <Badge className="bg-amber-tint text-amber-brand text-[0.6rem] uppercase">nova</Badge>
                 )}
+                <Badge
+                  className={
+                    i.temPrazo
+                      ? "bg-moss-tint text-moss-brand text-[0.6rem] uppercase"
+                      : "bg-amber-tint text-amber-brand text-[0.6rem] uppercase"
+                  }
+                >
+                  {i.temPrazo ? "com prazo" : "sem prazo"}
+                </Badge>
                 <Badge variant="outline" className="text-[0.6rem] uppercase">
                   {i.meio ?? "DJEN"}
                 </Badge>

@@ -321,6 +321,18 @@ export async function inserirPrazoSugerido(p: NovoPrazo): Promise<{ id: string }
   return { id: row.id };
 }
 
+/**
+ * Marca a intimação como já tratada. Chamada quando o prazo dela é gravado: a comunicação
+ * deixa a fila de pendências que a Início e a aba Prazos mostram.
+ */
+export async function marcarComunicacaoProcessada(comunicacaoId: string): Promise<void> {
+  const d = getDb();
+  await d
+    .update(schema.comunicacoes)
+    .set({ processada: true })
+    .where(eq(schema.comunicacoes.id, comunicacaoId));
+}
+
 export async function confirmarPrazo(prazoId: string, editor: string): Promise<void> {
   const d = getDb();
   await d

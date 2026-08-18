@@ -197,7 +197,21 @@ export interface IntimacaoRow {
   processada: boolean | null;
   numeroProcesso: string | null;
   numeroCnj: string | null;
+  /** Já existe prazo nascido desta intimação? Se não, ela ainda espera o cálculo. */
+  temPrazo: boolean;
 }
+
+// Uma intimação "espera prazo" enquanto nenhum prazo vivo aponta para ela. Prazo cancelado
+// não conta: a intimação volta para a fila de quem precisa de análise.
+const temPrazoSql = sql<boolean>`exists (
+  select 1 from ${schema.prazos}
+  where ${schema.prazos.comunicacaoId} = ${schema.comunicacoes.id}
+    and ${schema.prazos.status} <> 'cancelado'
+)`;
+
+// A fila de pendências ignora o que o advogado já marcou como cuidado (`processada`), porque
+// nem toda intimação gera prazo: ciência, mero expediente e juntada só pedem leitura.
+const pendenteSql = sql`${schema.comunicacoes.processada} is not true and not ${temPrazoSql}`;
 
 /** Últimas intimações/comunicações (DJEN), da mais recente para a mais antiga. */
 export async function listarIntimacoes(): Promise<IntimacaoRow[]> {
@@ -214,11 +228,41 @@ export async function listarIntimacoes(): Promise<IntimacaoRow[]> {
       processada: schema.comunicacoes.processada,
       numeroProcesso: schema.comunicacoes.numeroProcesso,
       numeroCnj: schema.processos.numeroCnj,
+      temPrazo: temPrazoSql,
     })
     .from(schema.comunicacoes)
     .leftJoin(schema.processos, eq(schema.comunicacoes.processoId, schema.processos.id))
     .orderBy(desc(schema.comunicacoes.dataDisponibilizacao))
     .limit(100);
+  return rows as IntimacaoRow[];
+}
+
+/**
+ * Intimações que ainda não viraram prazo. É o elo que faltava entre as abas: a coleta grava
+ * a comunicação, mas o prazo só nasce quando o rito e o ato são identificados no terminal
+ * (skill prazos-cpc). Até lá, a intimação fica aqui, visível na Início e na aba Prazos.
+ */
+export async function listarIntimacoesSemPrazo(limite = 20): Promise<IntimacaoRow[]> {
+  if (!db) return [];
+  const rows = await db
+    .select({
+      id: schema.comunicacoes.id,
+      tipo: schema.comunicacoes.tipo,
+      meio: schema.comunicacoes.meio,
+      dataDisponibilizacao: schema.comunicacoes.dataDisponibilizacao,
+      dataPublicacao: schema.comunicacoes.dataPublicacao,
+      oabDestino: schema.comunicacoes.oabDestino,
+      inteiroTeor: schema.comunicacoes.inteiroTeor,
+      processada: schema.comunicacoes.processada,
+      numeroProcesso: schema.comunicacoes.numeroProcesso,
+      numeroCnj: schema.processos.numeroCnj,
+      temPrazo: sql<boolean>`false`,
+    })
+    .from(schema.comunicacoes)
+    .leftJoin(schema.processos, eq(schema.comunicacoes.processoId, schema.processos.id))
+    .where(pendenteSql)
+    .orderBy(desc(schema.comunicacoes.dataDisponibilizacao))
+    .limit(limite);
   return rows as IntimacaoRow[];
 }
 
@@ -310,10 +354,19 @@ export interface Resumo {
   prazosAbertos: number;
   sugeridos: number;
   venceEm7Dias: number;
+  /** Intimações coletadas que ainda não viraram prazo. */
+  intimacoesSemPrazo: number;
 }
 
 export async function resumo(): Promise<Resumo> {
-  if (!db) return { totalProcessos: 0, prazosAbertos: 0, sugeridos: 0, venceEm7Dias: 0 };
+  if (!db)
+    return {
+      totalProcessos: 0,
+      prazosAbertos: 0,
+      sugeridos: 0,
+      venceEm7Dias: 0,
+      intimacoesSemPrazo: 0,
+    };
   const hoje = new Date().toISOString().slice(0, 10);
   const daqui7 = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
   const [tp] = await db.select({ n: sql<number>`count(*)::int` }).from(schema.processos);
@@ -335,11 +388,16 @@ export async function resumo(): Promise<Resumo> {
         lte(schema.prazos.dataFatal, daqui7),
       ),
     );
+  const [isp] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(schema.comunicacoes)
+    .where(pendenteSql);
   return {
     totalProcessos: tp?.n ?? 0,
     prazosAbertos: pa?.n ?? 0,
     sugeridos: sg?.n ?? 0,
     venceEm7Dias: v7?.n ?? 0,
+    intimacoesSemPrazo: isp?.n ?? 0,
   };
 }
 
