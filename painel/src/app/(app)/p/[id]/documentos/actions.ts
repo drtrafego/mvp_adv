@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { getUsuarioAtual } from "@/lib/auth";
 import { ehCategoria } from "@/lib/documentos";
@@ -70,6 +70,28 @@ export interface DadosDocumento {
   dataDocumento?: string;
 }
 
+/**
+ * Cliente do processo por vínculo CONFIRMADO pelo advogado.
+ *
+ * É o único que autoriza colocar o documento na pasta do cliente: vínculo sugerido pela máquina
+ * não basta, porque documento na pasta do cliente errado é vazamento, e com segredo de justiça o
+ * custo é outro. NULL é preferível.
+ */
+async function clienteHumanoDoProcesso(processoId: string): Promise<string | null> {
+  const [row] = await db!
+    .select({ clienteId: schema.processoPartes.clienteId })
+    .from(schema.processoPartes)
+    .where(
+      and(
+        eq(schema.processoPartes.processoId, processoId),
+        eq(schema.processoPartes.origem, "humana"),
+      ),
+    )
+    .orderBy(desc(schema.processoPartes.principal))
+    .limit(1);
+  return row?.clienteId ?? null;
+}
+
 /** Registra o documento depois que o binário já subiu para o Blob. */
 export async function registrarDocumentoAction(dados: DadosDocumento) {
   try {
@@ -78,11 +100,14 @@ export async function registrarDocumentoAction(dados: DadosDocumento) {
     if (!ehCategoria(dados.categoria))
       return { ok: false as const, erro: `Categoria inválida: ${dados.categoria}` };
 
+    const clienteId = dados.processoId ? await clienteHumanoDoProcesso(dados.processoId) : null;
+
     const [row] = await db
       .insert(schema.documentos)
       .values({
         processoId: dados.processoId ?? null,
         pecaId: dados.pecaId ?? null,
+        clienteId,
         titulo: dados.titulo,
         tipo: dados.tipo,
         categoria: dados.categoria,

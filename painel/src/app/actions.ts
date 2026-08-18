@@ -1,8 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db, schema } from "@/db";
+import { normalizarNome, papelDoPolo, poloOposto } from "@/lib/partes";
 
 const FASES_VALIDAS = [
   "postulatoria",
@@ -252,6 +253,8 @@ export async function salvarClienteAction(
     clienteId = novo.id;
   }
 
+  // Veio do formulário: é palavra do advogado, então nasce 'humana' e o motor não sobrescreve.
+  const agora = new Date();
   await db
     .insert(schema.processoPartes)
     .values({
@@ -259,6 +262,9 @@ export async function salvarClienteAction(
       clienteId,
       papel: papelNorm,
       principal: dados.principal ?? false,
+      origem: "humana",
+      confirmadoPor: "advogado",
+      confirmadoEm: agora,
     })
     .onConflictDoUpdate({
       target: [
@@ -266,7 +272,12 @@ export async function salvarClienteAction(
         schema.processoPartes.clienteId,
         schema.processoPartes.papel,
       ],
-      set: { principal: dados.principal ?? false },
+      set: {
+        principal: dados.principal ?? false,
+        origem: "humana",
+        confirmadoPor: "advogado",
+        confirmadoEm: agora,
+      },
     });
 
   await db
@@ -276,6 +287,170 @@ export async function salvarClienteAction(
 
   revalidatePath("/");
   return { ok: true, clienteId };
+}
+
+// ============================================================================
+// Partes reconhecidas pela máquina: a decisão do advogado
+//
+// A máquina propõe (origem 'maquina', amarelo); aqui o advogado dispõe, e o vínculo vira
+// 'humana' (verde), que o motor nunca mais sobrescreve.
+// ============================================================================
+
+/** Cria ou reaproveita o cadastro do cliente, casando pela chave normalizada do nome. */
+async function acharOuCriarCliente(nome: string): Promise<string> {
+  const chave = normalizarNome(nome);
+  const cadastrados = await db!
+    .select({ id: schema.clientes.id, nome: schema.clientes.nome })
+    .from(schema.clientes);
+  const existente = cadastrados.find((c) => normalizarNome(c.nome) === chave);
+  if (existente) return existente.id;
+  const [novo] = await db!
+    .insert(schema.clientes)
+    .values({ nome })
+    .returning({ id: schema.clientes.id });
+  return novo.id;
+}
+
+/**
+ * Confirma que a parte reconhecida é quem o advogado diz que é: grava o vínculo com
+ * `origem = 'humana'` e fecha a detecção.
+ *
+ * Só as detecções do POLO OPOSTO do mesmo processo são descartadas junto: litisconsorte do mesmo
+ * polo continua pendente, porque pode ser cliente também.
+ */
+export async function confirmarParteAction(
+  parteDetectadaId: string,
+  opcoes: { papel?: string; principal?: boolean } = {},
+) {
+  if (!db) return { ok: false, erro: "Banco não conectado." };
+
+  const [det] = await db
+    .select()
+    .from(schema.partesDetectadas)
+    .where(eq(schema.partesDetectadas.id, parteDetectadaId))
+    .limit(1);
+  if (!det) return { ok: false, erro: "Detecção não encontrada." };
+
+  const papel = opcoes.papel?.trim() || det.papelSugerido || papelDoPolo(det.polo);
+  const principal = opcoes.principal ?? true;
+  const clienteId = await acharOuCriarCliente(det.nome);
+  const agora = new Date();
+
+  await db
+    .insert(schema.processoPartes)
+    .values({
+      processoId: det.processoId,
+      clienteId,
+      papel,
+      principal,
+      origem: "humana",
+      polo: det.polo,
+      confirmadoPor: "advogado",
+      confirmadoEm: agora,
+    })
+    .onConflictDoUpdate({
+      target: [
+        schema.processoPartes.processoId,
+        schema.processoPartes.clienteId,
+        schema.processoPartes.papel,
+      ],
+      set: {
+        principal,
+        origem: "humana",
+        polo: det.polo,
+        confirmadoPor: "advogado",
+        confirmadoEm: agora,
+      },
+    });
+
+  // O cache do nome na carteira só muda quando a parte confirmada é a principal: terceiro
+  // interessado não é o cliente do processo.
+  if (principal) {
+    await db
+      .update(schema.processos)
+      .set({ clienteNome: det.nome })
+      .where(eq(schema.processos.id, det.processoId));
+  }
+
+  await db
+    .update(schema.partesDetectadas)
+    .set({ status: "confirmado", clienteId, decididoPor: "advogado", decididoEm: agora })
+    .where(eq(schema.partesDetectadas.id, parteDetectadaId));
+
+  const oposto = poloOposto(det.polo);
+  if (oposto) {
+    await db
+      .update(schema.partesDetectadas)
+      .set({ status: "descartado", decididoPor: "advogado", decididoEm: agora })
+      .where(
+        and(
+          eq(schema.partesDetectadas.processoId, det.processoId),
+          eq(schema.partesDetectadas.polo, oposto),
+          eq(schema.partesDetectadas.status, "sugerido"),
+        ),
+      );
+  }
+
+  revalidatePath("/");
+  return { ok: true, clienteId };
+}
+
+/**
+ * Descarta a detecção: esta parte não é cliente do escritório.
+ *
+ * Se a máquina tinha gravado o vínculo dela (o caso do polo único que saiu errado), o vínculo de
+ * máquina é REMOVIDO e o cache do nome é limpo. Deixar o amarelo no lugar depois do advogado
+ * dizer "não é ele" seria pior que não ter deduzido nada.
+ */
+export async function descartarParteAction(parteDetectadaId: string) {
+  if (!db) return { ok: false, erro: "Banco não conectado." };
+
+  const [det] = await db
+    .select()
+    .from(schema.partesDetectadas)
+    .where(eq(schema.partesDetectadas.id, parteDetectadaId))
+    .limit(1);
+  if (!det) return { ok: false, erro: "Detecção não encontrada." };
+
+  await db
+    .update(schema.partesDetectadas)
+    .set({ status: "descartado", decididoPor: "advogado", decididoEm: new Date() })
+    .where(eq(schema.partesDetectadas.id, parteDetectadaId));
+
+  if (det.clienteId) {
+    await db
+      .delete(schema.processoPartes)
+      .where(
+        and(
+          eq(schema.processoPartes.processoId, det.processoId),
+          eq(schema.processoPartes.clienteId, det.clienteId),
+          eq(schema.processoPartes.origem, "maquina"),
+        ),
+      );
+    await db
+      .update(schema.processos)
+      .set({ clienteNome: null })
+      .where(and(eq(schema.processos.id, det.processoId), eq(schema.processos.clienteNome, det.nome)));
+  }
+
+  revalidatePath("/");
+  return { ok: true };
+}
+
+/** Confirma várias detecções de uma vez, com o papel derivado do polo de cada uma. */
+export async function confirmarPartesEmLoteAction(ids: string[]) {
+  if (!db) return { ok: false, erro: "Banco não conectado." };
+  const alvos = ids.filter(Boolean);
+  if (alvos.length === 0) return { ok: false, erro: "Nada selecionado." };
+  let confirmadas = 0;
+  const erros: string[] = [];
+  for (const id of alvos) {
+    const r = await confirmarParteAction(id);
+    if (r.ok) confirmadas++;
+    else erros.push(r.erro ?? "falha");
+  }
+  revalidatePath("/");
+  return { ok: confirmadas > 0, confirmadas, erros };
 }
 
 // ============================================================================

@@ -4,7 +4,17 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { User, Check, FolderOpen, StickyNote, FileText, Building2, Bot } from "lucide-react";
+import {
+  User,
+  Check,
+  FolderOpen,
+  StickyNote,
+  FileText,
+  Building2,
+  Bot,
+  Paperclip,
+  ShieldCheck,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,10 +25,19 @@ import { atualizarClienteAction, adicionarAnotacaoClienteAction } from "@/app/ac
 import type { DetalheCliente } from "@/db/queries";
 
 type Processo = DetalheCliente["processos"][number];
+type Documento = DetalheCliente["documentos"][number];
 type Peca = DetalheCliente["pecas"][number];
 
+function formatarDataHora(d: Date | string | null): string {
+  if (!d) return "-";
+  const data = new Date(d);
+  if (Number.isNaN(data.getTime())) return "-";
+  return data.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+}
+
 export function ClienteDetalhe({ detalhe }: { detalhe: DetalheCliente }) {
-  const { cliente, processos, anotacoes, pecas } = detalhe;
+  const { cliente, processos, documentos, anotacoes, pecas } = detalhe;
+  const sugeridos = processos.filter((p) => p.vinculo === "maquina").length;
 
   return (
     <div className="flex flex-col">
@@ -36,6 +55,18 @@ export function ClienteDetalhe({ detalhe }: { detalhe: DetalheCliente }) {
             )}
           </div>
         </div>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+          <span>
+            {processos.length} {processos.length === 1 ? "processo" : "processos"} ·{" "}
+            {documentos.length} {documentos.length === 1 ? "documento" : "documentos"}
+          </span>
+          {/* Amarelo: vínculo deduzido pela máquina, ainda esperando a palavra do advogado. */}
+          {sugeridos > 0 && (
+            <Badge className="border border-amber-brand/30 bg-amber-tint text-[0.6rem] uppercase text-amber-brand">
+              <Bot className="mr-1 h-3 w-3" /> {sugeridos} vínculo(s) sugerido(s)
+            </Badge>
+          )}
+        </div>
       </div>
 
       <Tabs defaultValue="dados" className="px-4 pb-6 sm:px-6">
@@ -46,11 +77,14 @@ export function ClienteDetalhe({ detalhe }: { detalhe: DetalheCliente }) {
           <TabsTrigger value="processos">
             <FolderOpen /> Processos
           </TabsTrigger>
-          <TabsTrigger value="anotacoes">
-            <StickyNote /> Anotações
+          <TabsTrigger value="documentos">
+            <Paperclip /> Documentos
           </TabsTrigger>
           <TabsTrigger value="pecas">
             <FileText /> Peças
+          </TabsTrigger>
+          <TabsTrigger value="anotacoes">
+            <StickyNote /> Anotações
           </TabsTrigger>
         </TabsList>
 
@@ -59,6 +93,9 @@ export function ClienteDetalhe({ detalhe }: { detalhe: DetalheCliente }) {
         </TabsContent>
         <TabsContent value="processos">
           <ListaProcessos processos={processos} />
+        </TabsContent>
+        <TabsContent value="documentos">
+          <ListaDocumentos documentos={documentos} />
         </TabsContent>
         <TabsContent value="anotacoes">
           <AnotacoesBloco
@@ -148,18 +185,90 @@ function ListaProcessos({ processos }: { processos: Processo[] }) {
         <li key={p.id}>
           <Link
             href={`/p/${p.id}`}
-            className="flex items-center justify-between gap-3 rounded-xl border bg-card p-3 text-sm transition-colors hover:bg-muted/40"
+            className={`flex items-center justify-between gap-3 rounded-xl border p-3 text-sm transition-colors hover:bg-muted/40 ${
+              p.vinculo === "maquina" ? "border-amber-brand/40 bg-amber-tint/40" : "bg-card"
+            }`}
           >
             <span className="flex min-w-0 items-center gap-2">
               <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
               <span className="truncate font-mono">{p.numeroCnj}</span>
+              {p.papel && (
+                <span className="shrink-0 text-xs text-muted-foreground">{p.papel}</span>
+              )}
             </span>
-            <Badge variant="outline" className="shrink-0 text-[0.6rem] uppercase">
-              {p.status ?? "ativo"}
-            </Badge>
+            <span className="flex shrink-0 items-center gap-1.5">
+              {p.vinculo === "maquina" && (
+                <Badge className="border border-amber-brand/30 bg-amber-tint text-[0.6rem] uppercase text-amber-brand">
+                  <Bot className="mr-1 h-3 w-3" /> sugerido
+                </Badge>
+              )}
+              {p.vinculo === "humana" && (
+                <ShieldCheck className="h-3.5 w-3.5 text-moss-brand" aria-label="vínculo confirmado" />
+              )}
+              {/* Legado: o processo casa só pelo nome no cache, sem vínculo relacional. */}
+              {p.vinculo === "nome" && (
+                <Badge variant="outline" className="text-[0.6rem] uppercase">
+                  vínculo só por nome
+                </Badge>
+              )}
+              <Badge variant="outline" className="text-[0.6rem] uppercase">
+                {p.status ?? "ativo"}
+              </Badge>
+            </span>
           </Link>
         </li>
       ))}
+    </ul>
+  );
+}
+
+/** A pasta do cliente: documento do processo, da peça ou anexado direto a ele. */
+function ListaDocumentos({ documentos }: { documentos: Documento[] }) {
+  if (documentos.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed bg-card/40 px-5 py-8 text-center text-sm text-muted-foreground">
+        Nenhum documento na pasta deste cliente. Os documentos entram pelos processos vinculados,
+        pelas peças, ou anexados direto ao cliente.
+      </div>
+    );
+  }
+  return (
+    <ul className="space-y-2">
+      {documentos.map((d) => {
+        const linha = (
+          <>
+            <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+              <FileText className="h-4 w-4" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-medium">
+                {d.titulo ?? "documento sem título"}
+              </span>
+              <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                {d.categoria && <span className="capitalize">{d.categoria}</span>}
+                {d.numeroCnj && <span className="font-mono">· {d.numeroCnj}</span>}
+                {d.pecaId && !d.processoId && <span>· peça</span>}
+                <span>· {formatarDataHora(d.dataDocumento ?? d.createdAt)}</span>
+                {d.tamanhoBytes ? <span>· {(d.tamanhoBytes / 1024).toFixed(0)} KB</span> : null}
+              </span>
+            </span>
+          </>
+        );
+        return (
+          <li key={d.id}>
+            {d.processoId ? (
+              <Link
+                href={`/p/${d.processoId}/doc/${d.id}`}
+                className="flex items-start gap-3 rounded-xl border bg-card p-3 transition-colors hover:bg-muted/40"
+              >
+                {linha}
+              </Link>
+            ) : (
+              <div className="flex items-start gap-3 rounded-xl border bg-card p-3">{linha}</div>
+            )}
+          </li>
+        );
+      })}
     </ul>
   );
 }

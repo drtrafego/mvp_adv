@@ -90,7 +90,9 @@ export async function POST(request: Request): Promise<Response> {
         };
       },
       onUploadCompleted: async () => {
-        // Webhook não funciona em localhost sem túnel; o registro é feito pela action.
+        // Webhook não funciona em localhost sem túnel; o registro é feito pela action
+        // registrarDocumentoAction, que é também quem decide a pasta do cliente (só com vínculo
+        // `origem = 'humana'`). Aqui nada é gravado no banco.
       },
     });
     return Response.json(resultado);

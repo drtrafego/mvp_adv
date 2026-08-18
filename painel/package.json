@@ -10,7 +10,8 @@
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
     "criar-advogado": "node --experimental-strip-types scripts/criar-advogado.mts",
-    "migrar": "node --experimental-strip-types scripts/aplicar-migracao.mts"
+    "migrar": "node --experimental-strip-types scripts/aplicar-migracao.mts",
+    "conferir-vinculo": "node --experimental-strip-types scripts/conferir-vinculo-cliente.mts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

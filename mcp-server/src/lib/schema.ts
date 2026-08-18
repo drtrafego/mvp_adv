@@ -27,6 +27,11 @@ export const processos = pgTable("processos", {
   orgaoJulgador: text("orgao_julgador"),
   valorCausa: numeric("valor_causa"),
   grau: text("grau"),
+  /**
+   * DEPRECADA: a API Pública do DataJud não devolve as partes do processo, então esta coluna
+   * nasceu sem fonte e está NULL em toda a carteira. Não leia daqui: use `partesDetectadas`
+   * (o que a máquina reconheceu) e `processoPartes` (o vínculo com o cliente).
+   */
   partes: jsonb("partes"),
   clienteNome: text("cliente_nome"),
   fase: text("fase").default("postulatoria"),
@@ -132,12 +137,19 @@ export const documentos = pgTable(
     dataDocumento: date("data_documento"),
     /** Caso NOVO: a inicial ainda não tem processo, então o documento fica preso à peça. */
     pecaId: uuid("peca_id"),
+    /**
+     * Pasta do cliente. Só é preenchido a partir de vínculo `processo_partes` com
+     * `origem = 'humana'`: vínculo de máquina não basta, porque documento na pasta do cliente
+     * errado é vazamento. NULL é preferível.
+     */
+    clienteId: uuid("cliente_id").references(() => clientes.id),
     excluidoEm: timestamp("excluido_em", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   (t) => ({
     idxProc: index("idx_docs_proc").on(t.processoId, t.categoria, t.createdAt),
     idxPeca: index("idx_docs_peca").on(t.pecaId, t.categoria, t.createdAt),
+    idxCliente: index("idx_docs_cliente").on(t.clienteId, t.categoria, t.createdAt),
   }),
 );
 
@@ -209,6 +221,10 @@ export const clientes = pgTable(
 );
 
 // Vínculo processo <-> cliente com o papel (autor, réu, terceiro, etc).
+//
+// A regra de ouro vale aqui: `origem = 'maquina'` é o vínculo que o motor deduziu do polo único
+// das intimações (amarelo no painel); `origem = 'humana'` é palavra do advogado, e o motor nunca
+// sobrescreve nem toca no processo que já tem um.
 export const processoPartes = pgTable(
   "processo_partes",
   {
@@ -221,8 +237,53 @@ export const processoPartes = pgTable(
       .notNull(),
     papel: text("papel").notNull(),
     principal: boolean("principal").default(false),
+    /** maquina (sugerido, amarelo) | humana (confirmado, verde). */
+    origem: text("origem").default("humana"),
+    /** Polo como o DJEN devolve: A (ativo) ou P (passivo). */
+    polo: text("polo"),
+    confirmadoPor: text("confirmado_por"),
+    confirmadoEm: timestamp("confirmado_em", { withTimezone: true }),
   },
   (t) => ({ uniq: unique("processo_partes_unique").on(t.processoId, t.clienteId, t.papel) }),
+);
+
+// O que a máquina reconheceu como parte do processo, antes de virar cliente.
+//
+// Fonte: `comunicacoes.destinatarios` (djen_destinatario) ou a qualificação lida no inteiro teor
+// da intimação (teor_intimacao). Confiança 'alta' só quando TODAS as comunicações do processo
+// intimam um único polo; com destinatário dos dois polos tudo cai para 'baixa' e nada é gravado
+// em `clientes` nem em `processo_partes`, porque exibir a parte contrária como cliente é pior
+// que campo vazio.
+export const partesDetectadas = pgTable(
+  "partes_detectadas",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    processoId: uuid("processo_id")
+      .references(() => processos.id, { onDelete: "cascade" })
+      .notNull(),
+    comunicacaoId: uuid("comunicacao_id").references(() => comunicacoes.id),
+    /** Nome exatamente como veio da fonte. NUNCA é alterado. */
+    nome: text("nome").notNull(),
+    /** Nome normalizado (maiúsculas, sem acento, sufixo societário padronizado). */
+    nomeChave: text("nome_chave").notNull(),
+    /** A (polo ativo) | P (polo passivo). */
+    polo: text("polo"),
+    papelSugerido: text("papel_sugerido"),
+    /** djen_destinatario | teor_intimacao | manual. */
+    fonte: text("fonte").notNull(),
+    /** alta | media | baixa. */
+    confianca: text("confianca").notNull().default("baixa"),
+    eClienteSugerido: boolean("e_cliente_sugerido").notNull().default(false),
+    justificativa: text("justificativa"),
+    trechoFonte: text("trecho_fonte"),
+    /** sugerido | confirmado | descartado. Confirmado é palavra do humano. */
+    status: text("status").notNull().default("sugerido"),
+    clienteId: uuid("cliente_id").references(() => clientes.id),
+    decididoPor: text("decidido_por"),
+    decididoEm: timestamp("decidido_em", { withTimezone: true }),
+    criadoEm: timestamp("criado_em", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({ idxFila: index("idx_partes_det_fila").on(t.status, t.confianca, t.criadoEm) }),
 );
 
 export const prazos = pgTable(

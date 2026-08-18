@@ -59,7 +59,28 @@ export interface ProcessoRow {
   status: string | null;
   ultimaSincronizacao: Date | null;
   arquivadoEm: Date | null;
+  /**
+   * De onde veio o cliente exibido: 'humana' (o advogado confirmou, verde), 'maquina' (o motor
+   * deduziu do polo único das intimações, amarelo) ou null (só o nome no cache, sem vínculo).
+   */
+  clienteOrigem: string | null;
 }
+
+/**
+ * Origem do vínculo processo <-> cliente. Vínculo humano manda: se existe um, é ele que aparece,
+ * porque é o que o advogado confirmou.
+ *
+ * Escrita com nome de tabela literal, e não interpolando as colunas do schema: em query de UMA
+ * tabela o Drizzle renderiza a coluna sem o prefixo da tabela, e a subconsulta correlacionada
+ * viraria `where "processo_id" = "id"`, comparando duas colunas da própria subconsulta. Não dá
+ * erro, só devolve NULL sempre, que é o pior tipo de defeito.
+ */
+const clienteOrigemSql = sql<string | null>`(
+  select pp.origem from processo_partes pp
+  where pp.processo_id = processos.id
+  order by (pp.origem = 'humana') desc, pp.principal desc nulls last
+  limit 1
+)`;
 
 /** Lista processos não excluídos (soft-delete), do mais recente ao mais antigo. */
 export async function listarProcessos(): Promise<ProcessoRow[]> {
@@ -75,6 +96,7 @@ export async function listarProcessos(): Promise<ProcessoRow[]> {
       status: schema.processos.status,
       ultimaSincronizacao: schema.processos.ultimaSincronizacao,
       arquivadoEm: schema.processos.arquivadoEm,
+      clienteOrigem: clienteOrigemSql,
     })
     .from(schema.processos)
     .where(isNull(schema.processos.excluidoEm))
@@ -87,7 +109,10 @@ export interface DetalheProcesso {
   processo: typeof schema.processos.$inferSelect;
   prazos: (typeof schema.prazos.$inferSelect)[];
   movimentacoes: (typeof schema.movimentacoes.$inferSelect)[];
-  documentos: Omit<typeof schema.documentos.$inferSelect, "texto" | "excluidoEm" | "pecaId">[];
+  documentos: Omit<
+    typeof schema.documentos.$inferSelect,
+    "texto" | "excluidoEm" | "pecaId" | "clienteId"
+  >[];
   anotacoes: (typeof schema.anotacoes.$inferSelect)[];
   comunicacoes: (typeof schema.comunicacoes.$inferSelect)[];
   pecas: (typeof schema.pecas.$inferSelect)[];
@@ -95,6 +120,12 @@ export interface DetalheProcesso {
     parte: typeof schema.processoPartes.$inferSelect;
     cliente: typeof schema.clientes.$inferSelect | null;
   }[];
+  /**
+   * O que a máquina reconheceu dos destinatários das intimações, ainda sem decisão do advogado.
+   * Não vem de `processos.partes` (jsonb): aquela coluna é DEPRECADA, porque a API pública do
+   * DataJud não devolve partes e ela nasceu vazia.
+   */
+  partesDetectadas: (typeof schema.partesDetectadas.$inferSelect)[];
   fases: (typeof schema.fasesProcesso.$inferSelect)[];
 }
 
@@ -162,6 +193,16 @@ export async function detalheProcesso(id: string): Promise<DetalheProcesso | nul
     .where(eq(schema.processoPartes.processoId, id))
     .orderBy(desc(schema.processoPartes.principal));
 
+  const partesDetectadas = await db
+    .select()
+    .from(schema.partesDetectadas)
+    .where(eq(schema.partesDetectadas.processoId, id))
+    .orderBy(
+      sql`case ${schema.partesDetectadas.status} when 'sugerido' then 0 else 1 end`,
+      sql`case ${schema.partesDetectadas.confianca} when 'alta' then 0 when 'media' then 1 else 2 end`,
+      asc(schema.partesDetectadas.nome),
+    );
+
   const fases = await db
     .select()
     .from(schema.fasesProcesso)
@@ -189,6 +230,7 @@ export async function detalheProcesso(id: string): Promise<DetalheProcesso | nul
     comunicacoes,
     pecas,
     partes: partesRows,
+    partesDetectadas,
     fases,
   };
 }
@@ -386,17 +428,43 @@ export interface ClienteRow {
   nome: string;
   clienteId: string | null;
   totalProcessos: number;
+  /** Processos ligados a este cliente por vínculo de MÁQUINA, ainda esperando confirmação. */
+  processosSugeridos: number;
 }
 
 /**
  * Clientes da carteira: une os cadastrados na tabela `clientes` (ex.: importados de planilha) com
  * os nomes que aparecem só nos processos, sem duplicar, conta os processos de cada um e traz o
  * `clienteId` quando o cliente tem cadastro (necessário para abrir o detalhe em /c/[id]).
+ *
+ * A contagem é pelo VÍNCULO relacional (`processo_partes`). O caminho antigo, por igualdade de
+ * nome, continua valendo só para o processo que ainda não tem vínculo nenhum: enquanto existir
+ * processo assim, tirar o fallback faria a carteira do cliente parecer vazia.
  */
 export async function listarClientes(): Promise<ClienteRow[]> {
   if (!db) return [];
   const res = await db.execute(sql`
-    SELECT todos.nome AS nome, todos.cliente_id AS "clienteId", count(p.id)::int AS "totalProcessos"
+    SELECT
+      todos.nome AS nome,
+      todos.cliente_id AS "clienteId",
+      (
+        SELECT count(*)::int FROM processos p
+        WHERE p.excluido_em IS NULL AND (
+          EXISTS (
+            SELECT 1 FROM processo_partes pp
+            WHERE pp.processo_id = p.id AND pp.cliente_id = todos.cliente_id
+          )
+          OR (
+            p.cliente_nome = todos.nome
+            AND NOT EXISTS (SELECT 1 FROM processo_partes x WHERE x.processo_id = p.id)
+          )
+        )
+      ) AS "totalProcessos",
+      (
+        SELECT count(*)::int FROM processo_partes pp
+        JOIN processos p ON p.id = pp.processo_id AND p.excluido_em IS NULL
+        WHERE pp.cliente_id = todos.cliente_id AND pp.origem = 'maquina'
+      ) AS "processosSugeridos"
     FROM (
       SELECT nome, id AS cliente_id FROM clientes WHERE nome IS NOT NULL AND nome <> ''
       UNION ALL
@@ -404,12 +472,83 @@ export async function listarClientes(): Promise<ClienteRow[]> {
         WHERE cliente_nome IS NOT NULL AND cliente_nome <> '' AND excluido_em IS NULL
           AND cliente_nome NOT IN (SELECT nome FROM clientes WHERE nome IS NOT NULL AND nome <> '')
     ) todos
-    LEFT JOIN processos p ON p.cliente_nome = todos.nome AND p.excluido_em IS NULL
-    GROUP BY todos.nome, todos.cliente_id
     ORDER BY todos.nome
   `);
   const rows = (Array.isArray(res) ? res : (res as { rows?: unknown[] }).rows) ?? [];
   return rows as ClienteRow[];
+}
+
+export interface ParteAConfirmar {
+  id: string;
+  processoId: string;
+  numeroCnj: string;
+  classe: string | null;
+  tribunal: string;
+  nome: string;
+  polo: string | null;
+  papelSugerido: string | null;
+  fonte: string;
+  confianca: string;
+  eClienteSugerido: boolean;
+  justificativa: string | null;
+  trechoFonte: string | null;
+  clienteId: string | null;
+  /** Trecho do inteiro teor da intimação de origem, para o advogado conferir sem sair da fila. */
+  teor: string | null;
+}
+
+/**
+ * A fila de decisão: o que a máquina reconheceu e ninguém confirmou ainda.
+ *
+ * Confiança 'alta' significa polo único em todas as intimações do processo, e nesse caso o
+ * cliente já está gravado como sugestão (amarelo). 'baixa' e 'media' significam que os dois polos
+ * foram intimados: nada foi gravado, de propósito.
+ */
+export async function partesAConfirmar(): Promise<ParteAConfirmar[]> {
+  if (!db) return [];
+  const rows = await db
+    .select({
+      id: schema.partesDetectadas.id,
+      processoId: schema.partesDetectadas.processoId,
+      numeroCnj: schema.processos.numeroCnj,
+      classe: schema.processos.classe,
+      tribunal: schema.processos.tribunal,
+      nome: schema.partesDetectadas.nome,
+      polo: schema.partesDetectadas.polo,
+      papelSugerido: schema.partesDetectadas.papelSugerido,
+      fonte: schema.partesDetectadas.fonte,
+      confianca: schema.partesDetectadas.confianca,
+      eClienteSugerido: schema.partesDetectadas.eClienteSugerido,
+      justificativa: schema.partesDetectadas.justificativa,
+      trechoFonte: schema.partesDetectadas.trechoFonte,
+      clienteId: schema.partesDetectadas.clienteId,
+      // Tira as tags (parte das intimações vem em HTML) e colapsa o espaço. Classe POSIX em vez
+      // de '\s+': a barra invertida não sobrevive ao template do Drizzle e o padrão chegava ao
+      // Postgres como 's+', que apagava todo "s" do teor.
+      teor: sql<string | null>`(
+        select left(
+          regexp_replace(
+            regexp_replace(coalesce(c.inteiro_teor, ''), '<[^>]*>', ' ', 'g'),
+            '[[:space:]]+', ' ', 'g'
+          ), 2000)
+        from comunicacoes c
+        where c.processo_id = ${schema.partesDetectadas.processoId}
+          and (${schema.partesDetectadas.comunicacaoId} is null
+               or c.id = ${schema.partesDetectadas.comunicacaoId})
+        order by c.data_disponibilizacao desc nulls last
+        limit 1
+      )`,
+    })
+    .from(schema.partesDetectadas)
+    .innerJoin(schema.processos, eq(schema.partesDetectadas.processoId, schema.processos.id))
+    .where(and(eq(schema.partesDetectadas.status, "sugerido"), isNull(schema.processos.excluidoEm)))
+    .orderBy(
+      sql`case ${schema.partesDetectadas.confianca} when 'alta' then 0 when 'media' then 1 else 2 end`,
+      schema.processos.numeroCnj,
+      asc(schema.partesDetectadas.nome),
+    )
+    .limit(300);
+  return rows as ParteAConfirmar[];
 }
 
 export interface Resumo {
@@ -421,6 +560,10 @@ export interface Resumo {
   intimacoesSemPrazo: number;
   /** Intimações não cuidadas que ninguém leu ainda: nem análise, nem baixa. */
   intimacoesSemAnalise: number;
+  /** Partes reconhecidas pela máquina esperando a decisão do advogado. */
+  partesAConfirmar: number;
+  /** Vínculos processo <-> cliente gravados pela máquina, ainda não confirmados (amarelo). */
+  clientesSugeridos: number;
 }
 
 export async function resumo(): Promise<Resumo> {
@@ -432,6 +575,8 @@ export async function resumo(): Promise<Resumo> {
       venceEm7Dias: 0,
       intimacoesSemPrazo: 0,
       intimacoesSemAnalise: 0,
+      partesAConfirmar: 0,
+      clientesSugeridos: 0,
     };
   const hoje = new Date().toISOString().slice(0, 10);
   const daqui7 = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
@@ -462,6 +607,14 @@ export async function resumo(): Promise<Resumo> {
     .select({ n: sql<number>`count(*)::int` })
     .from(schema.comunicacoes)
     .where(sql`${schema.comunicacoes.processada} is not true and not ${temAnaliseSql}`);
+  const [pac] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(schema.partesDetectadas)
+    .where(eq(schema.partesDetectadas.status, "sugerido"));
+  const [cls] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(schema.processoPartes)
+    .where(eq(schema.processoPartes.origem, "maquina"));
   return {
     totalProcessos: tp?.n ?? 0,
     prazosAbertos: pa?.n ?? 0,
@@ -469,6 +622,8 @@ export async function resumo(): Promise<Resumo> {
     venceEm7Dias: v7?.n ?? 0,
     intimacoesSemPrazo: isp?.n ?? 0,
     intimacoesSemAnalise: isa?.n ?? 0,
+    partesAConfirmar: pac?.n ?? 0,
+    clientesSugeridos: cls?.n ?? 0,
   };
 }
 
@@ -578,14 +733,116 @@ export async function detalhePeca(id: string) {
 // Detalhe de cliente e de prazo (modais)
 // ============================================================================
 
+export interface ProcessoDoCliente extends ProcessoRow {
+  /**
+   * humana: o advogado confirmou o vínculo. maquina: o motor deduziu do polo único (amarelo).
+   * nome: não há vínculo relacional, o processo só bate pelo cache `cliente_nome` (legado).
+   */
+  vinculo: "humana" | "maquina" | "nome";
+  papel: string | null;
+}
+
+export interface DocumentoDoCliente {
+  id: string;
+  titulo: string | null;
+  tipo: string | null;
+  categoria: string | null;
+  tamanhoBytes: number | null;
+  paginas: number | null;
+  extracaoStatus: string | null;
+  descricao: string | null;
+  dataDocumento: string | null;
+  createdAt: Date | null;
+  processoId: string | null;
+  numeroCnj: string | null;
+  pecaId: string | null;
+  /** processo | peca | direto: por onde o documento chegou à pasta do cliente. */
+  via: string;
+}
+
 export interface DetalheCliente {
   cliente: typeof schema.clientes.$inferSelect;
-  processos: ProcessoRow[];
+  processos: ProcessoDoCliente[];
+  documentos: DocumentoDoCliente[];
   anotacoes: (typeof schema.anotacoes.$inferSelect)[];
   pecas: (typeof schema.pecas.$inferSelect)[];
 }
 
-/** Cliente + processos vinculados (por nome) + anotações + peças, para o modal. */
+/**
+ * Processos do cliente pelo VÍNCULO relacional (`processo_partes`), com o caminho antigo (nome
+ * igual em `processos.cliente_nome`) como rede de segurança, marcado como 'nome'. O fallback só
+ * pega processo que não tem vínculo nenhum: quando toda a carteira estiver vinculada, ele para de
+ * devolver linha sozinho.
+ */
+async function processosDoCliente(clienteId: string, nome: string): Promise<ProcessoDoCliente[]> {
+  if (!db) return [];
+  const res = await db.execute(sql`
+    SELECT p.id, p.numero_cnj AS "numeroCnj", p.cliente_nome AS "clienteNome", p.classe,
+           p.tribunal, p.fase, p.status,
+           p.ultima_sincronizacao AS "ultimaSincronizacao", p.arquivado_em AS "arquivadoEm",
+           CASE WHEN pp.id IS NULL THEN 'nome' ELSE coalesce(pp.origem, 'humana') END AS vinculo,
+           CASE WHEN pp.id IS NULL THEN 'humana' ELSE coalesce(pp.origem, 'humana') END AS "clienteOrigem",
+           pp.papel AS papel
+    FROM processos p
+    LEFT JOIN processo_partes pp ON pp.processo_id = p.id AND pp.cliente_id = ${clienteId}
+    WHERE p.excluido_em IS NULL
+      AND (
+        pp.id IS NOT NULL
+        OR (
+          p.cliente_nome = ${nome}
+          AND NOT EXISTS (SELECT 1 FROM processo_partes x WHERE x.processo_id = p.id)
+        )
+      )
+    ORDER BY p.ultima_sincronizacao DESC NULLS LAST
+  `);
+  const rows = (Array.isArray(res) ? res : (res as { rows?: unknown[] }).rows) ?? [];
+  return rows as ProcessoDoCliente[];
+}
+
+/**
+ * A pasta do cliente: os três caminhos por onde um documento chega até ele, sem a coluna `texto`
+ * (ela tem megabytes e não se lê na tela).
+ *
+ * 1. documentos dos processos do cliente (via `processo_partes`);
+ * 2. documentos presos às peças do cliente (caso novo, ainda sem processo);
+ * 3. documentos com `cliente_id` direto (preenchido só a partir de vínculo humano).
+ */
+export async function documentosDoCliente(clienteId: string): Promise<DocumentoDoCliente[]> {
+  if (!db) return [];
+  const res = await db.execute(sql`
+    SELECT DISTINCT ON (d.id)
+      d.id, d.titulo, d.tipo, d.categoria,
+      d.tamanho_bytes AS "tamanhoBytes", d.paginas,
+      d.extracao_status AS "extracaoStatus", d.descricao,
+      d.data_documento AS "dataDocumento", d.created_at AS "createdAt",
+      d.processo_id AS "processoId", p.numero_cnj AS "numeroCnj", d.peca_id AS "pecaId",
+      CASE
+        WHEN d.cliente_id = ${clienteId} THEN 'direto'
+        WHEN d.peca_id IS NOT NULL AND pe.cliente_id = ${clienteId} THEN 'peca'
+        ELSE 'processo'
+      END AS via
+    FROM documentos d
+    LEFT JOIN processos p ON p.id = d.processo_id
+    LEFT JOIN pecas pe ON pe.id = d.peca_id
+    WHERE d.excluido_em IS NULL
+      AND (
+        d.cliente_id = ${clienteId}
+        OR pe.cliente_id = ${clienteId}
+        OR EXISTS (
+          SELECT 1 FROM processo_partes pp
+          WHERE pp.processo_id = d.processo_id AND pp.cliente_id = ${clienteId}
+        )
+      )
+    ORDER BY d.id, d.created_at DESC
+  `);
+  const rows = ((Array.isArray(res) ? res : (res as { rows?: unknown[] }).rows) ??
+    []) as DocumentoDoCliente[];
+  return rows.sort(
+    (a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime(),
+  );
+}
+
+/** Cliente + processos vinculados + documentos + anotações + peças: a pasta do cliente. */
 export async function detalheCliente(id: string): Promise<DetalheCliente | null> {
   if (!db) return null;
   const [cliente] = await db
@@ -595,21 +852,8 @@ export async function detalheCliente(id: string): Promise<DetalheCliente | null>
     .limit(1);
   if (!cliente) return null;
 
-  const processos = (await db
-    .select({
-      id: schema.processos.id,
-      numeroCnj: schema.processos.numeroCnj,
-      clienteNome: schema.processos.clienteNome,
-      classe: schema.processos.classe,
-      tribunal: schema.processos.tribunal,
-      fase: schema.processos.fase,
-      status: schema.processos.status,
-      ultimaSincronizacao: schema.processos.ultimaSincronizacao,
-      arquivadoEm: schema.processos.arquivadoEm,
-    })
-    .from(schema.processos)
-    .where(and(isNull(schema.processos.excluidoEm), eq(schema.processos.clienteNome, cliente.nome)))
-    .orderBy(desc(schema.processos.ultimaSincronizacao))) as ProcessoRow[];
+  const processos = await processosDoCliente(id, cliente.nome);
+  const documentos = await documentosDoCliente(id);
 
   const anotacoes = await db
     .select()
@@ -623,7 +867,7 @@ export async function detalheCliente(id: string): Promise<DetalheCliente | null>
     .where(eq(schema.pecas.clienteId, id))
     .orderBy(desc(schema.pecas.criadoEm));
 
-  return { cliente, processos, anotacoes, pecas };
+  return { cliente, processos, documentos, anotacoes, pecas };
 }
 
 export interface DetalhePrazo {
@@ -905,10 +1149,12 @@ export async function listarAcessos(): Promise<AcessoRow[]> {
       nome: schema.usuarios.nome,
       oab: schema.usuarios.oab,
       criadoEm: schema.usuarios.criadoEm,
+      // Tabela e coluna literais de propósito: interpolar o schema numa subconsulta que vive na
+      // lista do SELECT sem join faz o Drizzle renderizar sem o prefixo da tabela, e a correlação
+      // virava `where "usuario_id" = "id"` (duas colunas de `sessoes`), devolvendo sempre 0.
       sessoesAtivas: sql<number>`(
-        select count(*)::int from ${schema.sessoes}
-        where ${schema.sessoes.usuarioId} = ${schema.usuarios.id}
-          and ${schema.sessoes.expiraEm} > now()
+        select count(*)::int from sessoes s
+        where s.usuario_id = usuarios.id and s.expira_em > now()
       )`,
     })
     .from(schema.usuarios)

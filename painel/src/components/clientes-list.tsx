@@ -4,7 +4,7 @@ import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Users, Briefcase, UserPlus } from "lucide-react";
+import { Users, Briefcase, UserPlus, Bot } from "lucide-react";
 import { criarClienteAction } from "@/app/actions";
 import type { ClienteRow } from "@/db/queries";
 
@@ -26,9 +26,15 @@ function Conteudo({ c }: { c: ClienteRow }) {
       </span>
       <div className="min-w-0 flex-1">
         <div className="truncate font-serif text-[0.95rem] font-medium">{c.nome}</div>
-        <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+        <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
           <Briefcase className="h-3 w-3" />
           {c.totalProcessos} {c.totalProcessos === 1 ? "processo" : "processos"}
+          {/* Amarelo: vínculo deduzido pela máquina, ainda sem confirmação do advogado. */}
+          {c.processosSugeridos > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-amber-brand/30 bg-amber-tint px-1.5 py-0.5 font-mono text-[0.6rem] uppercase text-amber-brand">
+              <Bot className="h-3 w-3" /> {c.processosSugeridos} sugerido
+            </span>
+          )}
         </div>
       </div>
     </>

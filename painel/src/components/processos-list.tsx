@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FolderOpen, Building2 } from "lucide-react";
+import { FolderOpen, Building2, Bot } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { ProcessoRow } from "@/db/queries";
 
@@ -40,7 +40,15 @@ export function ProcessosList({ processos }: { processos: ProcessoRow[] }) {
               {p.status ?? "ativo"}
             </Badge>
           </div>
-          <div className="mt-1.5 font-serif text-base font-medium">{p.clienteNome ?? "sem cliente"}</div>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 font-serif text-base font-medium">
+            {p.clienteNome ?? "sem cliente"}
+            {/* Amarelo: cliente deduzido do polo único das intimações, ainda sem confirmação. */}
+            {p.clienteOrigem === "maquina" && (
+              <Badge className="border border-amber-brand/30 bg-amber-tint text-[0.55rem] uppercase text-amber-brand">
+                <Bot className="mr-1 h-3 w-3" /> sugerido
+              </Badge>
+            )}
+          </div>
           <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
             <Building2 className="h-3 w-3" />
             {p.classe ?? "-"} · {p.tribunal}

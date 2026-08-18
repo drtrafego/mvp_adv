@@ -681,6 +681,11 @@ export async function ping(): Promise<boolean> {
 
 export interface NovoDocumento {
   processoId: string;
+  /**
+   * Pasta do cliente. Só vem preenchido a partir de vínculo `origem = 'humana'`: documento na
+   * pasta do cliente errado é vazamento, e NULL é preferível.
+   */
+  clienteId?: string | null;
   titulo: string;
   tipo: string;
   categoria: string;
@@ -704,6 +709,7 @@ export async function inserirDocumento(doc: NovoDocumento): Promise<{ id: string
     .insert(schema.documentos)
     .values({
       processoId: doc.processoId,
+      clienteId: doc.clienteId ?? null,
       titulo: doc.titulo,
       tipo: doc.tipo,
       categoria: doc.categoria,
@@ -802,6 +808,10 @@ export async function textoDocumento(documentoId: string) {
 // ---------------------------------------------------------------------------
 
 /**
+ * DEPRECADA: use `listarPartesPendentes` (lib/partes.ts), que já traz o que a máquina reconheceu
+ * dos destinatários, com polo e confiança. Continua aqui porque a tool `processos_sem_cliente`
+ * ainda a usa.
+ *
  * Processos sem cliente definido, com o teor das intimações vinculadas, para o Claude ler e
  * identificar as partes. Traz só um pedaço do texto: o suficiente para achar a qualificação.
  */
@@ -839,51 +849,6 @@ export async function processosSemCliente(limite = 30): Promise<
   return saida;
 }
 
-/**
- * Cadastra (ou reaproveita) o cliente, vincula ao processo com o papel e atualiza o cache
- * `processos.clienteNome`. Reaproveita pelo documento (CPF/CNPJ) quando houver; senão, pelo nome.
- */
-export async function definirClienteProcesso(p: {
-  numeroCnj: string;
-  nome: string;
-  papel: string;
-  documento?: string | null;
-}): Promise<{ processoId: string; clienteId: string } | null> {
-  const d = getDb();
-  const processoId = await processoExistente(p.numeroCnj);
-  if (!processoId) return null;
-
-  const nome = p.nome.trim();
-  const documento = p.documento?.replace(/\D/g, "") || null;
-
-  const [existente] = await d
-    .select({ id: schema.clientes.id })
-    .from(schema.clientes)
-    .where(documento ? eq(schema.clientes.documento, documento) : eq(schema.clientes.nome, nome))
-    .limit(1);
-
-  let clienteId = existente?.id;
-  if (!clienteId) {
-    const [novo] = await d
-      .insert(schema.clientes)
-      .values({
-        nome,
-        documento,
-        tipoDocumento: documento ? (documento.length > 11 ? "CNPJ" : "CPF") : null,
-      })
-      .returning({ id: schema.clientes.id });
-    clienteId = novo.id;
-  }
-
-  await d
-    .insert(schema.processoPartes)
-    .values({ processoId, clienteId, papel: p.papel, principal: true })
-    .onConflictDoNothing();
-
-  await d
-    .update(schema.processos)
-    .set({ clienteNome: nome })
-    .where(eq(schema.processos.id, processoId));
-
-  return { processoId, clienteId };
-}
+// A gravação do cliente vive em `partes.ts` (confirmarClienteHumano): ela é a única que carimba
+// origem, polo e quem confirmou, e fecha a detecção correspondente. Ter dois caminhos gravando
+// `processo_partes` de jeitos diferentes é exatamente o defeito que a Entrega 2 corrige.

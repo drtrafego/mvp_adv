@@ -26,6 +26,7 @@ import {
   History,
   Inbox,
   Sparkles,
+  Users,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -70,7 +71,10 @@ import {
   confirmarPrazoAction,
   editarPrazoAction,
   cancelarPrazoAction,
+  confirmarParteAction,
+  descartarParteAction,
 } from "@/app/actions";
+import { rotuloPolo } from "@/lib/partes";
 import { UploadDocumento } from "@/components/processo/upload-documento";
 import { CATEGORIAS } from "@/lib/documentos";
 import { excluirDocumentoAction } from "@/app/(app)/p/[id]/documentos/actions";
@@ -81,6 +85,7 @@ type Movimentacao = DetalheProcesso["movimentacoes"][number];
 type Documento = DetalheProcesso["documentos"][number];
 type Anotacao = DetalheProcesso["anotacoes"][number];
 type Parte = DetalheProcesso["partes"][number];
+type ParteDetectada = DetalheProcesso["partesDetectadas"][number];
 type FaseHist = DetalheProcesso["fases"][number];
 
 const FASES = [
@@ -177,7 +182,11 @@ export function ProcessoDetalhe({ detalhe }: { detalhe: DetalheProcesso }) {
             <AbaAnotacoes processoId={processo.id} anotacoes={detalhe.anotacoes} />
           </TabsContent>
           <TabsContent value="cliente">
-            <AbaCliente processoId={processo.id} partes={detalhe.partes} />
+            <AbaCliente
+              processoId={processo.id}
+              partes={detalhe.partes}
+              detectadas={detalhe.partesDetectadas}
+            />
           </TabsContent>
         </Tabs>
       </div>
@@ -216,8 +225,14 @@ function Cabecalho({ detalhe }: { detalhe: DetalheProcesso }) {
           {processo.status ?? "ativo"}
         </Badge>
       </div>
-      <h2 className="mt-2 font-serif text-xl font-semibold leading-tight">
+      <h2 className="mt-2 flex flex-wrap items-center gap-2 font-serif text-xl font-semibold leading-tight">
         {processo.clienteNome ?? "sem cliente"}
+        {/* Amarelo: o cliente veio do polo único das intimações, ninguém confirmou ainda. */}
+        {detalhe.partes.length > 0 && detalhe.partes.every((p) => p.parte.origem === "maquina") && (
+          <Badge className="border border-amber-brand/30 bg-amber-tint text-[0.6rem] uppercase text-amber-brand">
+            <Bot className="mr-1 h-3 w-3" /> cliente sugerido
+          </Badge>
+        )}
       </h2>
       <p className="mt-1 font-mono text-sm text-muted-foreground">{processo.numeroCnj}</p>
       <p className="mt-0.5 text-sm text-muted-foreground">
@@ -959,7 +974,15 @@ function AnotacaoItem({ a }: { a: Anotacao }) {
 // Aba Cliente
 // ============================================================================
 
-function AbaCliente({ processoId, partes }: { processoId: string; partes: Parte[] }) {
+function AbaCliente({
+  processoId,
+  partes,
+  detectadas,
+}: {
+  processoId: string;
+  partes: Parte[];
+  detectadas: ParteDetectada[];
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -998,27 +1021,63 @@ function AbaCliente({ processoId, partes }: { processoId: string; partes: Parte[
     });
   }
 
+  const pendentes = detectadas.filter((d) => d.status === "sugerido");
+
   return (
     <div className="space-y-5">
       {partes.length > 0 && (
         <div>
           <span className="mb-2 block font-mono text-xs uppercase tracking-wide text-muted-foreground">
-            Partes do processo
+            Partes vinculadas
           </span>
           <ul className="space-y-1.5">
-            {partes.map((p) => (
-              <li key={p.parte.id} className="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm">
-                <User className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="font-medium">{p.cliente?.nome ?? "sem cadastro"}</span>
-                <Badge variant="outline" className="text-[0.6rem] uppercase">
-                  {p.parte.papel}
-                </Badge>
-                {p.parte.principal && (
-                  <Badge className="bg-moss-tint text-moss-brand border border-moss-brand/30 text-[0.6rem] uppercase">
-                    principal
+            {partes.map((p) => {
+              const daMaquina = p.parte.origem === "maquina";
+              return (
+                <li
+                  key={p.parte.id}
+                  className={`flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
+                    daMaquina ? "border-amber-brand/40 bg-amber-tint/40" : "bg-card"
+                  }`}
+                >
+                  <User className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="font-medium">{p.cliente?.nome ?? "sem cadastro"}</span>
+                  <Badge variant="outline" className="text-[0.6rem] uppercase">
+                    {p.parte.papel}
                   </Badge>
-                )}
-              </li>
+                  {p.parte.principal && (
+                    <Badge className="bg-moss-tint text-moss-brand border border-moss-brand/30 text-[0.6rem] uppercase">
+                      principal
+                    </Badge>
+                  )}
+                  {daMaquina ? (
+                    <Badge className="border border-amber-brand/30 bg-amber-tint text-[0.6rem] uppercase text-amber-brand">
+                      <Bot className="mr-1 h-3 w-3" /> sugerido
+                    </Badge>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 font-mono text-[0.65rem] uppercase tracking-wide text-moss-brand">
+                      <ShieldCheck className="h-3.5 w-3.5" /> confirmado
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      {pendentes.length > 0 && (
+        <div>
+          <span className="mb-1 block font-mono text-xs uppercase tracking-wide text-amber-brand">
+            Reconhecidas a confirmar · {pendentes.length}
+          </span>
+          <p className="mb-2 text-xs text-muted-foreground">
+            Lidas dos destinatários das intimações. Enquanto o processo tem intimação dos dois
+            polos, nada vira cliente sozinho: quem diz de que lado o escritório está é você.
+          </p>
+          <ul className="space-y-2">
+            {pendentes.map((d) => (
+              <ParteDetectadaItem key={d.id} d={d} />
             ))}
           </ul>
         </div>
@@ -1085,6 +1144,80 @@ function AbaCliente({ processoId, partes }: { processoId: string; partes: Parte[
         </Button>
       </div>
     </div>
+  );
+}
+
+/**
+ * Uma parte que a máquina reconheceu e ninguém confirmou. Três saídas, todas do advogado: é o
+ * cliente (vira vínculo humano principal), é a parte contrária (some, e o vínculo que a máquina
+ * tiver criado é removido) ou é terceiro (vínculo humano, mas não é o cliente do processo).
+ */
+function ParteDetectadaItem({ d }: { d: ParteDetectada }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+
+  function decidir(acao: "cliente" | "contraria" | "terceiro") {
+    startTransition(async () => {
+      const r =
+        acao === "contraria"
+          ? await descartarParteAction(d.id)
+          : await confirmarParteAction(d.id, {
+              papel: acao === "terceiro" ? "terceiro" : (d.papelSugerido ?? undefined),
+              principal: acao === "cliente",
+            });
+      if (r.ok) {
+        toast.success(
+          acao === "cliente"
+            ? `${d.nome} confirmado como cliente.`
+            : acao === "terceiro"
+              ? `${d.nome} registrado como terceiro.`
+              : `${d.nome} marcado como parte contrária.`,
+        );
+      } else {
+        toast.error(r.erro ?? "Falha.");
+      }
+      router.refresh();
+    });
+  }
+
+  return (
+    <li className="rounded-xl border border-amber-brand/40 bg-amber-tint/40 p-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-medium">{d.nome}</span>
+        <Badge variant="outline" className="text-[0.6rem] uppercase">
+          {rotuloPolo(d.polo)}
+        </Badge>
+        <Badge className="border border-amber-brand/30 bg-amber-tint text-[0.6rem] uppercase text-amber-brand">
+          <Bot className="mr-1 h-3 w-3" /> confiança {d.confianca}
+        </Badge>
+        {d.eClienteSugerido && (
+          <Badge variant="outline" className="text-[0.6rem] uppercase">
+            já gravado como sugestão
+          </Badge>
+        )}
+      </div>
+      {d.justificativa && (
+        <p className="mt-1.5 rounded-md border-l-2 border-amber-brand/40 bg-card/60 py-1.5 pl-3 pr-2 text-xs text-muted-foreground">
+          {d.justificativa}
+        </p>
+      )}
+      {d.trechoFonte && (
+        <p className="mt-1.5 line-clamp-3 font-mono text-[0.7rem] text-muted-foreground">
+          “{d.trechoFonte}”
+        </p>
+      )}
+      <div className="mt-2.5 flex flex-wrap gap-2">
+        <Button size="xs" onClick={() => decidir("cliente")} disabled={pending}>
+          <Check /> É o cliente
+        </Button>
+        <Button size="xs" variant="outline" onClick={() => decidir("contraria")} disabled={pending}>
+          <X /> É a parte contrária
+        </Button>
+        <Button size="xs" variant="ghost" onClick={() => decidir("terceiro")} disabled={pending}>
+          <Users /> Terceiro
+        </Button>
+      </div>
+    </li>
   );
 }
 

@@ -79,7 +79,6 @@ import {
   textoDocumento,
   processoExistente,
   processosSemCliente,
-  definirClienteProcesso,
   buscarModelos,
   salvarModelo,
   salvarPeca,
@@ -93,6 +92,15 @@ import {
   montarStoragePath,
   rotuloCategoria,
 } from "./lib/documentos.js";
+import {
+  organizarPartes,
+  resumoPartes,
+  listarPartesPendentes,
+  sugerirParteDoTeor,
+  confirmarClienteHumano,
+  clienteHumanoDoProcesso,
+  papelDoPolo,
+} from "./lib/partes.js";
 import { blobConfigurado, enviarParaBlob } from "./lib/blob.js";
 import { extrairTexto } from "./lib/extrair-texto.js";
 import { reconciliarIntimacoes } from "./lib/reconciliacao.js";
@@ -200,7 +208,9 @@ server.registerTool(
     title: "Adicionar processo à carteira",
     description:
       "Consulta o processo no DataJud e grava (ou atualiza) na carteira (Neon), junto com " +
-      "as movimentações. Opcionalmente associa o nome do cliente.",
+      "as movimentações. Reconhece as partes pelos destinatários das intimações já coletadas e, " +
+      "quando todas apontam para um único polo, grava o cliente como SUGESTÃO (amarelo). " +
+      "Opcionalmente associa o nome do cliente.",
     inputSchema: {
       numero_cnj: z.string(),
       cliente_nome: z.string().optional(),
@@ -215,9 +225,24 @@ server.registerTool(
       const p = await consultarProcesso(numero_cnj, alias_tribunal);
       const { id } = await upsertProcesso(p, cliente_nome);
       const novas = await upsertMovimentacoes(id, p.movimentacoes);
+      const { deteccao, aplicacao } = await organizarPartes(id);
+      const sobrePartes = deteccao.semFonte
+        ? "\nPartes: nenhuma intimação vinculada ainda, então não há de onde reconhecê-las " +
+          "(o DataJud não devolve partes)."
+        : aplicacao.motivo === "vinculo_humano"
+          ? `\nPartes: ${deteccao.detectadas.length} reconhecida(s). O processo já tem cliente ` +
+            `confirmado pelo advogado, então o motor não tocou no vínculo.`
+          : deteccao.poloUnico
+          ? `\nPartes: ${deteccao.detectadas.length} reconhecida(s), todas do polo ` +
+            `${deteccao.polos.join("/")}. ${aplicacao.aplicados} cliente(s) gravado(s) como ` +
+            `SUGESTÃO (amarelo): ${aplicacao.nomes.join(", ")}. Confirme no painel.`
+          : `\nPartes: ${deteccao.detectadas.length} reconhecida(s) dos dois polos ` +
+            `(${deteccao.polos.join(", ")}); nada foi gravado como cliente. Este processo entrou ` +
+            `na fila de decisão do advogado (tool partes_pendentes).`;
       return texto(
         `✓ ${p.numeroCNJ} salvo na carteira${cliente_nome ? ` (cliente: ${cliente_nome})` : ""}.\n` +
-          `${p.movimentacoes.length} movimentações no DataJud, ${novas} novas gravadas.`,
+          `${p.movimentacoes.length} movimentações no DataJud, ${novas} novas gravadas.` +
+          sobrePartes,
       );
     } catch (e) {
       return erro((e as Error).message);
@@ -372,20 +397,28 @@ server.registerTool(
         oabsAlvo: montarOabsAlvo(numero_oab, uf_oab),
       });
       const gravadas = comuns.length > 0 ? await upsertComunicacoes(comuns) : 0;
-      const { criados, vinculados } = await autocadastrarDeComunicacoes(comuns);
+      const r = await autocadastrarDeComunicacoes(comuns);
       await registrarSincronizacao("djen", {
         escopo,
         status: "ok",
         itens: comuns.length,
         novos: gravadas,
-        mensagem: `auto-cadastro: ${criados} processo(s) novo(s), ${vinculados} vinculada(s)`,
+        mensagem:
+          `auto-cadastro: ${r.criados} processo(s) novo(s), ${r.vinculados} vinculada(s), ` +
+          `${r.clientesAplicados} cliente(s) sugerido(s)`,
       });
       return texto(
         `⚙️ ${comuns.length} intimação(ões) processada(s) (${escopo})\n` +
           `  • ${gravadas} comunicação(ões) nova(s) gravada(s)\n` +
-          `  • ${criados} processo(s) novo(s) cadastrado(s) na carteira\n` +
-          `  • ${vinculados} comunicação(ões) vinculada(s) a processo\n\n` +
-          `Nenhum prazo foi criado: use o fluxo prazos-cpc + calcular_prazo para isso.`,
+          `  • ${r.criados} processo(s) novo(s) cadastrado(s) na carteira\n` +
+          `  • ${r.vinculados} comunicação(ões) vinculada(s) a processo\n` +
+          `  • ${r.partesDetectadas} parte(s) reconhecida(s) nos destinatários das intimações\n` +
+          `  • ${r.clientesAplicados} cliente(s) gravado(s) como SUGESTÃO (amarelo no painel)\n` +
+          `  • ${r.processosAConfirmar} processo(s) esperando decisão: os dois polos foram ` +
+          `intimados, então nada foi gravado como cliente\n\n` +
+          `Nenhum prazo foi criado: use o fluxo prazos-cpc + calcular_prazo para isso.\n` +
+          `Nenhum cliente foi confirmado: veja a fila com partes_pendentes, ou o advogado decide ` +
+          `no painel (Clientes > a confirmar).`,
       );
     } catch (e) {
       await registrarSincronizacao("djen", {
@@ -1214,8 +1247,14 @@ server.registerTool(
       });
       await enviarParaBlob(storagePath, dados, mime);
 
+      // Pasta do cliente só com vínculo CONFIRMADO pelo advogado. Vínculo de máquina não basta:
+      // documento na pasta do cliente errado é vazamento, e com segredo de justiça o custo é
+      // outro. NULL é preferível.
+      const clienteHumano = await clienteHumanoDoProcesso(processoId);
+
       const { id } = await inserirDocumento({
         processoId,
+        clienteId: clienteHumano?.id ?? null,
         titulo: tituloFinal,
         tipo: formato,
         categoria,
@@ -1237,10 +1276,15 @@ server.registerTool(
         extracao.status === "ok"
           ? `Texto extraído (${extracao.paginas ?? "?"} página(s)); use ler_documento para analisar.`
           : `⚠️ Sem texto utilizável: ${extracao.motivo ?? extracao.status}`;
+      const sobrePasta = clienteHumano
+        ? `Também entrou na pasta do cliente ${clienteHumano.nome}.`
+        : `Fora da pasta de cliente: este processo ainda não tem cliente CONFIRMADO pelo ` +
+          `advogado, e vínculo sugerido pela máquina não basta para arquivar documento.`;
       return texto(
         `✅ "${tituloFinal}" anexado ao processo ${formatarCNJ(numero_cnj)} como ` +
           `${rotuloCategoria(categoria)}.\n` +
           `Tamanho: ${(info.size / 1024).toFixed(0)} KB | id: ${id}\n${sobreTexto}\n` +
+          `${sobrePasta}\n` +
           `Já aparece na aba Documentos do processo, no painel.`,
       );
     } catch (e) {
@@ -1351,8 +1395,10 @@ server.registerTool(
 server.registerTool(
   "processos_sem_cliente",
   {
-    title: "Processos sem cliente identificado",
+    title: "Processos sem cliente identificado (DEPRECADA)",
     description:
+      "DEPRECADA: use partes_pendentes, que já traz o que a máquina reconheceu dos destinatários " +
+      "do DJEN, com polo e confiança. Continua funcionando para não quebrar rotina antiga.\n\n" +
       "Lista os processos da carteira que ainda não têm cliente, junto com o teor das intimações " +
       "vinculadas. Leia o teor, identifique a parte que o escritório representa (é a que tem o " +
       "advogado do escritório na qualificação) e grave com definir_cliente. Se o teor não " +
@@ -1384,13 +1430,139 @@ server.registerTool(
 );
 
 server.registerTool(
+  "partes_pendentes",
+  {
+    title: "Partes reconhecidas esperando decisão",
+    description:
+      "A fila de decisão sobre quem é o cliente. Lista o que a máquina reconheceu das intimações " +
+      "(campo `destinatarios` do DJEN, com o polo A=ativo / P=passivo) e que ainda ninguém " +
+      "confirmou, com o teor recortado ao lado.\n\n" +
+      "Como ler a confiança: 'alta' significa que TODAS as intimações do processo foram para um " +
+      "único polo, então o cliente já foi gravado como sugestão (amarelo) e só falta o advogado " +
+      "confirmar. 'baixa' ou 'media' significa que os dois polos foram intimados: aí NADA foi " +
+      "gravado como cliente, de propósito, porque exibir a parte contrária como cliente é pior " +
+      "que campo vazio.\n\n" +
+      "O que fazer com cada item: se o teor permitir concluir com segurança de que lado está o " +
+      "escritório, chame sugerir_cliente com a justificativa e o trecho que sustenta a leitura. " +
+      "Se não permitir, NÃO invente: deixe para o advogado decidir no painel.",
+    inputSchema: {
+      limite: z.number().int().positive().max(200).optional().describe("Máximo de itens (padrão 40)."),
+    },
+  },
+  async ({ limite }) => {
+    if (!bancoConfigurado()) return erro("Banco (Neon) não configurado.");
+    try {
+      const itens = await listarPartesPendentes(limite ?? 40);
+      if (itens.length === 0)
+        return texto(
+          "Nenhuma parte esperando decisão. Se a carteira tem processo sem cliente, rode " +
+            "processar_intimacoes (ou adicionar_processo) para reconhecer as partes.",
+        );
+      const porProcesso = new Map<string, typeof itens>();
+      for (const i of itens) {
+        porProcesso.set(i.numeroCnj, [...(porProcesso.get(i.numeroCnj) ?? []), i]);
+      }
+      const blocos = [...porProcesso.entries()].map(([cnj, lista]) => {
+        const linhas = lista.map(
+          (i) =>
+            `    • ${i.nome} — polo ${i.polo ?? "?"} (${i.papelSugerido ?? "parte"}) · ` +
+            `confiança ${i.confianca}${i.eClienteSugerido ? " · JÁ GRAVADO como sugestão" : ""}\n` +
+            `      id: ${i.id} · fonte: ${i.fonte}` +
+            (i.justificativa ? `\n      ${i.justificativa}` : ""),
+        );
+        const teor = lista.find((x) => x.teor)?.teor;
+        return (
+          `  ${cnj} — ${lista[0].classe ?? "classe não informada"} (processo_id ${lista[0].processoId})\n` +
+          `${linhas.join("\n")}` +
+          (teor ? `\n      [teor] ${teor}` : "")
+        );
+      });
+      return texto(
+        `👥 ${itens.length} parte(s) esperando decisão em ${porProcesso.size} processo(s):\n\n` +
+          `${blocos.join("\n\n")}\n\n` +
+          `Leu o teor e concluiu? sugerir_cliente (exige justificativa e trecho_fonte). ` +
+          `Quem confirma é o advogado: no painel (Clientes > a confirmar) ou por definir_cliente ` +
+          `com confirmado_pelo_advogado=true, quando ele ditar o nome.`,
+      );
+    } catch (e) {
+      return erro((e as Error).message);
+    }
+  },
+);
+
+server.registerTool(
+  "sugerir_cliente",
+  {
+    title: "Sugerir o cliente lido no teor da intimação",
+    description:
+      "Grava, como SUGESTÃO, a parte que você identificou lendo o inteiro teor. Não cria cliente " +
+      "nem vínculo: entra em `partes_detectadas` para o advogado decidir.\n\n" +
+      "justificativa e trecho_fonte são OBRIGATÓRIOS. O trecho é literal, copiado do teor: sem " +
+      "ele a sugestão é chute, e chute sobre quem é o cliente coloca a parte contrária na pasta " +
+      "do escritório. Se o teor não permitir concluir, não chame esta tool.",
+    inputSchema: {
+      numero_cnj: z.string().describe("Número CNJ do processo na carteira."),
+      nome: z.string().describe("Nome da parte, exatamente como consta no documento."),
+      polo: z
+        .enum(["A", "P"])
+        .optional()
+        .describe("A (ativo: autor, exequente) ou P (passivo: réu, executado), se der para saber."),
+      papel: z.string().optional().describe("Papel no processo, se o teor disser (ex.: executado)."),
+      justificativa: z.string().min(10).describe("Por que você concluiu que é esta a parte."),
+      trecho_fonte: z
+        .string()
+        .min(10)
+        .describe("Trecho LITERAL do teor que sustenta a conclusão (ex.: a qualificação da parte)."),
+      comunicacao_id: z.string().uuid().optional().describe("Intimação de onde saiu o trecho."),
+    },
+  },
+  async ({ numero_cnj, nome, polo, papel, justificativa, trecho_fonte, comunicacao_id }) => {
+    if (!bancoConfigurado()) return erro("Banco (Neon) não configurado.");
+    if (!trecho_fonte?.trim())
+      return erro(
+        "Sem trecho_fonte não dá para gravar a sugestão: é o que permite ao advogado conferir de " +
+          "onde saiu o nome.",
+      );
+    try {
+      const processoId = await processoExistente(numero_cnj);
+      if (!processoId)
+        return erro(
+          `Processo ${formatarCNJ(numero_cnj)} não está na carteira. Cadastre com ` +
+            `adicionar_processo antes.`,
+        );
+      await sugerirParteDoTeor({
+        processoId,
+        nome,
+        polo,
+        papelSugerido: papel ?? papelDoPolo(polo),
+        justificativa,
+        trechoFonte: trecho_fonte,
+        comunicacaoId: comunicacao_id,
+      });
+      return texto(
+        `📝 "${nome}" registrado como SUGESTÃO de parte em ${formatarCNJ(numero_cnj)} ` +
+          `(polo ${polo ?? "não identificado"}).\n` +
+          `Nada foi gravado em clientes nem no vínculo do processo: quem confirma é o advogado, ` +
+          `no painel (Clientes > a confirmar).`,
+      );
+    } catch (e) {
+      return erro((e as Error).message);
+    }
+  },
+);
+
+server.registerTool(
   "definir_cliente",
   {
     title: "Definir o cliente de um processo",
     description:
-      "Cadastra o cliente (ou reaproveita um já existente), vincula ao processo com o papel e " +
-      "passa a exibir o nome na carteira e nos alertas de prazo. Use o nome COMO ESTÁ no " +
-      "documento, sem abreviar nem corrigir.",
+      "Grava quem é o cliente do processo. ATENÇÃO ao parâmetro confirmado_pelo_advogado:\n\n" +
+      "- false (padrão): você está deduzindo da leitura. A chamada é roteada para sugerir_cliente " +
+      "e exige justificativa e trecho_fonte; nada entra em clientes nem em processo_partes.\n" +
+      "- true: o ADVOGADO ditou o nome nesta conversa. Aí sim o cliente é cadastrado (ou " +
+      "reaproveitado), o vínculo é gravado com origem humana e o motor nunca mais sobrescreve.\n\n" +
+      "Nunca marque true por conta própria. Use o nome COMO ESTÁ no documento, sem abreviar nem " +
+      "corrigir.",
     inputSchema: {
       numero_cnj: z.string().describe("Número CNJ do processo já cadastrado na carteira."),
       nome: z.string().describe("Nome da parte, exatamente como consta no documento."),
@@ -1398,19 +1570,81 @@ server.registerTool(
         .string()
         .describe("Papel no processo: autor, réu, exequente, executado, agravante, impetrante..."),
       documento: z.string().optional().describe("CPF ou CNPJ, se constar no documento."),
+      polo: z.enum(["A", "P"]).optional().describe("A (ativo) ou P (passivo)."),
+      confirmado_pelo_advogado: z
+        .boolean()
+        .optional()
+        .describe(
+          "true SOMENTE quando o próprio advogado ditou este nome. Padrão false (vira sugestão).",
+        ),
+      justificativa: z.string().optional().describe("Obrigatória quando não é confirmação do advogado."),
+      trecho_fonte: z
+        .string()
+        .optional()
+        .describe("Trecho literal do documento. Obrigatório quando não é confirmação do advogado."),
     },
   },
-  async ({ numero_cnj, nome, papel, documento }) => {
+  async ({
+    numero_cnj,
+    nome,
+    papel,
+    documento,
+    polo,
+    confirmado_pelo_advogado,
+    justificativa,
+    trecho_fonte,
+  }) => {
     if (!bancoConfigurado()) return erro("Banco (Neon) não configurado.");
     try {
-      const r = await definirClienteProcesso({ numeroCnj: numero_cnj, nome, papel, documento });
-      if (!r)
+      const processoId = await processoExistente(numero_cnj);
+      if (!processoId)
         return erro(
-          `Processo ${numero_cnj} não está na carteira. Cadastre com adicionar_processo antes.`,
+          `Processo ${formatarCNJ(numero_cnj)} não está na carteira. Cadastre com ` +
+            `adicionar_processo antes.`,
         );
+
+      if (!confirmado_pelo_advogado) {
+        if (!justificativa?.trim() || !trecho_fonte?.trim())
+          return erro(
+            "Sem confirmação do advogado, isto é leitura sua, e leitura entra como sugestão: " +
+              "informe justificativa e trecho_fonte (trecho literal do documento). Se foi o " +
+              "advogado que ditou o nome, chame de novo com confirmado_pelo_advogado=true.",
+          );
+        await sugerirParteDoTeor({
+          processoId,
+          nome,
+          polo,
+          papelSugerido: papel,
+          justificativa,
+          trechoFonte: trecho_fonte,
+        });
+        return texto(
+          `📝 "${nome}" registrado como SUGESTÃO em ${formatarCNJ(numero_cnj)} (papel ${papel}).\n` +
+            `Nada foi gravado em clientes nem no vínculo: quem confirma é o advogado, no painel ` +
+            `(Clientes > a confirmar).`,
+        );
+      }
+
+      const r = await confirmarClienteHumano({
+        processoId,
+        nome,
+        papel,
+        polo,
+        documento,
+        decididoPor: "advogado",
+      });
+      const resumo = await resumoPartes(processoId);
       return texto(
-        `✅ ${nome} vinculado ao processo ${formatarCNJ(numero_cnj)} como ${papel}.\n` +
-          `O nome já aparece na carteira, na busca e nos alertas de prazo. Confira no painel.`,
+        `✅ ${nome} vinculado ao processo ${formatarCNJ(numero_cnj)} como ${papel}, por decisão ` +
+          `do advogado (origem humana). O motor não sobrescreve mais este vínculo.\n` +
+          (r.descartadas > 0
+            ? `${r.descartadas} detecção(ões) do polo oposto foram descartadas; litisconsorte do ` +
+              `mesmo polo continua pendente.\n`
+            : "") +
+          (resumo.aConfirmar > 0
+            ? `Ainda há ${resumo.aConfirmar} parte(s) deste processo esperando decisão.\n`
+            : "") +
+          `O nome já aparece na carteira, na busca e nos alertas de prazo.`,
       );
     } catch (e) {
       return erro((e as Error).message);

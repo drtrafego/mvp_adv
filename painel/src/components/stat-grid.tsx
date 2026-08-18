@@ -1,7 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { Briefcase, CalendarClock, Sparkles, AlarmClock, BellRing, type LucideIcon } from "lucide-react";
+import {
+  Briefcase,
+  CalendarClock,
+  Sparkles,
+  AlarmClock,
+  BellRing,
+  UserCheck,
+  type LucideIcon,
+} from "lucide-react";
 import { StaggerGroup, StaggerItem } from "@/components/motion-primitives";
 import type { Resumo } from "@/db/queries";
 
@@ -16,7 +24,7 @@ const tons: Record<Tom, { quadrado: string; numero: string }> = {
 
 export function StatGrid({ resumo }: { resumo: Resumo }) {
   return (
-    <StaggerGroup className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+    <StaggerGroup className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
       <Stat icon={Briefcase} n={resumo.totalProcessos} label="processos" tom="indigo" href="/processos" />
       <Stat icon={CalendarClock} n={resumo.prazosAbertos} label="prazos abertos" tom="moss" href="/prazos" />
       <Stat icon={Sparkles} n={resumo.sugeridos} label="aguardando você" tom="amber" href="/prazos" />
@@ -27,6 +35,13 @@ export function StatGrid({ resumo }: { resumo: Resumo }) {
         label="sem prazo ainda"
         tom="amber"
         href="/intimacoes"
+      />
+      <Stat
+        icon={UserCheck}
+        n={resumo.partesAConfirmar}
+        label="clientes a confirmar"
+        tom="amber"
+        href="/clientes/confirmar"
       />
     </StaggerGroup>
   );
