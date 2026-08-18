@@ -1,21 +1,24 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Scale, FileText, Clock, TriangleAlert } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { PrazosBoard } from "@/components/prazos-board";
 import { ProcessosList } from "@/components/processos-list";
 import { IntimacoesSemPrazo } from "@/components/intimacoes-sem-prazo";
+import { ChegouAgora } from "@/components/chegou-agora";
 import { Reveal } from "@/components/motion-primitives";
 import { bancoConectado } from "@/db";
-import { listarPrazos, listarProcessos, resumo } from "@/db/queries";
+import { intimacoesRecentes, listarPrazos, listarProcessos, resumo } from "@/db/queries";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const conectado = bancoConectado();
-  const [dados, prazos, processos] = await Promise.all([
+  const [dados, prazos, processos, recentes] = await Promise.all([
     resumo(),
     listarPrazos(),
     listarProcessos(),
+    intimacoesRecentes(7),
   ]);
 
   return (
@@ -33,6 +36,26 @@ export default async function Home() {
                 <IntimacoesSemPrazo total={dados.intimacoesSemPrazo} />
               </div>
             )}
+
+            {/* O que chegou nos últimos 7 dias, com a leitura da máquina. Fica ANTES do quadro de
+                prazos porque é a primeira pergunta do dia: saiu intimação, o que ela quer dizer? */}
+            {recentes.length > 0 && (
+              <div className="mb-6">
+                <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+                  <h3 className="font-mono text-[0.7rem] uppercase tracking-[0.15em] text-muted-foreground">
+                    Chegou agora · últimos 7 dias
+                  </h3>
+                  <Link
+                    href="/intimacoes"
+                    className="font-mono text-[0.65rem] uppercase tracking-wide text-indigo-brand hover:underline"
+                  >
+                    ver todas
+                  </Link>
+                </div>
+                <ChegouAgora intimacoes={recentes} />
+              </div>
+            )}
+
             <PrazosBoard prazos={prazos} />
           </Reveal>
 

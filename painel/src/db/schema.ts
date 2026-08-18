@@ -141,22 +141,36 @@ export const documentos = pgTable(
   }),
 );
 
-export const analises = pgTable("analises", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  processoId: uuid("processo_id").references(() => processos.id, { onDelete: "cascade" }),
-  documentoId: uuid("documento_id").references(() => documentos.id),
-  tipo: text("tipo").notNull(),
-  conteudo: jsonb("conteudo").notNull(),
-  versao: integer("versao").default(1),
-  origem: text("origem").default("maquina"),
-  editadoPor: text("editado_por"),
-  editadoEm: timestamp("editado_em", { withTimezone: true }),
-  modelo: text("modelo"),
-  tokensInput: integer("tokens_input"),
-  tokensOutput: integer("tokens_output"),
-  custoUsd: numeric("custo_usd"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-});
+// Leitura assistida de uma intimação ou documento. Aponta para o alvo que analisou: a
+// comunicação (intimação), o documento, ou ao menos o processo. Nunca é atualizada: análise nova
+// sobre o mesmo alvo entra como linha nova com `versao` + 1, para o histórico ficar auditável.
+export const analises = pgTable(
+  "analises",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    processoId: uuid("processo_id").references(() => processos.id, { onDelete: "cascade" }),
+    documentoId: uuid("documento_id").references(() => documentos.id),
+    /** Intimação analisada. É o vínculo que faz a pré-análise aparecer na tela da intimação. */
+    comunicacaoId: uuid("comunicacao_id").references(() => comunicacoes.id),
+    tipo: text("tipo").notNull(),
+    conteudo: jsonb("conteudo").notNull(),
+    versao: integer("versao").default(1),
+    /** sugerida (padrão) | confirmada | descartada. Confirmada nunca é sobrescrita. */
+    status: text("status").default("sugerida"),
+    origem: text("origem").default("maquina"),
+    editadoPor: text("editado_por"),
+    editadoEm: timestamp("editado_em", { withTimezone: true }),
+    modelo: text("modelo"),
+    tokensInput: integer("tokens_input"),
+    tokensOutput: integer("tokens_output"),
+    custoUsd: numeric("custo_usd"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    idxComunicacao: index("idx_analises_comunicacao").on(t.comunicacaoId, t.createdAt),
+    idxProcesso: index("idx_analises_processo").on(t.processoId, t.createdAt),
+  }),
+);
 
 // Notas livres do advogado sobre um processo, cliente OU prazo (exatamente um alvo).
 export const anotacoes = pgTable(

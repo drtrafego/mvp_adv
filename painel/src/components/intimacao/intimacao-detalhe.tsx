@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { BellRing, CalendarDays, ExternalLink, Clock, Copy } from "lucide-react";
+import { BellRing, CalendarDays, ExternalLink, Clock, Copy, FileSearch } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { AnaliseBloco } from "@/components/analise/analise-bloco";
 import { formatarData } from "@/lib/prazo-ui";
 import type { DetalheIntimacao } from "@/db/queries";
 
@@ -13,8 +14,9 @@ import type { DetalheIntimacao } from "@/db/queries";
  * completo, que é a fonte oficial do prazo e o que o advogado precisa ler antes de decidir.
  */
 export function IntimacaoDetalhe({ detalhe }: { detalhe: DetalheIntimacao }) {
-  const { intimacao, processo, prazos } = detalhe;
+  const { intimacao, processo, prazos, analises } = detalhe;
   const teor = (intimacao.inteiroTeor ?? "").trim();
+  const vivas = analises.filter((a) => a.status !== "descartada");
 
   function copiar() {
     navigator.clipboard.writeText(teor).then(
@@ -75,6 +77,37 @@ export function IntimacaoDetalhe({ detalhe }: { detalhe: DetalheIntimacao }) {
       </div>
 
       <div className="px-4 py-5 sm:px-6">
+        {/* Pré-análise no topo: é a primeira coisa que o advogado precisa ver ao abrir a
+            intimação. Antes ela existia no banco e não aparecia em lugar nenhum aqui. */}
+        <div className="mb-5">
+          <h3 className="mb-2 font-mono text-[0.65rem] uppercase tracking-wide text-muted-foreground">
+            Pré-análise
+          </h3>
+          {vivas.length > 0 ? (
+            <div className="flex flex-col gap-3">
+              {vivas.map((a) => (
+                <AnaliseBloco key={a.id} analise={a} />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed bg-card/40 p-4">
+              <div className="flex items-center gap-2 font-serif text-base font-medium">
+                <FileSearch className="h-4 w-4 text-muted-foreground" /> Ninguém leu esta intimação
+                ainda
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                No terminal, peça a leitura assistida com o id desta intimação:
+              </p>
+              <code className="mt-2 block break-all rounded-md bg-muted px-3 py-2 font-mono text-xs">
+                analisa a intimação {intimacao.id}
+              </code>
+              <p className="mt-2 text-xs text-muted-foreground">
+                A análise nasce como sugestão e aparece aqui para você confirmar ou descartar.
+              </p>
+            </div>
+          )}
+        </div>
+
         {prazos.length > 0 && (
           <div className="mb-5">
             <h3 className="mb-2 font-mono text-[0.65rem] uppercase tracking-wide text-muted-foreground">

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Inbox, BellRing, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { marcarCuidada } from "@/app/(app)/intimacoes/actions";
+import { estiloSeveridade } from "@/lib/analise-ui";
 import type { IntimacaoRow } from "@/db/queries";
 
 function dataBr(d: string | null): string {
@@ -29,6 +30,7 @@ export function IntimacoesList({ intimacoes }: { intimacoes: IntimacaoRow[] }) {
     <div className="flex flex-col gap-2">
       {intimacoes.map((i) => {
         const teor = (i.inteiroTeor ?? "").replace(/\s+/g, " ").trim();
+        const severidade = i.temAnalise ? estiloSeveridade(i.severidade) : null;
         return (
           // O card inteiro abre o inteiro teor, no mesmo padrão de modal do resto do sistema.
           // O "cuidei" fica FORA do link (form não pode viver dentro de <a>), numa faixa própria.
@@ -59,6 +61,16 @@ export function IntimacoesList({ intimacoes }: { intimacoes: IntimacaoRow[] }) {
                 >
                   {i.temPrazo ? "com prazo" : "sem prazo"}
                 </Badge>
+                {i.temAnalise && (
+                  <Badge className="bg-indigo-tint text-indigo-brand text-[0.6rem] uppercase">
+                    analisada
+                  </Badge>
+                )}
+                {severidade && (
+                  <Badge className={`${severidade.cls} text-[0.6rem] uppercase`}>
+                    risco {severidade.txt}
+                  </Badge>
+                )}
                 <Badge variant="outline" className="text-[0.6rem] uppercase">
                   {i.meio ?? "DJEN"}
                 </Badge>

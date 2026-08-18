@@ -132,31 +132,177 @@ export async function upsertComunicacoes(comuns: ComunicacaoDJEN[]): Promise<num
   return inseridas.length;
 }
 
+export interface FiltroIntimacoes {
+  apenasPendentes?: boolean;
+  dias?: number;
+  numeroCnj?: string;
+  limite?: number;
+}
+
+export interface IntimacaoBanco {
+  id: string;
+  dataDisponibilizacao: string | null;
+  tipo: string | null;
+  meio: string | null;
+  numeroProcesso: string | null;
+  numeroCnj: string | null;
+  clienteNome: string | null;
+  tribunal: string | null;
+  processoId: string | null;
+  processada: boolean | null;
+  temPrazo: boolean;
+  temAnalise: boolean;
+  inteiroTeor: string | null;
+}
+
+// Uma intimação "espera tratamento" enquanto ninguém a marcou como cuidada e nenhum prazo vivo
+// aponta para ela. Mesma definição que o painel usa na fila de pendências.
+const intimacaoTemPrazo = sql<boolean>`exists (
+  select 1 from ${schema.prazos}
+  where ${schema.prazos.comunicacaoId} = ${schema.comunicacoes.id}
+    and ${schema.prazos.status} <> 'cancelado'
+)`;
+
+const intimacaoTemAnalise = sql<boolean>`exists (
+  select 1 from ${schema.analises}
+  where ${schema.analises.comunicacaoId} = ${schema.comunicacoes.id}
+    and coalesce(${schema.analises.status}, 'sugerida') <> 'descartada'
+)`;
+
 /**
- * Grava uma análise (de intimação ou documento) na tabela `analises`, ligada a um processo
- * da carteira pelo número CNJ. Nasce origem='maquina' (sugerida); o advogado revisa no painel.
- * Retorna null se o processo ainda não estiver na carteira.
+ * Intimações JÁ coletadas, do banco (não vai ao DJEN). Existe porque o id da comunicação é a
+ * chave de tudo o que vem depois: é ele que se passa em `comunicacao_id` de `calcular_prazo` e de
+ * `salvar_analise`. Sem esta tool, o prazo e a análise nasciam órfãos e o advogado não achava, na
+ * intimação, o que o sistema tinha lido dela.
+ */
+export async function listarIntimacoesBanco(f: FiltroIntimacoes = {}): Promise<IntimacaoBanco[]> {
+  const d = getDb();
+  const dias = f.dias ?? 15;
+  const desde = new Date(Date.now() - dias * 86400000).toISOString().slice(0, 10);
+
+  const conds = [gte(schema.comunicacoes.dataDisponibilizacao, desde)];
+  if (f.apenasPendentes ?? true) {
+    conds.push(sql`${schema.comunicacoes.processada} is not true and not ${intimacaoTemPrazo}`);
+  }
+  if (f.numeroCnj) {
+    // Compara só os dígitos: o DJEN devolve o número com máscara e a carteira guarda formatado,
+    // mas quem chama a tool pode digitar de qualquer jeito.
+    const digitos = f.numeroCnj.replace(/\D/g, "");
+    conds.push(sql`(
+      regexp_replace(coalesce(${schema.comunicacoes.numeroProcesso}, ''), '\\D', '', 'g') = ${digitos}
+      or regexp_replace(coalesce(${schema.processos.numeroCnj}, ''), '\\D', '', 'g') = ${digitos}
+    )`);
+  }
+
+  const rows = await d
+    .select({
+      id: schema.comunicacoes.id,
+      dataDisponibilizacao: schema.comunicacoes.dataDisponibilizacao,
+      tipo: schema.comunicacoes.tipo,
+      meio: schema.comunicacoes.meio,
+      numeroProcesso: schema.comunicacoes.numeroProcesso,
+      numeroCnj: schema.processos.numeroCnj,
+      clienteNome: schema.processos.clienteNome,
+      tribunal: schema.processos.tribunal,
+      processoId: schema.comunicacoes.processoId,
+      processada: schema.comunicacoes.processada,
+      temPrazo: intimacaoTemPrazo,
+      temAnalise: intimacaoTemAnalise,
+      inteiroTeor: schema.comunicacoes.inteiroTeor,
+    })
+    .from(schema.comunicacoes)
+    .leftJoin(schema.processos, eq(schema.comunicacoes.processoId, schema.processos.id))
+    .where(and(...conds))
+    .orderBy(desc(schema.comunicacoes.dataDisponibilizacao))
+    .limit(f.limite ?? 30);
+  return rows as IntimacaoBanco[];
+}
+
+export type ResultadoAnalise =
+  | { ok: true; id: string; versao: number; processoId: string | null; jaConfirmada: boolean }
+  | { ok: false; motivo: "sem_alvo" | "comunicacao_inexistente" | "documento_inexistente" | "processo_fora_carteira" };
+
+/**
+ * Grava uma análise (de intimação ou documento) na tabela `analises`. Nasce origem='maquina',
+ * status='sugerida'; o advogado revisa no painel e tem a palavra final.
+ *
+ * O alvo é obrigatório: comunicação (intimação), documento ou, na falta dos dois, o processo pelo
+ * CNJ. Análise sem alvo é análise que ninguém encontra. Quando o alvo é a comunicação, o processo
+ * é DERIVADO dela: assim a análise de uma intimação de processo que ainda não está na carteira
+ * também é gravada, em vez de recusada.
+ *
+ * NUNCA faz UPDATE: análise nova sobre o mesmo alvo é linha nova com `versao` + 1, e a que o
+ * advogado confirmou continua intacta.
  */
 export async function salvarAnalise(a: {
-  numeroCnj: string;
+  numeroCnj?: string;
+  comunicacaoId?: string;
+  documentoId?: string;
   tipo: string;
   conteudo: unknown;
   modelo?: string;
-}): Promise<{ id: string } | null> {
+}): Promise<ResultadoAnalise> {
   const d = getDb();
-  const processoId = await processoExistente(a.numeroCnj);
-  if (!processoId) return null;
+  if (!a.comunicacaoId && !a.documentoId && !a.numeroCnj) return { ok: false, motivo: "sem_alvo" };
+
+  let processoId: string | null = null;
+
+  if (a.comunicacaoId) {
+    const [com] = await d
+      .select({ processoId: schema.comunicacoes.processoId })
+      .from(schema.comunicacoes)
+      .where(eq(schema.comunicacoes.id, a.comunicacaoId))
+      .limit(1);
+    if (!com) return { ok: false, motivo: "comunicacao_inexistente" };
+    processoId = com.processoId;
+  }
+
+  if (a.documentoId) {
+    const [doc] = await d
+      .select({ processoId: schema.documentos.processoId })
+      .from(schema.documentos)
+      .where(eq(schema.documentos.id, a.documentoId))
+      .limit(1);
+    if (!doc) return { ok: false, motivo: "documento_inexistente" };
+    processoId = processoId ?? doc.processoId;
+  }
+
+  if (!processoId && a.numeroCnj) {
+    processoId = await processoExistente(a.numeroCnj);
+    // Só é erro quando o CNJ era o ÚNICO alvo: sem ele e sem comunicação/documento, a análise
+    // não teria onde aparecer.
+    if (!processoId && !a.comunicacaoId && !a.documentoId)
+      return { ok: false, motivo: "processo_fora_carteira" };
+  }
+
+  const anteriores = await d
+    .select({ versao: schema.analises.versao, status: schema.analises.status })
+    .from(schema.analises)
+    .where(
+      a.comunicacaoId
+        ? eq(schema.analises.comunicacaoId, a.comunicacaoId)
+        : a.documentoId
+          ? eq(schema.analises.documentoId, a.documentoId)
+          : and(eq(schema.analises.processoId, processoId as string), eq(schema.analises.tipo, a.tipo)),
+    );
+  const versao = anteriores.reduce((maior, x) => Math.max(maior, x.versao ?? 1), 0) + 1;
+  const jaConfirmada = anteriores.some((x) => x.status === "confirmada");
+
   const [row] = await d
     .insert(schema.analises)
     .values({
       processoId,
+      comunicacaoId: a.comunicacaoId ?? null,
+      documentoId: a.documentoId ?? null,
       tipo: a.tipo,
       conteudo: a.conteudo as any,
+      versao,
+      status: "sugerida",
       origem: "maquina",
       modelo: a.modelo ?? null,
     })
     .returning({ id: schema.analises.id });
-  return { id: row.id };
+  return { ok: true, id: row.id, versao, processoId, jaConfirmada };
 }
 
 // ===== Peças e modelos do escritório =====

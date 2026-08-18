@@ -32,10 +32,16 @@ títulos, assinatura, citação de julgado): skill `peca-forense`.
   siga a skill `prazos-cpc`: identifique o RITO, consulte `catalogo_prazos`, escolha a chave do
   ato e chame `calcular_prazo` com `ato_chave` e `persistir: true`. Nunca afirme a data fatal sem
   a tool — o código conta, você não.
-  **Passe sempre `comunicacao_id`** ao gravar o prazo de uma intimação. A coleta só grava a
-  comunicação; o prazo é um passo separado, seu. Enquanto o vínculo não existe, o painel mostra a
-  intimação na fila "sem prazo" da Início e da aba Prazos. Depois de coletar, ou você calcula os
-  prazos, ou avisa ao advogado quantas intimações ficaram esperando.
+  **Passe sempre `comunicacao_id`** ao gravar o prazo de uma intimação. O id vem de
+  `listar_intimacoes` (lê o banco, não vai ao DJEN): é o mesmo id que `salvar_analise` usa. A
+  coleta só grava a comunicação; o prazo é um passo separado, seu. Enquanto o vínculo não existe,
+  o painel mostra a intimação na fila "sem prazo" da Início e da aba Prazos. Depois de coletar,
+  ou você calcula os prazos, ou avisa ao advogado quantas intimações ficaram esperando.
+- **Pré-análise da intimação**: é o que o advogado abre primeiro, no topo da tela da intimação.
+  Rode a `analista-documento` e grave com `salvar_analise` passando `comunicacao_id`. Sem esse id
+  a tool recusa análise do tipo `analise_intimacao`, justamente para a análise não nascer órfã.
+  Análise nunca é editada: nova rodada entra como versão nova, e a que o advogado confirmou não é
+  tocada.
   **Não existe prazo padrão de 15 dias.** Isso é a regra do procedimento comum cível e só vale
   ali. No penal a contagem é corrida e não para no recesso (CPP art. 798): defesa em 10 dias,
   apelação em 5 para interpor e 8 para as razões (3 em contravenção). Na recuperação judicial e

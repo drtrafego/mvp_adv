@@ -206,6 +206,11 @@ export interface IntimacaoRow {
   numeroCnj: string | null;
   /** Já existe prazo nascido desta intimação? Se não, ela ainda espera o cálculo. */
   temPrazo: boolean;
+  /** Já existe pré-análise desta intimação? */
+  temAnalise: boolean;
+  /** Severidade e resultado da análise mais recente (null quando não há análise). */
+  severidade: string | null;
+  resultado: string | null;
 }
 
 // Uma intimação "espera prazo" enquanto nenhum prazo vivo aponta para ela. Prazo cancelado
@@ -219,6 +224,36 @@ const temPrazoSql = sql<boolean>`exists (
 // A fila de pendências ignora o que o advogado já marcou como cuidado (`processada`), porque
 // nem toda intimação gera prazo: ciência, mero expediente e juntada só pedem leitura.
 const pendenteSql = sql`${schema.comunicacoes.processada} is not true and not ${temPrazoSql}`;
+
+// Análise descartada pelo advogado não conta: para o painel, a intimação volta a ser não analisada.
+const temAnaliseSql = sql<boolean>`exists (
+  select 1 from ${schema.analises}
+  where ${schema.analises.comunicacaoId} = ${schema.comunicacoes.id}
+    and coalesce(${schema.analises.status}, 'sugerida') <> 'descartada'
+)`;
+
+/** Um campo do conteúdo (jsonb) da análise mais recente da intimação. */
+function campoAnaliseSql(campo: string) {
+  // O cast para text é o que resolve a ambiguidade do operador ->> com parâmetro (jsonb ->> text
+  // e jsonb ->> int existem os dois).
+  return sql<string | null>`(
+    select ${schema.analises.conteudo}->>(${campo})::text
+    from ${schema.analises}
+    where ${schema.analises.comunicacaoId} = ${schema.comunicacoes.id}
+      and coalesce(${schema.analises.status}, 'sugerida') <> 'descartada'
+    order by ${schema.analises.createdAt} desc
+    limit 1
+  )`;
+}
+
+/** Data fatal mais próxima entre os prazos vivos nascidos da intimação. */
+const dataFatalSql = sql<string | null>`(
+  select ${schema.prazos.dataFatal} from ${schema.prazos}
+  where ${schema.prazos.comunicacaoId} = ${schema.comunicacoes.id}
+    and ${schema.prazos.status} <> 'cancelado'
+  order by ${schema.prazos.dataFatal} asc
+  limit 1
+)`;
 
 /** Últimas intimações/comunicações (DJEN), da mais recente para a mais antiga. */
 export async function listarIntimacoes(): Promise<IntimacaoRow[]> {
@@ -236,12 +271,62 @@ export async function listarIntimacoes(): Promise<IntimacaoRow[]> {
       numeroProcesso: schema.comunicacoes.numeroProcesso,
       numeroCnj: schema.processos.numeroCnj,
       temPrazo: temPrazoSql,
+      temAnalise: temAnaliseSql,
+      severidade: campoAnaliseSql("severidade"),
+      resultado: campoAnaliseSql("resultado"),
     })
     .from(schema.comunicacoes)
     .leftJoin(schema.processos, eq(schema.comunicacoes.processoId, schema.processos.id))
     .orderBy(desc(schema.comunicacoes.dataDisponibilizacao))
     .limit(100);
   return rows as IntimacaoRow[];
+}
+
+export interface IntimacaoRecente {
+  id: string;
+  tipo: string | null;
+  dataDisponibilizacao: string | null;
+  numeroProcesso: string | null;
+  numeroCnj: string | null;
+  clienteNome: string | null;
+  processada: boolean | null;
+  temPrazo: boolean;
+  temAnalise: boolean;
+  severidade: string | null;
+  resultado: string | null;
+  acaoNecessaria: string | null;
+  dataFatal: string | null;
+}
+
+/**
+ * O que chegou nos últimos dias, com prazo e análise já agregados. Existe para responder a
+ * pergunta que o advogado faz todo dia de manhã: saiu intimação hoje, o que o sistema achou dela?
+ */
+export async function intimacoesRecentes(dias = 7): Promise<IntimacaoRecente[]> {
+  if (!db) return [];
+  const desde = new Date(Date.now() - dias * 86400000).toISOString().slice(0, 10);
+  const rows = await db
+    .select({
+      id: schema.comunicacoes.id,
+      tipo: schema.comunicacoes.tipo,
+      dataDisponibilizacao: schema.comunicacoes.dataDisponibilizacao,
+      numeroProcesso: schema.comunicacoes.numeroProcesso,
+      numeroCnj: schema.processos.numeroCnj,
+      clienteNome: schema.processos.clienteNome,
+      processada: schema.comunicacoes.processada,
+      temPrazo: temPrazoSql,
+      temAnalise: temAnaliseSql,
+      severidade: campoAnaliseSql("severidade"),
+      resultado: campoAnaliseSql("resultado"),
+      acaoNecessaria: campoAnaliseSql("acao_necessaria"),
+      dataFatal: dataFatalSql,
+    })
+    .from(schema.comunicacoes)
+    .leftJoin(schema.processos, eq(schema.comunicacoes.processoId, schema.processos.id))
+    .where(gte(schema.comunicacoes.dataDisponibilizacao, desde))
+    .orderBy(desc(schema.comunicacoes.dataDisponibilizacao))
+    .limit(20);
+  return rows as IntimacaoRecente[];
 }
 
 export interface AnaliseConteudo {
@@ -334,6 +419,8 @@ export interface Resumo {
   venceEm7Dias: number;
   /** Intimações coletadas que ainda não viraram prazo. */
   intimacoesSemPrazo: number;
+  /** Intimações não cuidadas que ninguém leu ainda: nem análise, nem baixa. */
+  intimacoesSemAnalise: number;
 }
 
 export async function resumo(): Promise<Resumo> {
@@ -344,6 +431,7 @@ export async function resumo(): Promise<Resumo> {
       sugeridos: 0,
       venceEm7Dias: 0,
       intimacoesSemPrazo: 0,
+      intimacoesSemAnalise: 0,
     };
   const hoje = new Date().toISOString().slice(0, 10);
   const daqui7 = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
@@ -370,12 +458,17 @@ export async function resumo(): Promise<Resumo> {
     .select({ n: sql<number>`count(*)::int` })
     .from(schema.comunicacoes)
     .where(pendenteSql);
+  const [isa] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(schema.comunicacoes)
+    .where(sql`${schema.comunicacoes.processada} is not true and not ${temAnaliseSql}`);
   return {
     totalProcessos: tp?.n ?? 0,
     prazosAbertos: pa?.n ?? 0,
     sugeridos: sg?.n ?? 0,
     venceEm7Dias: v7?.n ?? 0,
     intimacoesSemPrazo: isp?.n ?? 0,
+    intimacoesSemAnalise: isa?.n ?? 0,
   };
 }
 
@@ -723,13 +816,32 @@ export async function diasSemIntimacaoNova(): Promise<number | null> {
   return Math.floor((Date.now() - new Date(row.ultima).getTime()) / 86400000);
 }
 
+export interface AnaliseItem {
+  id: string;
+  tipo: string;
+  conteudo: AnaliseConteudo;
+  versao: number | null;
+  status: string | null;
+  origem: string | null;
+  modelo: string | null;
+  editadoPor: string | null;
+  editadoEm: Date | null;
+  createdAt: Date | null;
+}
+
 export interface DetalheIntimacao {
   intimacao: typeof schema.comunicacoes.$inferSelect;
   processo: typeof schema.processos.$inferSelect | null;
   prazos: (typeof schema.prazos.$inferSelect)[];
+  /** Pré-análises desta intimação, da mais recente para a mais antiga. */
+  analises: AnaliseItem[];
 }
 
-/** Intimação com o inteiro teor, o processo vinculado e os prazos que nasceram dela. */
+/**
+ * Intimação com o inteiro teor, o processo vinculado, os prazos que nasceram dela e as
+ * pré-análises. Sem as análises aqui, o advogado abria a intimação do dia e não achava em lugar
+ * nenhum o que o sistema tinha lido dela.
+ */
 export async function detalheIntimacao(id: string): Promise<DetalheIntimacao | null> {
   if (!db) return null;
   const [intimacao] = await db
@@ -754,7 +866,24 @@ export async function detalheIntimacao(id: string): Promise<DetalheIntimacao | n
     .where(eq(schema.prazos.comunicacaoId, id))
     .orderBy(schema.prazos.dataFatal);
 
-  return { intimacao, processo: processo ?? null, prazos };
+  const analises = (await db
+    .select({
+      id: schema.analises.id,
+      tipo: schema.analises.tipo,
+      conteudo: schema.analises.conteudo,
+      versao: schema.analises.versao,
+      status: schema.analises.status,
+      origem: schema.analises.origem,
+      modelo: schema.analises.modelo,
+      editadoPor: schema.analises.editadoPor,
+      editadoEm: schema.analises.editadoEm,
+      createdAt: schema.analises.createdAt,
+    })
+    .from(schema.analises)
+    .where(eq(schema.analises.comunicacaoId, id))
+    .orderBy(desc(schema.analises.createdAt))) as AnaliseItem[];
+
+  return { intimacao, processo: processo ?? null, prazos, analises };
 }
 
 export interface AcessoRow {

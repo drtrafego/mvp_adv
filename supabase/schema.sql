@@ -122,9 +122,11 @@ create table if not exists analises (
   id uuid primary key default gen_random_uuid(),
   processo_id uuid references processos(id) on delete cascade,
   documento_id uuid references documentos(id),
+  comunicacao_id uuid references comunicacoes(id),  -- intimação analisada (a pré-análise da tela)
   tipo text not null,
   conteudo jsonb not null,
   versao int default 1,
+  status text default 'sugerida',         -- sugerida | confirmada | descartada
   origem text default 'maquina',          -- maquina | humana
   editado_por text,
   editado_em timestamptz,
@@ -134,6 +136,9 @@ create table if not exists analises (
   custo_usd numeric(10,5),
   created_at timestamptz default now()
 );
+
+create index if not exists idx_analises_comunicacao on analises (comunicacao_id, created_at desc);
+create index if not exists idx_analises_processo on analises (processo_id, created_at desc);
 
 -- O coração: prazos
 create table if not exists prazos (

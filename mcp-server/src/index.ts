@@ -61,6 +61,7 @@ import {
   upsertProcesso,
   upsertMovimentacoes,
   upsertComunicacoes,
+  listarIntimacoesBanco,
   salvarAnalise,
   inserirPrazoSugerido,
   marcarComunicacaoProcessada,
@@ -393,6 +394,81 @@ server.registerTool(
         itens: 0,
         mensagem: (e as Error).message.slice(0, 300),
       });
+      return erro((e as Error).message);
+    }
+  },
+);
+
+// ---------------------------------------------------------------------------
+// listar_intimacoes — as intimações já coletadas, COM O ID de cada uma
+// ---------------------------------------------------------------------------
+server.registerTool(
+  "listar_intimacoes",
+  {
+    title: "Listar intimações coletadas (com id)",
+    description:
+      "Lista as intimações que JÁ estão no banco (não vai ao DJEN; para coletar, use " +
+      "buscar_intimacoes). Devolve, para cada uma, o ID da comunicação: é EXATAMENTE esse id que " +
+      "você passa em `comunicacao_id` de calcular_prazo e em `comunicacao_id` de salvar_analise. " +
+      "Sem ele, o prazo e a análise nascem soltos e o advogado não encontra, na tela da intimação, " +
+      "nem a data fatal nem o que o sistema leu. Comece por aqui sempre que for calcular prazo ou " +
+      "analisar intimação. Mostra também se cada uma já tem prazo e já tem análise.",
+    inputSchema: {
+      apenas_pendentes: z
+        .boolean()
+        .optional()
+        .describe(
+          "Padrão true: só as que ninguém cuidou ainda (sem prazo vivo e não marcadas como " +
+            "cuidadas). false traz todas do período.",
+        ),
+      dias: z.number().int().positive().optional().describe("Janela em dias para trás (padrão 15)."),
+      numero_cnj: z.string().optional().describe("Limita a um processo (compara só os dígitos)."),
+      limite: z.number().int().positive().optional().describe("Máximo de itens (padrão 30)."),
+      incluir_teor: z
+        .boolean()
+        .optional()
+        .describe("Traz um pedaço maior do inteiro teor de cada intimação (padrão false)."),
+    },
+  },
+  async ({ apenas_pendentes, dias, numero_cnj, limite, incluir_teor }) => {
+    if (!bancoConfigurado()) return erro("Banco (Neon) não configurado.");
+    try {
+      const itens = await listarIntimacoesBanco({
+        apenasPendentes: apenas_pendentes ?? true,
+        dias: dias ?? 15,
+        numeroCnj: numero_cnj,
+        limite,
+      });
+      const janela = `últimos ${dias ?? 15} dia(s)${(apenas_pendentes ?? true) ? ", só pendentes" : ""}`;
+      if (itens.length === 0)
+        return texto(
+          `Nenhuma intimação no filtro (${janela}). Se esperava alguma, rode buscar_intimacoes ` +
+            `para coletar o período, ou amplie 'dias' e passe apenas_pendentes=false.`,
+        );
+      const corte = incluir_teor ? 1200 : 220;
+      const lista = itens
+        .map((i) => {
+          const teor = (i.inteiroTeor ?? "").replace(/\s+/g, " ").trim();
+          const processo = i.numeroCnj ?? i.numeroProcesso ?? "sem número";
+          const naCarteira = i.processoId
+            ? `processo_id: ${i.processoId}`
+            : "processo ainda NÃO está na carteira";
+          const cliente = i.clienteNome ? ` · ${i.clienteNome}` : "";
+          return (
+            `  • ${i.dataDisponibilizacao ?? "?"} — ${i.tribunal ?? i.meio ?? "?"} — ${i.tipo ?? "Comunicação"}\n` +
+            `    id: ${i.id}   ← use este id em comunicacao_id\n` +
+            `    Processo: ${processo}${cliente} (${naCarteira})\n` +
+            `    prazo: ${i.temPrazo ? "já calculado" : "AINDA NÃO"} · análise: ${i.temAnalise ? "já feita" : "AINDA NÃO"}` +
+            (teor ? `\n    Teor: ${teor.slice(0, corte)}${teor.length > corte ? "..." : ""}` : "")
+          );
+        })
+        .join("\n");
+      return texto(
+        `📥 ${itens.length} intimação(ões) (${janela}):\n${lista}\n\n` +
+          `Para o prazo: calcular_prazo com ato_chave, comunicacao_id e persistir=true.\n` +
+          `Para a análise: salvar_analise com tipo='analise_intimacao' e comunicacao_id.`,
+      );
+    } catch (e) {
       return erro((e as Error).message);
     }
   },
@@ -810,14 +886,32 @@ server.registerTool(
     description:
       "Grava no painel a análise de uma intimação ou documento. Você (Claude) lê o teor, produz a " +
       "análise estruturada e chama esta ferramenta para persistir. A análise nasce como SUGESTÃO " +
-      "(máquina); o advogado revisa e tem a palavra final. Ligada ao processo pelo número CNJ.\n\n" +
+      "(máquina); o advogado revisa e tem a palavra final.\n\n" +
+      "ALVO OBRIGATÓRIO: informe comunicacao_id (intimação), documento_id ou, na falta dos dois, " +
+      "numero_cnj. Análise de INTIMAÇÃO exige comunicacao_id, senão ela não aparece na tela da " +
+      "intimação e o advogado não acha o que o sistema leu. O id vem de listar_intimacoes.\n\n" +
       "EXIGÊNCIA DE QUALIDADE: análise que só resume não serve. Diga de que lado o cliente está e " +
       "o que o ato provoca PARA ELE; nomeie o ato processual cabível com o dispositivo (não " +
       "'avaliar o cabimento de recurso'); se abre prazo, calcule a data fatal com calcular_prazo " +
       "antes e informe aqui; e diga o que acontece se o advogado não agir. Cada ponto traz " +
       "informação nova, com o trecho do documento que a sustenta.",
     inputSchema: {
-      numero_cnj: z.string().describe("Número CNJ do processo já cadastrado na carteira."),
+      comunicacao_id: z
+        .string()
+        .uuid()
+        .optional()
+        .describe(
+          "ID da intimação analisada, como devolvido por listar_intimacoes. OBRIGATÓRIO quando " +
+            "tipo='analise_intimacao': é o que faz a pré-análise aparecer na tela da intimação.",
+        ),
+      documento_id: z.string().uuid().optional().describe("ID do documento analisado (listar_documentos)."),
+      numero_cnj: z
+        .string()
+        .optional()
+        .describe(
+          "Número CNJ do processo na carteira. Use quando a análise não é de uma intimação nem de " +
+            "um documento específico. Com comunicacao_id, o processo é derivado da própria intimação.",
+        ),
       tipo: z
         .string()
         .default("analise_documento")
@@ -873,6 +967,8 @@ server.registerTool(
     },
   },
   async ({
+    comunicacao_id,
+    documento_id,
     numero_cnj,
     tipo,
     tipo_ato,
@@ -889,6 +985,19 @@ server.registerTool(
   }) => {
     if (!bancoConfigurado())
       return erro("Banco (Neon) não configurado. Defina DATABASE_URL para salvar análises.");
+    // Trava contra o defeito de origem: análise de intimação sem o vínculo com a intimação é
+    // análise que o advogado nunca encontra na tela onde procura.
+    if (tipo === "analise_intimacao" && !comunicacao_id)
+      return erro(
+        "Análise de intimação exige comunicacao_id. Chame listar_intimacoes, pegue o id da " +
+          "intimação analisada e repita salvar_analise com comunicacao_id. Sem esse vínculo a " +
+          "análise não aparece na tela da intimação.",
+      );
+    if (!comunicacao_id && !documento_id && !numero_cnj)
+      return erro(
+        "Informe o alvo da análise: comunicacao_id (intimação, via listar_intimacoes), " +
+          "documento_id (via listar_documentos) ou numero_cnj.",
+      );
     try {
       const conteudo = {
         tipo_ato,
@@ -903,14 +1012,38 @@ server.registerTool(
         trecho_fonte,
         atencao,
       };
-      const r = await salvarAnalise({ numeroCnj: numero_cnj, tipo, conteudo, modelo: "claude (análise assistida)" });
-      if (!r)
-        return erro(
-          `Processo ${formatarCNJ(numero_cnj)} não está na carteira. Cadastre com adicionar_processo antes de analisar.`,
-        );
+      const r = await salvarAnalise({
+        comunicacaoId: comunicacao_id,
+        documentoId: documento_id,
+        numeroCnj: numero_cnj,
+        tipo,
+        conteudo,
+        modelo: "claude (análise assistida)",
+      });
+      if (!r.ok) {
+        if (r.motivo === "comunicacao_inexistente")
+          return erro(
+            `Intimação ${comunicacao_id} não existe no banco. Confira o id em listar_intimacoes.`,
+          );
+        if (r.motivo === "documento_inexistente")
+          return erro(`Documento ${documento_id} não existe no banco. Confira o id em listar_documentos.`);
+        if (r.motivo === "processo_fora_carteira")
+          return erro(
+            `Processo ${formatarCNJ(numero_cnj ?? "")} não está na carteira. Cadastre com ` +
+              `adicionar_processo, ou salve a análise pela intimação (comunicacao_id), que dispensa a carteira.`,
+          );
+        return erro("Análise sem alvo: informe comunicacao_id, documento_id ou numero_cnj.");
+      }
+      const onde = comunicacao_id
+        ? `na tela da intimação (/i/${comunicacao_id}) e no setor Análises`
+        : "no setor Análises do painel";
+      const aviso = r.jaConfirmada
+        ? "\n⚠️ Já havia análise CONFIRMADA para este alvo: ela continua intacta, esta entrou como versão nova."
+        : "";
       return texto(
-        `✅ Análise salva no painel (setor Análises) para ${formatarCNJ(numero_cnj)}. ` +
-          `Nasce como sugestão; o advogado revisa e confirma. id=${r.id}`,
+        `✅ Análise salva ${onde}. Nasce como sugestão (v${r.versao}); o advogado revisa e ` +
+          `confirma. id=${r.id}` +
+          aviso,
       );
     } catch (e) {
       return erro((e as Error).message);

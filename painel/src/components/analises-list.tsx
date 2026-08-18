@@ -1,21 +1,7 @@
 import Link from "next/link";
 import { FileSearch, TriangleAlert, ArrowRight, Clock, ShieldAlert } from "lucide-react";
 import type { AnaliseRow } from "@/db/queries";
-
-function selo(resultado?: string) {
-  const r = (resultado ?? "").toLowerCase();
-  if (r.includes("favor") && !r.includes("des")) return { txt: "favorável", cls: "bg-moss-tint text-moss-brand" };
-  if (r.includes("desfavor")) return { txt: "desfavorável", cls: "bg-amber-tint text-amber-brand" };
-  return { txt: "neutro", cls: "bg-muted text-muted-foreground" };
-}
-
-/** Severidade do risco, conforme a skill saida-forense. */
-const SEVERIDADE: Record<string, { txt: string; cls: string; borda: string }> = {
-  critico: { txt: "crítico", cls: "bg-destructive/10 text-destructive", borda: "border-destructive" },
-  alto: { txt: "alto", cls: "bg-amber-tint text-amber-brand", borda: "border-amber-brand" },
-  medio: { txt: "médio", cls: "bg-amber-tint/60 text-amber-brand", borda: "border-amber-brand/60" },
-  baixo: { txt: "baixo", cls: "bg-muted text-muted-foreground", borda: "border-border" },
-};
+import { SEVERIDADE, seloResultado as selo } from "@/lib/analise-ui";
 
 export function AnalisesList({ analises }: { analises: AnaliseRow[] }) {
   if (analises.length === 0) {
