@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Inbox, BellRing, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { marcarCuidada } from "@/app/(app)/intimacoes/actions";
+import { marcarCuidada, reabrirIntimacao } from "@/app/(app)/intimacoes/actions";
 import { estiloSeveridade } from "@/lib/analise-ui";
 import type { IntimacaoRow } from "@/db/queries";
 
@@ -18,10 +18,9 @@ export function IntimacoesList({ intimacoes }: { intimacoes: IntimacaoRow[] }) {
         <span className="grid h-14 w-14 place-items-center rounded-2xl bg-muted text-muted-foreground">
           <Inbox className="h-7 w-7" />
         </span>
-        <p className="mt-4 font-serif text-base font-medium">Nenhuma intimação coletada</p>
+        <p className="mt-4 font-serif text-base font-medium">Nenhuma intimação nesta lista</p>
         <p className="mt-1 max-w-xs text-sm text-muted-foreground">
-          No terminal:{" "}
-          <span className="font-mono text-foreground">&quot;puxa minhas intimações de hoje&quot;</span>.
+          Confira os filtros ou aguarde a próxima coleta de comunicações.
         </p>
       </div>
     );
@@ -39,7 +38,7 @@ export function IntimacoesList({ intimacoes }: { intimacoes: IntimacaoRow[] }) {
             className="group rounded-xl border bg-card shadow-sm shadow-black/[0.02] transition-colors hover:border-indigo-brand/30"
           >
           <Link href={`/i/${i.id}`} className="block p-4">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2">
                 <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-indigo-tint text-indigo-brand">
                   <BellRing className="h-3.5 w-3.5" />
@@ -48,7 +47,8 @@ export function IntimacoesList({ intimacoes }: { intimacoes: IntimacaoRow[] }) {
                   {i.tipo ?? "Comunicação"}
                 </span>
               </div>
-              <div className="flex shrink-0 items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {i.processada && <Badge className="bg-moss-tint text-moss-brand text-[0.6rem] uppercase">cuidada</Badge>}
                 {!i.processada && (
                   <Badge className="bg-amber-tint text-amber-brand text-[0.6rem] uppercase">nova</Badge>
                 )}
@@ -108,6 +108,12 @@ export function IntimacoesList({ intimacoes }: { intimacoes: IntimacaoRow[] }) {
                 <Check className="h-3 w-3" />
                 cuidei, não gera prazo
               </button>
+            </form>
+          )}
+          {i.processada === true && (
+            <form action={reabrirIntimacao} className="border-t border-border/70 px-4 py-2">
+              <input type="hidden" name="id" value={i.id} />
+              <button type="submit" className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-indigo-brand">Devolver à fila de revisão</button>
             </form>
           )}
           </div>

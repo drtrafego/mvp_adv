@@ -1,9 +1,19 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, isNull, ne } from "drizzle-orm";
+import { createHash } from "node:crypto";
 import { db, schema } from "@/db";
+import { getUsuarioAtual } from "@/lib/auth";
+import { ehDataIso, ehHashSha256, ehUuid, textoValido } from "@/lib/seguranca";
 import { normalizarNome, papelDoPolo, poloOposto } from "@/lib/partes";
+
+// As actions podem ser chamadas diretamente por HTTP; nunca dependem do layout.
+async function sessaoParaMutacao() {
+  const usuario = await getUsuarioAtual();
+  if (!usuario) return { erro: "Sessão expirada. Entre de novo." };
+  return { autor: `${usuario.email} (${usuario.id})` };
+}
 
 const FASES_VALIDAS = [
   "postulatoria",
@@ -18,12 +28,17 @@ const FASES_VALIDAS = [
 
 /** Confirma um prazo: status 'confirmado', origem 'humana'. O motor não sobrescreve mais. */
 export async function confirmarPrazoAction(prazoId: string) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
-  await db
+  if (!ehUuid(prazoId)) return { ok: false, erro: "Identificador inválido." };
+  const [atualizado] = await db
     .update(schema.prazos)
-    .set({ status: "confirmado", origem: "humana", editadoPor: "advogado", editadoEm: new Date() })
-    .where(eq(schema.prazos.id, prazoId));
-  revalidatePath("/");
+    .set({ status: "confirmado", origem: "humana", editadoPor: sessao.autor, editadoEm: new Date() })
+    .where(and(eq(schema.prazos.id, prazoId), ne(schema.prazos.status, "cancelado")))
+    .returning({ id: schema.prazos.id });
+  if (!atualizado) return { ok: false, erro: "Prazo não encontrado ou já cancelado." };
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 
@@ -32,30 +47,43 @@ export async function editarPrazoAction(
   prazoId: string,
   patch: { dataFatal?: string; ato?: string },
 ) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
-  await db
+  if (!ehUuid(prazoId)) return { ok: false, erro: "Identificador inválido." };
+  if (!patch || (patch.dataFatal !== undefined && !ehDataIso(patch.dataFatal)) ||
+      (patch.ato !== undefined && !textoValido(patch.ato, 1000))) {
+    return { ok: false, erro: "Informe um ato válido e uma data real no formato AAAA-MM-DD." };
+  }
+  if (patch.dataFatal === undefined && patch.ato === undefined) return { ok: false, erro: "Nada para alterar." };
+  const [atualizado] = await db
     .update(schema.prazos)
     .set({
       status: "editado",
       origem: "humana",
-      editadoPor: "advogado",
+      editadoPor: sessao.autor,
       editadoEm: new Date(),
       ...(patch.dataFatal ? { dataFatal: patch.dataFatal } : {}),
       ...(patch.ato ? { ato: patch.ato } : {}),
     })
-    .where(eq(schema.prazos.id, prazoId));
-  revalidatePath("/");
+    .where(and(eq(schema.prazos.id, prazoId), ne(schema.prazos.status, "cancelado")))
+    .returning({ id: schema.prazos.id });
+  if (!atualizado) return { ok: false, erro: "Prazo não encontrado ou já cancelado." };
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 
 /** Cancela um prazo (some da lista ativa). */
 export async function cancelarPrazoAction(prazoId: string) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
+  if (!ehUuid(prazoId)) return { ok: false, erro: "Identificador inválido." };
   await db
     .update(schema.prazos)
-    .set({ status: "cancelado", origem: "humana", editadoPor: "advogado", editadoEm: new Date() })
+    .set({ status: "cancelado", origem: "humana", editadoPor: sessao.autor, editadoEm: new Date() })
     .where(eq(schema.prazos.id, prazoId));
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 
@@ -65,7 +93,10 @@ export async function cancelarPrazoAction(prazoId: string) {
 
 /** Muda a fase do processo e grava a mudança no histórico `fases_processo`. */
 export async function mudarFaseAction(processoId: string, fase: string, motivo?: string) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
+  if (!ehUuid(processoId)) return { ok: false, erro: "Identificador inválido." };
   if (!FASES_VALIDAS.includes(fase as (typeof FASES_VALIDAS)[number])) {
     return { ok: false, erro: "Fase inválida." };
   }
@@ -83,10 +114,10 @@ export async function mudarFaseAction(processoId: string, fase: string, motivo?:
     fase,
     faseAnterior: proc.fase,
     motivo: motivo?.trim() || null,
-    autor: "advogado",
+    autor: sessao.autor,
     origem: "humana",
   });
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 
@@ -99,7 +130,10 @@ export async function adicionarMovimentacaoManualAction(
   processoId: string,
   dados: { descricao: string; dataHora: string },
 ) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
+  if (!ehUuid(processoId)) return { ok: false, erro: "Identificador inválido." };
   const descricao = dados.descricao?.trim();
   if (!descricao) return { ok: false, erro: "Descrição obrigatória." };
   const dataHora = new Date(dados.dataHora);
@@ -110,9 +144,9 @@ export async function adicionarMovimentacaoManualAction(
     descricao,
     dataHora,
     fonte: "manual",
-    criadoPor: "advogado",
+    criadoPor: sessao.autor,
   });
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 
@@ -121,7 +155,10 @@ export async function editarMovimentacaoAction(
   movId: string,
   patch: { descricao?: string; dataHora?: string },
 ) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
+  if (!ehUuid(movId)) return { ok: false, erro: "Identificador inválido." };
 
   const [mov] = await db
     .select({ fonte: schema.movimentacoes.fonte })
@@ -146,13 +183,16 @@ export async function editarMovimentacaoAction(
   }
 
   await db.update(schema.movimentacoes).set(set).where(eq(schema.movimentacoes.id, movId));
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 
 /** Remove uma movimentação, apenas se for manual. */
 export async function removerMovimentacaoAction(movId: string) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
+  if (!ehUuid(movId)) return { ok: false, erro: "Identificador inválido." };
 
   const [mov] = await db
     .select({ fonte: schema.movimentacoes.fonte })
@@ -165,7 +205,7 @@ export async function removerMovimentacaoAction(movId: string) {
   }
 
   await db.delete(schema.movimentacoes).where(eq(schema.movimentacoes.id, movId));
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 
@@ -175,18 +215,24 @@ export async function removerMovimentacaoAction(movId: string) {
 
 /** Cria uma anotação livre no processo. */
 export async function adicionarAnotacaoAction(processoId: string, texto: string) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
+  if (!ehUuid(processoId)) return { ok: false, erro: "Identificador inválido." };
   const conteudo = texto?.trim();
   if (!conteudo) return { ok: false, erro: "Texto obrigatório." };
 
-  await db.insert(schema.anotacoes).values({ processoId, texto: conteudo, autor: "advogado" });
-  revalidatePath("/");
+  await db.insert(schema.anotacoes).values({ processoId, texto: conteudo, autor: sessao.autor });
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 
 /** Edita o texto de uma anotação e carimba `atualizadoEm`. */
 export async function editarAnotacaoAction(anotacaoId: string, texto: string) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
+  if (!ehUuid(anotacaoId)) return { ok: false, erro: "Identificador inválido." };
   const conteudo = texto?.trim();
   if (!conteudo) return { ok: false, erro: "Texto obrigatório." };
 
@@ -194,15 +240,18 @@ export async function editarAnotacaoAction(anotacaoId: string, texto: string) {
     .update(schema.anotacoes)
     .set({ texto: conteudo, atualizadoEm: new Date() })
     .where(eq(schema.anotacoes.id, anotacaoId));
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 
 /** Remove uma anotação. */
 export async function removerAnotacaoAction(anotacaoId: string) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
+  if (!ehUuid(anotacaoId)) return { ok: false, erro: "Identificador inválido." };
   await db.delete(schema.anotacoes).where(eq(schema.anotacoes.id, anotacaoId));
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 
@@ -230,11 +279,18 @@ export async function salvarClienteAction(
   dados: DadosCliente,
   papel: string,
 ) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
+  if (!ehUuid(processoId)) return { ok: false, erro: "Identificador inválido." };
   const nome = dados.nome?.trim();
   if (!nome) return { ok: false, erro: "Nome obrigatório." };
+  if (!textoValido(nome, 200) || (dados.id && !ehUuid(dados.id))) return { ok: false, erro: "Nome ou cliente inválido." };
   const papelNorm = papel?.trim();
-  if (!papelNorm) return { ok: false, erro: "Papel obrigatório." };
+  if (!textoValido(papelNorm, 100)) return { ok: false, erro: "Papel obrigatório com até 100 caracteres." };
+  const [processoAlvo] = await db.select({ id: schema.processos.id }).from(schema.processos)
+    .where(eq(schema.processos.id, processoId)).limit(1);
+  if (!processoAlvo) return { ok: false, erro: "Processo não encontrado." };
 
   const valores = {
     nome,
@@ -247,7 +303,8 @@ export async function salvarClienteAction(
 
   let clienteId = dados.id;
   if (clienteId) {
-    await db.update(schema.clientes).set(valores).where(eq(schema.clientes.id, clienteId));
+    const [atualizado] = await db.update(schema.clientes).set(valores).where(eq(schema.clientes.id, clienteId)).returning({ id: schema.clientes.id });
+    if (!atualizado) return { ok: false, erro: "Cliente não encontrado." };
   } else {
     const [novo] = await db.insert(schema.clientes).values(valores).returning({ id: schema.clientes.id });
     clienteId = novo.id;
@@ -263,7 +320,7 @@ export async function salvarClienteAction(
       papel: papelNorm,
       principal: dados.principal ?? false,
       origem: "humana",
-      confirmadoPor: "advogado",
+      confirmadoPor: sessao.autor,
       confirmadoEm: agora,
     })
     .onConflictDoUpdate({
@@ -275,17 +332,16 @@ export async function salvarClienteAction(
       set: {
         principal: dados.principal ?? false,
         origem: "humana",
-        confirmadoPor: "advogado",
+        confirmadoPor: sessao.autor,
         confirmadoEm: agora,
       },
     });
 
-  await db
-    .update(schema.processos)
-    .set({ clienteNome: nome })
-    .where(eq(schema.processos.id, processoId));
+  if (dados.principal) {
+    await db.update(schema.processos).set({ clienteNome: nome }).where(eq(schema.processos.id, processoId));
+  }
 
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { ok: true, clienteId };
 }
 
@@ -322,7 +378,10 @@ export async function confirmarParteAction(
   parteDetectadaId: string,
   opcoes: { papel?: string; principal?: boolean } = {},
 ) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
+  if (!ehUuid(parteDetectadaId)) return { ok: false, erro: "Identificador inválido." };
 
   const [det] = await db
     .select()
@@ -330,6 +389,7 @@ export async function confirmarParteAction(
     .where(eq(schema.partesDetectadas.id, parteDetectadaId))
     .limit(1);
   if (!det) return { ok: false, erro: "Detecção não encontrada." };
+  if (det.status !== "sugerido") return { ok: false, erro: "Esta detecção já foi decidida. Recarregue a página." };
 
   const papel = opcoes.papel?.trim() || det.papelSugerido || papelDoPolo(det.polo);
   const principal = opcoes.principal ?? true;
@@ -345,7 +405,7 @@ export async function confirmarParteAction(
       principal,
       origem: "humana",
       polo: det.polo,
-      confirmadoPor: "advogado",
+      confirmadoPor: sessao.autor,
       confirmadoEm: agora,
     })
     .onConflictDoUpdate({
@@ -358,7 +418,7 @@ export async function confirmarParteAction(
         principal,
         origem: "humana",
         polo: det.polo,
-        confirmadoPor: "advogado",
+        confirmadoPor: sessao.autor,
         confirmadoEm: agora,
       },
     });
@@ -374,14 +434,14 @@ export async function confirmarParteAction(
 
   await db
     .update(schema.partesDetectadas)
-    .set({ status: "confirmado", clienteId, decididoPor: "advogado", decididoEm: agora })
+    .set({ status: "confirmado", clienteId, decididoPor: sessao.autor, decididoEm: agora })
     .where(eq(schema.partesDetectadas.id, parteDetectadaId));
 
   const oposto = poloOposto(det.polo);
   if (oposto) {
     await db
       .update(schema.partesDetectadas)
-      .set({ status: "descartado", decididoPor: "advogado", decididoEm: agora })
+      .set({ status: "descartado", decididoPor: sessao.autor, decididoEm: agora })
       .where(
         and(
           eq(schema.partesDetectadas.processoId, det.processoId),
@@ -391,7 +451,7 @@ export async function confirmarParteAction(
       );
   }
 
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { ok: true, clienteId };
 }
 
@@ -403,7 +463,10 @@ export async function confirmarParteAction(
  * dizer "não é ele" seria pior que não ter deduzido nada.
  */
 export async function descartarParteAction(parteDetectadaId: string) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
+  if (!ehUuid(parteDetectadaId)) return { ok: false, erro: "Identificador inválido." };
 
   const [det] = await db
     .select()
@@ -411,10 +474,11 @@ export async function descartarParteAction(parteDetectadaId: string) {
     .where(eq(schema.partesDetectadas.id, parteDetectadaId))
     .limit(1);
   if (!det) return { ok: false, erro: "Detecção não encontrada." };
+  if (det.status !== "sugerido") return { ok: false, erro: "Esta detecção já foi decidida. Recarregue a página." };
 
   await db
     .update(schema.partesDetectadas)
-    .set({ status: "descartado", decididoPor: "advogado", decididoEm: new Date() })
+    .set({ status: "descartado", decididoPor: sessao.autor, decididoEm: new Date() })
     .where(eq(schema.partesDetectadas.id, parteDetectadaId));
 
   if (det.clienteId) {
@@ -427,20 +491,26 @@ export async function descartarParteAction(parteDetectadaId: string) {
           eq(schema.processoPartes.origem, "maquina"),
         ),
       );
-    await db
-      .update(schema.processos)
-      .set({ clienteNome: null })
-      .where(and(eq(schema.processos.id, det.processoId), eq(schema.processos.clienteNome, det.nome)));
+    const [principalHumano] = await db.select({ id: schema.processoPartes.id }).from(schema.processoPartes)
+      .where(and(eq(schema.processoPartes.processoId, det.processoId), eq(schema.processoPartes.origem, "humana"), eq(schema.processoPartes.principal, true)))
+      .limit(1);
+    if (!principalHumano) {
+      await db.update(schema.processos).set({ clienteNome: null })
+        .where(and(eq(schema.processos.id, det.processoId), eq(schema.processos.clienteNome, det.nome)));
+    }
   }
 
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 
 /** Confirma várias detecções de uma vez, com o papel derivado do polo de cada uma. */
 export async function confirmarPartesEmLoteAction(ids: string[]) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
-  const alvos = ids.filter(Boolean);
+  if (!Array.isArray(ids) || ids.length > 100 || ids.some((id) => !ehUuid(id))) return { ok: false, erro: "Selecione até 100 identificadores válidos." };
+  const alvos = [...new Set(ids)];
   if (alvos.length === 0) return { ok: false, erro: "Nada selecionado." };
   let confirmadas = 0;
   const erros: string[] = [];
@@ -449,7 +519,7 @@ export async function confirmarPartesEmLoteAction(ids: string[]) {
     if (r.ok) confirmadas++;
     else erros.push(r.erro ?? "falha");
   }
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { ok: confirmadas > 0, confirmadas, erros };
 }
 
@@ -459,34 +529,43 @@ export async function confirmarPartesEmLoteAction(ids: string[]) {
 
 /** Arquiva o processo: sai da rotina de sync, continua consultável e reversível. */
 export async function arquivarProcessoAction(processoId: string) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
+  if (!ehUuid(processoId)) return { ok: false, erro: "Identificador inválido." };
   await db
     .update(schema.processos)
     .set({ status: "arquivado", arquivadoEm: new Date() })
     .where(eq(schema.processos.id, processoId));
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 
 /** Desarquiva o processo, voltando ao status ativo. */
 export async function desarquivarProcessoAction(processoId: string) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
+  if (!ehUuid(processoId)) return { ok: false, erro: "Identificador inválido." };
   await db
     .update(schema.processos)
     .set({ status: "ativo", arquivadoEm: null })
     .where(eq(schema.processos.id, processoId));
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 
-/** Exclui o processo por soft-delete: some da UI, recuperável por 30 dias. */
+/** Exclui da carteira por soft-delete. O registro permanece para recuperação administrativa. */
 export async function excluirProcessoAction(processoId: string) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
+  if (!ehUuid(processoId)) return { ok: false, erro: "Identificador inválido." };
   await db
     .update(schema.processos)
     .set({ status: "excluido", excluidoEm: new Date() })
     .where(eq(schema.processos.id, processoId));
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 
@@ -496,21 +575,27 @@ export async function excluirProcessoAction(processoId: string) {
 
 /** Cria uma anotação livre num cliente. */
 export async function adicionarAnotacaoClienteAction(clienteId: string, texto: string) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
+  if (!ehUuid(clienteId)) return { ok: false, erro: "Identificador inválido." };
   const conteudo = texto?.trim();
   if (!conteudo) return { ok: false, erro: "Texto obrigatório." };
-  await db.insert(schema.anotacoes).values({ clienteId, texto: conteudo, autor: "advogado" });
-  revalidatePath("/");
+  await db.insert(schema.anotacoes).values({ clienteId, texto: conteudo, autor: sessao.autor });
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 
 /** Cria uma anotação livre num prazo. */
 export async function adicionarAnotacaoPrazoAction(prazoId: string, texto: string) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
+  if (!ehUuid(prazoId)) return { ok: false, erro: "Identificador inválido." };
   const conteudo = texto?.trim();
   if (!conteudo) return { ok: false, erro: "Texto obrigatório." };
-  await db.insert(schema.anotacoes).values({ prazoId, texto: conteudo, autor: "advogado" });
-  revalidatePath("/");
+  await db.insert(schema.anotacoes).values({ prazoId, texto: conteudo, autor: sessao.autor });
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 
@@ -526,10 +611,16 @@ export async function salvarModeloAction(dados: {
   arquivoNome?: string;
   tags?: string[];
 }) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
   const tipo = dados.tipo?.trim();
   const titulo = dados.titulo?.trim();
   if (!tipo || !titulo) return { ok: false, erro: "Tipo e título são obrigatórios." };
+  if (!textoValido(tipo, 100) || !textoValido(titulo, 200) ||
+      (dados.textoExtraido !== undefined && !textoValido(dados.textoExtraido, 2 * 1024 * 1024, false)) ||
+      !Array.isArray(dados.tags ?? []) || (dados.tags ?? []).length > 30 ||
+      (dados.tags ?? []).some((tag) => !textoValido(tag, 100))) return { ok: false, erro: "Modelo excede os limites permitidos." };
   const [row] = await db
     .insert(schema.modelosPeca)
     .values({
@@ -540,15 +631,18 @@ export async function salvarModeloAction(dados: {
       tags: dados.tags ?? [],
     })
     .returning({ id: schema.modelosPeca.id });
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { ok: true, id: row.id };
 }
 
 /** Desativa (aposenta) um modelo sem apagar. */
 export async function removerModeloAction(id: string) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
+  if (!ehUuid(id)) return { ok: false, erro: "Identificador inválido." };
   await db.update(schema.modelosPeca).set({ ativo: false }).where(eq(schema.modelosPeca.id, id));
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 
@@ -569,9 +663,12 @@ export async function gerarPecaAction(dados: {
   prazoId?: string;
   clienteId?: string;
 }) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
   const tipo = dados.tipo?.trim();
-  if (!tipo) return { ok: false, erro: "Tipo da peça é obrigatório." };
+  if (!textoValido(tipo, 100)) return { ok: false, erro: "Tipo da peça inválido." };
+  if ([dados.processoId, dados.prazoId, dados.clienteId].some((id) => id !== undefined && !ehUuid(id))) return { ok: false, erro: "Vínculo inválido." };
   const [row] = await db
     .insert(schema.pecas)
     .values({
@@ -583,7 +680,7 @@ export async function gerarPecaAction(dados: {
       origem: "maquina",
     })
     .returning({ id: schema.pecas.id });
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   const alvo = dados.prazoId
     ? `do prazo ${dados.prazoId}`
     : dados.processoId
@@ -599,38 +696,67 @@ export async function gerarPecaAction(dados: {
 
 /** Edita o conteúdo de uma peça: origem 'humana', status 'editado'. O motor não sobrescreve mais. */
 export async function editarPecaAction(id: string, conteudo: string) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
+  if (!ehUuid(id)) return { ok: false, erro: "Identificador inválido." };
+  if (!textoValido(conteudo, 2 * 1024 * 1024)) return { ok: false, erro: "Informe o texto da peça com até 2 MB." };
   await db
     .update(schema.pecas)
     .set({
       conteudo,
       status: "editado",
       origem: "humana",
-      editadoPor: "advogado",
+      editadoPor: sessao.autor,
       editadoEm: new Date(),
       atualizadoEm: new Date(),
     })
     .where(eq(schema.pecas.id, id));
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 
-/** Aprova a peça (origem 'humana') sem alterar o texto. */
-export async function confirmarPecaAction(id: string) {
+/** Aprova somente o texto e a versão que o advogado visualizou, sem alterar a peça. */
+export async function confirmarPecaAction(
+  id: string,
+  revisao: { hashConteudo: string; versao: number | null; origem: string | null },
+) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
-  await db
+  if (!ehUuid(id)) return { ok: false, erro: "Identificador inválido." };
+  if (!revisao || !ehHashSha256(revisao.hashConteudo) || revisao.origem !== "maquina" ||
+      (revisao.versao !== null && (!Number.isSafeInteger(revisao.versao) || revisao.versao < 1))) {
+    return { ok: false, erro: "Recarregue a peça e confira o rascunho antes de aprovar." };
+  }
+  const [peca] = await db.select({ conteudo: schema.pecas.conteudo, versao: schema.pecas.versao, origem: schema.pecas.origem }).from(schema.pecas)
+    .where(and(eq(schema.pecas.id, id), eq(schema.pecas.origem, "maquina"), inArray(schema.pecas.status, ["gerado", "editado"]))).limit(1);
+  if (!peca?.conteudo?.trim()) return { ok: false, erro: "A peça precisa estar redigida antes da confirmação." };
+  if (peca.versao !== revisao.versao || peca.origem !== revisao.origem ||
+      createHash("sha256").update(peca.conteudo, "utf8").digest("hex") !== revisao.hashConteudo) {
+    return { ok: false, erro: "A peça mudou desde sua leitura. Recarregue e revise o texto atualizado antes de aprovar." };
+  }
+  const [confirmada] = await db
     .update(schema.pecas)
-    .set({ origem: "humana", editadoPor: "advogado", editadoEm: new Date() })
-    .where(eq(schema.pecas.id, id));
-  revalidatePath("/");
+    .set({ origem: "humana", editadoPor: sessao.autor, editadoEm: new Date() })
+    // Compara também no UPDATE: uma geração ou edição depois da leitura acima invalida a revisão.
+    .where(and(eq(schema.pecas.id, id), eq(schema.pecas.conteudo, peca.conteudo),
+      peca.versao === null ? isNull(schema.pecas.versao) : eq(schema.pecas.versao, peca.versao),
+      eq(schema.pecas.origem, "maquina"), inArray(schema.pecas.status, ["gerado", "editado"])))
+    .returning({ id: schema.pecas.id });
+  if (!confirmada) return { ok: false, erro: "A peça mudou durante a confirmação. Recarregue e revise a versão atualizada." };
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 
 /** Arquiva uma peça (some da lista ativa). */
 export async function removerPecaAction(id: string) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
+  if (!ehUuid(id)) return { ok: false, erro: "Identificador inválido." };
   await db.update(schema.pecas).set({ status: "arquivado" }).where(eq(schema.pecas.id, id));
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 
@@ -646,7 +772,10 @@ export async function atualizarClienteAction(
     observacoes?: string;
   },
 ) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
+  if (!ehUuid(id)) return { ok: false, erro: "Identificador inválido." };
   const set: Record<string, string | null> = {};
   if (dados.nome !== undefined) {
     const n = dados.nome.trim();
@@ -659,12 +788,14 @@ export async function atualizarClienteAction(
   if (dados.telefone !== undefined) set.telefone = dados.telefone.trim() || null;
   if (dados.observacoes !== undefined) set.observacoes = dados.observacoes.trim() || null;
   await db.update(schema.clientes).set(set).where(eq(schema.clientes.id, id));
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 
 /** Cria um cliente novo pelo nome (para os que só existem como texto no processo). */
 export async function criarClienteAction(nome: string) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
   const n = nome?.trim();
   if (!n) return { ok: false, erro: "Nome é obrigatório." };
@@ -672,7 +803,7 @@ export async function criarClienteAction(nome: string) {
     .insert(schema.clientes)
     .values({ nome: n })
     .returning({ id: schema.clientes.id });
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { ok: true, id: row.id };
 }
 
@@ -682,6 +813,8 @@ export async function criarClienteAction(nome: string) {
 // ============================================================================
 
 export async function iniciarInicialAction(dados: { clienteNome?: string; fatos: string }) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
   const fatos = dados.fatos?.trim();
   if (!fatos) return { ok: false, erro: "Descreva os fatos do caso." };
@@ -716,7 +849,7 @@ export async function iniciarInicialAction(dados: { clienteNome?: string; fatos:
       origem: "maquina",
     })
     .returning({ id: schema.pecas.id });
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { ok: true, id: row.id };
 }
 
@@ -730,17 +863,25 @@ export async function protocolarInicialAction(
   pecaId: string,
   dados: { numeroCnj: string; tribunal: string; clienteNome?: string },
 ) {
+  const sessao = await sessaoParaMutacao();
+  if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
+  if (!ehUuid(pecaId)) return { ok: false, erro: "Identificador inválido." };
   const numeroCnj = dados.numeroCnj?.trim();
   const tribunal = dados.tribunal?.trim();
   if (!numeroCnj || !tribunal) {
     return { ok: false, erro: "Informe o número CNJ e o tribunal do processo protocolado." };
   }
 
+  const cnjDigitos = numeroCnj.replace(/\D/g, "");
+  if (cnjDigitos.length !== 20 || !textoValido(tribunal, 100)) return { ok: false, erro: "Informe um CNJ com 20 dígitos e o tribunal." };
+  const [peca] = await db.select({ id: schema.pecas.id }).from(schema.pecas).where(eq(schema.pecas.id, pecaId)).limit(1);
+  if (!peca) return { ok: false, erro: "Peça não encontrada." };
+  const cnjFormatado = `${cnjDigitos.slice(0, 7)}-${cnjDigitos.slice(7, 9)}.${cnjDigitos.slice(9, 13)}.${cnjDigitos.slice(13, 14)}.${cnjDigitos.slice(14, 16)}.${cnjDigitos.slice(16)}`;
   const [proc] = await db
     .insert(schema.processos)
     .values({
-      numeroCnj,
+      numeroCnj: cnjFormatado,
       tribunal,
       clienteNome: dados.clienteNome?.trim() || null,
       fase: "postulatoria",
@@ -754,13 +895,13 @@ export async function protocolarInicialAction(
     const [ex] = await db
       .select({ id: schema.processos.id })
       .from(schema.processos)
-      .where(eq(schema.processos.numeroCnj, numeroCnj))
+      .where(eq(schema.processos.numeroCnj, cnjFormatado))
       .limit(1);
     processoId = ex?.id;
   }
   if (!processoId) return { ok: false, erro: "Não foi possível criar o processo." };
 
   await db.update(schema.pecas).set({ processoId }).where(eq(schema.pecas.id, pecaId));
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { ok: true, processoId };
 }

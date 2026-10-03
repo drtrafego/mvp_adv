@@ -1,7 +1,8 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { getUsuarioAtual } from "@/lib/auth";
 import { db, schema } from "@/db";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
+import { ehDataIso, ehHashSha256, ehUuid, origemPermitida, textoValido } from "@/lib/seguranca";
 import {
   ehCategoria,
   MIMES,
@@ -22,13 +23,14 @@ export const dynamic = "force-dynamic";
  * tamanho e o tipo, então nada do que ele manda é aceito sem conferência.
  */
 export async function POST(request: Request): Promise<Response> {
-  const usuario = await getUsuarioAtual();
-  if (!usuario) return new Response("Não autorizado.", { status: 401 });
   if (!db) return new Response("Banco não conectado.", { status: 503 });
-
-  const body = (await request.json()) as HandleUploadBody;
-
   try {
+    const body = (await request.json()) as HandleUploadBody;
+    // O SDK autentica a assinatura do callback Blob. Apenas a emissão de token usa cookie.
+    if (body.type === "blob.generate-client-token") {
+      if (!origemPermitida(request)) return new Response("Origem não autorizada.", { status: 403 });
+      if (!(await getUsuarioAtual())) return new Response("Não autorizado.", { status: 401 });
+    }
     const resultado = await handleUpload({
       body,
       request,
@@ -39,8 +41,14 @@ export async function POST(request: Request): Promise<Response> {
           categoria?: string;
           titulo?: string;
           hash?: string;
+          dataDocumento?: string;
+          uploadId?: string;
         };
-        if ((!p.processoId && !p.pecaId) || !p.categoria || !p.hash || !p.titulo) {
+        if (Boolean(p.processoId) === Boolean(p.pecaId) ||
+            (p.processoId && !ehUuid(p.processoId)) || (p.pecaId && !ehUuid(p.pecaId)) ||
+            !p.categoria || !ehHashSha256(p.hash) || !textoValido(p.titulo, 200) ||
+            (p.uploadId !== undefined && !ehUuid(p.uploadId)) ||
+            (p.dataDocumento && !ehDataIso(p.dataDocumento))) {
           throw new Error("Dados do upload incompletos.");
         }
         if (!ehCategoria(p.categoria)) throw new Error(`Categoria inválida: ${p.categoria}`);
@@ -52,7 +60,7 @@ export async function POST(request: Request): Promise<Response> {
           const [processo] = await db!
             .select({ id: schema.processos.id, numeroCnj: schema.processos.numeroCnj })
             .from(schema.processos)
-            .where(eq(schema.processos.id, p.processoId))
+            .where(and(eq(schema.processos.id, p.processoId), isNull(schema.processos.excluidoEm)))
             .limit(1);
           if (!processo) throw new Error("Processo não encontrado.");
           numeroCnj = processo.numeroCnj;
@@ -68,6 +76,7 @@ export async function POST(request: Request): Promise<Response> {
         // O caminho é derivado no servidor e comparado com o pedido: sem isso o cliente
         // escolheria onde gravar dentro do store.
         const extensao = (pathname.match(/\.[^.]+$/)?.[0] ?? "").toLowerCase();
+        if (!MIMES[extensao]) throw new Error("Extensão de arquivo não permitida.");
         const esperado = montarStoragePath({
           numeroCnj,
           pecaId: p.pecaId,
@@ -75,16 +84,18 @@ export async function POST(request: Request): Promise<Response> {
           titulo: p.titulo,
           hashSha256: p.hash,
           extensao,
+          data: p.dataDocumento || undefined,
+          uploadId: p.uploadId,
         });
         if (pathname !== esperado) {
           throw new Error("Caminho do arquivo não confere com a convenção do sistema.");
         }
 
         return {
-          allowedContentTypes: Object.values(MIMES),
+          allowedContentTypes: [MIMES[extensao]],
           maximumSizeInBytes: TAMANHO_MAX_PAINEL,
           addRandomSuffix: false,
-          allowOverwrite: true,
+          allowOverwrite: false,
           // O registro no banco é feito pela Server Action, depois que o upload conclui.
           tokenPayload: JSON.stringify({ processoId: p.processoId, pecaId: p.pecaId }),
         };

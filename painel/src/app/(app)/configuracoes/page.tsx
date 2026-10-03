@@ -14,18 +14,19 @@ import { PageHeader } from "@/components/page-header";
 import { ImportarClientes } from "@/components/importar-clientes";
 import { ImportarModelos } from "@/components/importar-modelos";
 import { MinhaSenha, ListaAcessos, NovoAcesso } from "@/components/gestao-acesso";
-import { getUsuarioAtual } from "@/lib/auth";
+import { getUsuarioAtual, usuarioPodeAdministrar } from "@/lib/auth";
 import { listarModelos, listarAcessos } from "@/db/queries";
 import { fazerLogout } from "@/app/login/actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function ConfiguracoesPage() {
-  const [usuario, modelos, acessos] = await Promise.all([
+  const [usuario, modelos] = await Promise.all([
     getUsuarioAtual(),
     listarModelos(),
-    listarAcessos(),
   ]);
+  const administra = usuario ? await usuarioPodeAdministrar(usuario) : false;
+  const acessos = administra ? await listarAcessos() : [];
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-8">
@@ -70,7 +71,7 @@ export default async function ConfiguracoesPage() {
         <MinhaSenha />
       </section>
 
-      <section className="mt-6 rounded-xl border bg-card p-6 shadow-sm">
+      {administra && <section className="mt-6 rounded-xl border bg-card p-6 shadow-sm">
         <h2 className="flex items-center gap-2 font-serif text-lg font-semibold">
           <Users className="h-5 w-5 text-indigo-brand" /> Quem tem acesso
         </h2>
@@ -79,9 +80,9 @@ export default async function ConfiguracoesPage() {
           escritório. Não existe perfil restrito: só conceda a quem pode ver tudo.
         </p>
         <ListaAcessos acessos={acessos} usuarioAtualId={usuario?.id ?? null} />
-      </section>
+      </section>}
 
-      <section className="mt-6 rounded-xl border bg-card p-6 shadow-sm">
+      {administra && <section className="mt-6 rounded-xl border bg-card p-6 shadow-sm">
         <h2 className="flex items-center gap-2 font-serif text-lg font-semibold">
           <UserPlus className="h-5 w-5 text-indigo-brand" /> Criar acesso
         </h2>
@@ -90,7 +91,8 @@ export default async function ConfiguracoesPage() {
           troca a senha em Minha senha.
         </p>
         <NovoAcesso />
-      </section>
+      </section>}
+      {!administra && <p className="mt-6 rounded-xl border bg-card p-4 text-sm text-muted-foreground">Seu acesso permite trabalhar nos processos, prazos e documentos deste escritório. O titular gerencia as contas da equipe.</p>}
 
       <section className="mt-6 rounded-xl border bg-card p-6 shadow-sm">
         <h2 className="flex items-center gap-2 font-serif text-lg font-semibold">

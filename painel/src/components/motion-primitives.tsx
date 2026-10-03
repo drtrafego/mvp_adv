@@ -5,7 +5,7 @@ import { motion, useReducedMotion, type Variants } from "motion/react";
 const ease = [0.22, 1, 0.36, 1] as const;
 
 /**
- * Fade + leve subida na ENTRADA (no carregamento, não no scroll).
+ * Leve subida na entrada; o conteúdo já nasce visível, inclusive antes da hidratação.
  * Regra dura: o conteúdo nunca pode ficar preso invisível. Por isso animamos no mount
  * (sempre completa) e, com prefers-reduced-motion, renderizamos já visível, sem animação.
  */
@@ -25,7 +25,7 @@ export function Reveal({
   return (
     <Comp
       className={className}
-      initial={reduce ? false : { opacity: 0, y: 14 }}
+      initial={reduce ? false : { y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={reduce ? { duration: 0 } : { duration: 0.5, ease, delay }}
     >
@@ -40,7 +40,7 @@ const groupVariants: Variants = {
 };
 
 const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 12 },
+  hidden: { y: 12 },
   show: { opacity: 1, y: 0, transition: { duration: 0.45, ease } },
 };
 

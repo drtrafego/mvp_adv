@@ -1,5 +1,10 @@
 # Panorama de funcionalidades do Gabinete
 
+> Documento histórico da arquitetura inicial. Fluxos, contagens e hospedagem abaixo
+> não descrevem integralmente a versão revisada. Para o estado atual, consultar
+> `docs/10_AUDITORIA_E_ROADMAP.md`; para implantar o Gabinete independente no VPS,
+> usar `docs/09_IMPLANTACAO.md`. O agente externo e sua API ficam para outra etapa.
+
 Sistema jurídico de UM advogado (não SaaS). O advogado comanda pelo celular/terminal
 (Claude Code + MCP), tudo grava no Neon, e o painel web é onde ele vê e edita.
 Filosofia inegociável: **a máquina propõe, o humano dispõe**.

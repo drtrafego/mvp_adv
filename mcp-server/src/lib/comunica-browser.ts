@@ -96,11 +96,12 @@ async function consultarPorDentro(page: Page, url: string): Promise<ResultadoFet
     let ultimoStatus = 0;
     for (let i = 0; i < 3; i++) {
       try {
-        const r = await fetch(u, { headers: { Accept: "application/json" }, credentials: "include" });
+        const r = await fetch(u, { headers: { Accept: "application/json" }, credentials: "include", signal: AbortSignal.timeout(20_000) });
         ultimoStatus = r.status;
         if (r.ok) {
           const j = (await r.json()) as { items?: ComunicaRawItem[] };
-          return { ok: true, status: r.status, items: j.items ?? [] };
+          if (!Array.isArray(j.items)) return { ok: false, status: r.status, items: null, erro: "Resposta sem lista items." };
+          return { ok: true, status: r.status, items: j.items };
         }
         // 403 do WAF ou 5xx: espera e tenta de novo, o token pode estar assentando.
         if (r.status === 403 || r.status >= 500) {

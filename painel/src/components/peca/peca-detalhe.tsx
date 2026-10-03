@@ -45,6 +45,7 @@ export type PecaDetalhe = {
     conteudo: string | null;
     status: string | null;
     origem: string | null;
+    versao: number | null;
     criadoEm: Date | string | null;
   };
   processo: { id: string; numeroCnj: string; clienteNome: string | null } | null;
@@ -105,10 +106,17 @@ export function PecaDetalhe({ detalhe }: { detalhe: PecaDetalhe }) {
 
   function aprovar() {
     start(async () => {
-      const r = await confirmarPecaAction(peca.id);
-      if (r.ok) toast.success("Peça aprovada. Virou sua palavra.");
-      else toast.error(r.erro ?? "Falha.");
-      router.refresh();
+      try {
+        // O snapshot é o texto exibido, não o rascunho ainda não salvo no editor.
+        const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(peca.conteudo ?? ""));
+        const hashConteudo = Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+        const r = await confirmarPecaAction(peca.id, { hashConteudo, versao: peca.versao, origem: peca.origem });
+        if (r.ok) toast.success("Peça aprovada. Virou sua palavra.");
+        else toast.error(r.erro ?? "Falha.");
+        router.refresh();
+      } catch {
+        toast.error("Não foi possível conferir a revisão. Recarregue a peça e tente novamente.");
+      }
     });
   }
 
@@ -293,7 +301,7 @@ function DocumentosDoCaso({
         <h3 className="font-mono text-[0.65rem] uppercase tracking-wide text-muted-foreground">
           Documentos do caso · {documentos.length}
         </h3>
-        <UploadDocumento pecaId={pecaId} processoId={processoId} numeroCnj={numeroCnj} />
+        <UploadDocumento pecaId={processoId ? undefined : pecaId} processoId={processoId} numeroCnj={numeroCnj} />
       </div>
 
       {documentos.length === 0 ? (

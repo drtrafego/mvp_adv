@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Check, Pencil, X, CalendarDays, Inbox, ShieldCheck, Sparkles } from "lucide-react";
+import { Check, Pencil, X, CalendarDays, Inbox, ShieldCheck, Sparkles, TriangleAlert } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
@@ -22,10 +23,10 @@ import {
   editarPrazoAction,
   cancelarPrazoAction,
 } from "@/app/actions";
-import { estiloStatus, diasRestantes, urgencia, formatarData } from "@/lib/prazo-ui";
+import { estiloStatus, diasRestantes, urgencia, formatarData, FILTROS_PRAZO, pendenciasDoPrazo, type FiltroPrazo } from "@/lib/prazo-ui";
 import type { PrazoRow } from "@/db/queries";
 
-export function PrazosBoard({ prazos }: { prazos: PrazoRow[] }) {
+export function PrazosBoard({ prazos, filtro = "todos", mostrarFiltros = true }: { prazos: PrazoRow[]; filtro?: FiltroPrazo; mostrarFiltros?: boolean }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -45,6 +46,7 @@ export function PrazosBoard({ prazos }: { prazos: PrazoRow[] }) {
     startTransition(async () => {
       const r = await cancelarPrazoAction(id);
       if (r.ok) toast("Prazo cancelado.");
+      else toast.error(r.erro ?? "Falha ao cancelar.");
       router.refresh();
     });
   }
@@ -57,16 +59,47 @@ export function PrazosBoard({ prazos }: { prazos: PrazoRow[] }) {
         </span>
         <p className="mt-4 font-serif text-lg font-medium">Nenhum prazo por enquanto</p>
         <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-          No terminal, peça ao Claude Code para{" "}
-          <span className="font-mono text-foreground">buscar suas intimações</span> e calcular os
-          prazos. Eles aparecem aqui automaticamente.
+          Os prazos aparecem após a coleta e a análise das intimações. Confira a fila de
+          comunicações para acompanhar o que aguarda revisão.
         </p>
+        <Link href="/intimacoes?filtro=sem-prazo" className="mt-4 text-sm font-medium text-indigo-brand hover:underline">Ver intimações pendentes</Link>
       </div>
     );
   }
 
+  const selecionar = (p: PrazoRow, valor: FiltroPrazo) => {
+    const dias = diasRestantes(p.dataFatal);
+    if (valor === "revisao") return p.origem !== "humana";
+    if (valor === "prioridade") return dias >= 0 && dias <= 7;
+    if (valor === "futuros") return dias > 7;
+    if (valor === "vencidos") return dias < 0;
+    return true;
+  };
+  const filtrados = prazos.filter((p) => selecionar(p, filtro));
+  const ativos = filtrados.filter((p) => diasRestantes(p.dataFatal) >= 0);
+  const vencidos = filtrados.filter((p) => diasRestantes(p.dataFatal) < 0);
+  const cards = (itens: PrazoRow[]) => (
+    <StaggerGroup className="grid gap-3">
+      {itens.map((p) => (
+        <StaggerItem key={p.id}>
+          <PrazoCard p={p} onConfirmar={confirmar} onCancelar={cancelar} pending={pending} />
+        </StaggerItem>
+      ))}
+    </StaggerGroup>
+  );
+
   return (
     <div className="space-y-4">
+      {mostrarFiltros && (
+        <nav aria-label="Filtrar prazos" className="flex flex-wrap gap-2">
+          {FILTROS_PRAZO.map((f) => (
+            <Link key={f.valor} href={f.valor === "todos" ? "/prazos" : `/prazos?filtro=${f.valor}`} aria-current={filtro === f.valor ? "page" : undefined}
+              className={`rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${filtro === f.valor ? "border-indigo-brand/40 bg-indigo-tint text-indigo-brand" : "bg-card text-muted-foreground hover:border-indigo-brand/30"}`}>
+              {f.rotulo} <span className="ml-1 opacity-70">{prazos.filter((p) => selecionar(p, f.valor)).length}</span>
+            </Link>
+          ))}
+        </nav>
+      )}
       <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-card/50 px-3 py-2 text-xs text-muted-foreground">
         <CalendarDays className="h-3.5 w-3.5 text-indigo-brand" />
         <span>
@@ -74,13 +107,17 @@ export function PrazosBoard({ prazos }: { prazos: PrazoRow[] }) {
           (máquina) · <span className="text-moss-brand">●</span> confirmado/editado (humano)
         </span>
       </div>
-      <StaggerGroup className="grid gap-3">
-        {prazos.map((p) => (
-          <StaggerItem key={p.id}>
-            <PrazoCard p={p} onConfirmar={confirmar} onCancelar={cancelar} pending={pending} />
-          </StaggerItem>
-        ))}
-      </StaggerGroup>
+      {filtrados.length === 0 && <p className="rounded-xl border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">Nenhum prazo neste filtro.</p>}
+      {vencidos.length > 0 && (
+        <section aria-label="Prazos vencidos" className="space-y-3">
+          <div className="flex items-start gap-2 rounded-lg border border-destructive/25 bg-destructive/5 p-3 text-sm">
+            <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+            <div><p className="font-semibold text-destructive">{vencidos.length} prazo(s) vencido(s) aguardando conferência</p><p className="mt-0.5 text-xs text-muted-foreground">Confira se o ato foi praticado e registre a situação nas anotações do processo. A confirmação da data não encerra o prazo.</p></div>
+          </div>
+          {cards(vencidos)}
+        </section>
+      )}
+      {ativos.length > 0 && <section aria-label="Prazos a vencer" className="space-y-3">{vencidos.length > 0 && <h3 className="font-serif text-lg font-semibold">Próximos vencimentos</h3>}{cards(ativos)}</section>}
     </div>
   );
 }
@@ -119,6 +156,7 @@ function PrazoCard({
   const dias = diasRestantes(p.dataFatal);
   const urg = urgencia(dias);
   const isHumano = p.origem === "humana";
+  const pendencias = pendenciasDoPrazo(p.divergencia);
   const barra =
     dias < 0 || dias <= 1 ? "bg-destructive" : dias <= 7 ? "bg-amber-brand" : "bg-indigo-brand";
 
@@ -150,26 +188,22 @@ function PrazoCard({
           {p.justificativaIa}
         </p>
       )}
+      {pendencias.length > 0 && (
+        <div className="mt-3 rounded-lg border border-amber-brand/30 bg-amber-tint/60 p-3 text-xs text-amber-brand">
+          <p className="font-semibold">Conferir antes de confirmar</p>
+          <ul className="mt-1 list-disc space-y-1 pl-4">{pendencias.map((item, i) => <li key={i}>{item}</li>)}</ul>
+        </div>
+      )}
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {!isHumano && (
-          <Button size="sm" onClick={() => onConfirmar(p.id)} disabled={pending}>
-            <Check className="mr-1 h-4 w-4" /> Confirmar
-          </Button>
+          <RevisarPrazoDialog p={p} onConfirmar={onConfirmar} pending={pending} />
         )}
         <EditarPrazoDialog p={p} />
         <Button size="sm" variant="outline" render={<Link href={`/pz/${p.id}`} />}>
           <Sparkles className="mr-1 h-4 w-4" /> Abrir / gerar peça
         </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="text-muted-foreground"
-          onClick={() => onCancelar(p.id)}
-          disabled={pending}
-        >
-          <X className="mr-1 h-4 w-4" /> Cancelar
-        </Button>
+        <CancelarPrazoDialog p={p} onCancelar={onCancelar} pending={pending} />
         {isHumano && (
           <span className="ml-auto inline-flex items-center gap-1 font-mono text-[0.7rem] uppercase tracking-wide text-moss-brand">
             <ShieldCheck className="h-3.5 w-3.5" /> validado
@@ -180,6 +214,32 @@ function PrazoCard({
   );
 }
 
+function RevisarPrazoDialog({ p, onConfirmar, pending }: { p: PrazoRow; onConfirmar: (id: string) => void; pending: boolean }) {
+  const [open, setOpen] = useState(false);
+  const pendencias = pendenciasDoPrazo(p.divergencia);
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger render={<Button size="sm" disabled={pending} />}><Check className="mr-1 h-4 w-4" /> Revisar e confirmar</DialogTrigger>
+      <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-lg">
+        <DialogHeader><DialogTitle>Conferir prazo sugerido</DialogTitle><DialogDescription>Confira o ato, o rito e a fonte antes de assumir a data.</DialogDescription></DialogHeader>
+        <dl className="space-y-3 rounded-lg border bg-muted/30 p-4 text-sm">
+          <div><dt className="text-xs text-muted-foreground">Ato</dt><dd className="font-medium">{p.ato}</dd></div>
+          <div><dt className="text-xs text-muted-foreground">Processo</dt><dd className="break-all font-mono text-xs">{p.numeroCnj ?? "Sem processo vinculado"}</dd></div>
+          <div><dt className="text-xs text-muted-foreground">Data fatal sugerida</dt><dd className="font-semibold">{formatarData(p.dataFatal)}{p.dias ? ` · ${p.dias} dias ${p.contagem === "corridos" ? "corridos" : p.contagem === "uteis" ? "úteis" : ""}` : ""}</dd></div>
+        </dl>
+        {p.justificativaIa && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{p.justificativaIa}</p>}
+        {pendencias.length > 0 && <div className="rounded-lg border border-amber-brand/30 bg-amber-tint p-3 text-sm text-amber-brand"><p className="font-semibold">Pontos a conferir</p><ul className="mt-2 list-disc space-y-1 pl-4">{pendencias.map((item, i) => <li key={i}>{item}</li>)}</ul></div>}
+        <DialogFooter><Button variant="outline" render={<Link href={p.comunicacaoId ? `/i/${p.comunicacaoId}` : `/pz/${p.id}`} />} onClick={() => setOpen(false)}>{p.comunicacaoId ? "Ver intimação" : "Ver detalhes"}</Button><Button disabled={pending} onClick={() => { onConfirmar(p.id); setOpen(false); }}><ShieldCheck /> Conferi e confirmo</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function CancelarPrazoDialog({ p, onCancelar, pending }: { p: PrazoRow; onCancelar: (id: string) => void; pending: boolean }) {
+  const [open, setOpen] = useState(false);
+  return <Dialog open={open} onOpenChange={setOpen}><DialogTrigger render={<Button size="sm" variant="ghost" className="text-muted-foreground" disabled={pending} />}><X className="mr-1 h-4 w-4" /> Cancelar</DialogTrigger><DialogContent><DialogHeader><DialogTitle>Cancelar este prazo?</DialogTitle><DialogDescription>{p.ato} · {formatarData(p.dataFatal)}. O prazo sai da lista ativa e dos alertas. Use esta ação quando o prazo não se aplica e registre o motivo nas anotações do processo.</DialogDescription></DialogHeader><DialogFooter showCloseButton><Button variant="destructive" disabled={pending} onClick={() => { onCancelar(p.id); setOpen(false); }}>Cancelar prazo</Button></DialogFooter></DialogContent></Dialog>;
+}
+
 function EditarPrazoDialog({ p }: { p: PrazoRow }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -188,6 +248,10 @@ function EditarPrazoDialog({ p }: { p: PrazoRow }) {
   const [pending, startTransition] = useTransition();
 
   function salvar() {
+    if (!ato.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(dataFatal)) {
+      toast.error("Informe o ato e uma data fatal válida.");
+      return;
+    }
     startTransition(async () => {
       const r = await editarPrazoAction(p.id, { dataFatal, ato });
       if (r.ok) {

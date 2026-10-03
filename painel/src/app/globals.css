@@ -53,6 +53,9 @@
   --ink: #e9e7e0;
   --ink-soft: #828a98;
   --line: #2a2f3b;
+  --indigo: #aaaef0;
+  --amber: #e0ae6a;
+  --moss: #9bc397;
   --indigo-tint: #23264a;
   --amber-tint: #3a2f1c;
   --moss-tint: #223324;
@@ -134,4 +137,17 @@ body {
 ::selection {
   background: var(--indigo);
   color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

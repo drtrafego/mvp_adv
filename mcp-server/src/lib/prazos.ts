@@ -105,6 +105,15 @@ export function calcularPrazo(input: CalcularPrazoInput): CalcularPrazoResult {
           `informe 'dias' e 'contagem' manualmente com justificativa.`,
       );
     }
+    // O catálogo legado representa este prazo em anos como 730 dias. Não executar uma
+    // aproximação que muda o aniversário quando o intervalo atravessa um ano bissexto.
+    if (ato.chave === "acao-rescisoria") {
+      throw new Error(
+        "[CONFERIR] Cálculo de ação rescisória bloqueado: o catálogo descreve um prazo em anos, " +
+          "que não pode ser convertido automaticamente em 730 dias. O advogado deve conferir " +
+          "o termo inicial e o aniversário no calendário antes de registrar a data.",
+      );
+    }
   }
 
   const dias = input.dias ?? ato?.dias;
@@ -114,6 +123,12 @@ export function calcularPrazo(input: CalcularPrazoInput): CalcularPrazoResult {
         "lei silencia, o prazo é de 5 dias (CPC art. 218 §3º): use a chave 'manifestacao-generica'.",
     );
   }
+  if (!Number.isSafeInteger(dias) || dias < 1 || dias > 36_500) {
+    throw new Error("O prazo precisa ser um inteiro finito de 1 a 36500 dias.");
+  }
+  // Valida a entrada mesmo quando publicação conhecida substitui a disponibilização.
+  parseISODate(input.dataDisponibilizacao);
+  if (input.dataPublicacaoConhecida) parseISODate(input.dataPublicacaoConhecida);
 
   const contagem: Contagem = input.contagem ?? ato?.contagem ?? "uteis";
   const rito: Rito | null = ato?.rito ?? null;

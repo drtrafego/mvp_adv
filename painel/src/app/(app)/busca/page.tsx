@@ -12,7 +12,7 @@ export default async function BuscaPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q = "" } = await searchParams;
-  const termo = q.trim();
+  const termo = q.trim().slice(0, 200);
   const res = termo
     ? await buscaGlobal(termo)
     : { processos: [], clientes: [], prazos: [] };
@@ -26,10 +26,16 @@ export default async function BuscaPage({
         icone={Search}
         descricao={
           termo
-            ? `${total} ${total === 1 ? "resultado" : "resultados"} em processos, clientes e prazos.`
+            ? `${total} ${total === 1 ? "resultado exibido" : "resultados exibidos"} em processos, clientes e prazos.`
             : "Use o campo de busca na barra lateral para achar processos, clientes e prazos."
         }
       />
+      <form action="/busca" className="mb-6 flex gap-2">
+        <label className="sr-only" htmlFor="busca-termo">Buscar por processo, cliente ou ato</label>
+        <input id="busca-termo" name="q" defaultValue={termo} maxLength={200} placeholder="Nome, número CNJ ou ato" className="min-w-0 flex-1 rounded-lg border bg-card px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring/30" />
+        <button type="submit" className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">Buscar</button>
+      </form>
+      {(res.processos.length === 30 || res.clientes.length === 30 || res.prazos.length === 30) && <p className="mb-4 rounded-lg border bg-muted/40 p-3 text-sm text-muted-foreground">Exibimos até 30 resultados por categoria. Refine o termo para localizar um item específico.</p>}
 
       {termo && total === 0 && (
         <div className="flex flex-col items-center rounded-xl border border-dashed bg-card/40 px-6 py-12 text-center">

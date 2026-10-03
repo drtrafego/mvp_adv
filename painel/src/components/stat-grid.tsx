@@ -27,14 +27,14 @@ export function StatGrid({ resumo }: { resumo: Resumo }) {
     <StaggerGroup className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
       <Stat icon={Briefcase} n={resumo.totalProcessos} label="processos" tom="indigo" href="/processos" />
       <Stat icon={CalendarClock} n={resumo.prazosAbertos} label="prazos abertos" tom="moss" href="/prazos" />
-      <Stat icon={Sparkles} n={resumo.sugeridos} label="aguardando você" tom="amber" href="/prazos" />
-      <Stat icon={AlarmClock} n={resumo.venceEm7Dias} label="vencem em 7 dias" tom="rose" href="/prazos" />
+      <Stat icon={Sparkles} n={resumo.sugeridos} label="para revisar" tom="amber" href="/prazos?filtro=revisao" />
+      <Stat icon={AlarmClock} n={resumo.venceEm7Dias} label="vencem em 7 dias" tom="rose" href="/prazos?filtro=prioridade" />
       <Stat
         icon={BellRing}
         n={resumo.intimacoesSemPrazo}
         label="sem prazo ainda"
         tom="amber"
-        href="/intimacoes"
+        href="/intimacoes?filtro=sem-prazo"
       />
       <Stat
         icon={UserCheck}

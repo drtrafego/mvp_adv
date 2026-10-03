@@ -17,6 +17,7 @@ import type { ComunicacaoDJEN } from "./comunica.js";
 import type { CalcularPrazoResult } from "./prazos.js";
 import { canonicalOab } from "./oab.js";
 import { formatarCNJ } from "./cnj.js";
+import { parseISODate } from "./feriados.js";
 
 let db: NeonHttpDatabase<typeof schema> | null = null;
 
@@ -234,6 +235,23 @@ export type ResultadoAnalise =
  * NUNCA faz UPDATE: análise nova sobre o mesmo alvo é linha nova com `versao` + 1, e a que o
  * advogado confirmou continua intacta.
  */
+/** Inteiro teor por id; o MCP pagina a saída sem cortar o documento silenciosamente. */
+export async function lerIntimacaoBanco(comunicacaoId: string) {
+  const [row] = await getDb()
+    .select({
+      id: schema.comunicacoes.id,
+      processoId: schema.comunicacoes.processoId,
+      numeroProcesso: schema.comunicacoes.numeroProcesso,
+      tipo: schema.comunicacoes.tipo,
+      dataDisponibilizacao: schema.comunicacoes.dataDisponibilizacao,
+      inteiroTeor: schema.comunicacoes.inteiroTeor,
+    })
+    .from(schema.comunicacoes)
+    .where(eq(schema.comunicacoes.id, comunicacaoId))
+    .limit(1);
+  return row ?? null;
+}
+
 export async function salvarAnalise(a: {
   numeroCnj?: string;
   comunicacaoId?: string;
@@ -373,12 +391,6 @@ export async function salvarPeca(p: {
 }): Promise<{ id: string } | null> {
   const d = getDb();
   if (p.pecaId) {
-    const [existente] = await d
-      .select({ origem: schema.pecas.origem })
-      .from(schema.pecas)
-      .where(eq(schema.pecas.id, p.pecaId))
-      .limit(1);
-    if (existente?.origem === "humana") return null;
     const [row] = await d
       .update(schema.pecas)
       .set({
@@ -388,7 +400,9 @@ export async function salvarPeca(p: {
         status: "gerado",
         atualizadoEm: new Date(),
       })
-      .where(eq(schema.pecas.id, p.pecaId))
+      // A trava pertence ao UPDATE: uma aprovação entre SELECT e UPDATE não pode
+      // ser sobrescrita pelo agente. Origem desconhecida também não dá permissão.
+      .where(and(eq(schema.pecas.id, p.pecaId), eq(schema.pecas.origem, "maquina")))
       .returning({ id: schema.pecas.id });
     return row ? { id: row.id } : null;
   }
@@ -441,12 +455,37 @@ export interface NovoPrazo {
   justificativaIA?: string;
 }
 
-export async function inserirPrazoSugerido(p: NovoPrazo): Promise<{ id: string }> {
+export async function inserirPrazoSugerido(p: NovoPrazo): Promise<{ id: string; criado: boolean }> {
   const d = getDb();
+  let processoId = p.processoId;
+  if (p.comunicacaoId) {
+    const [comunicacao] = await d
+      .select({ processoId: schema.comunicacoes.processoId })
+      .from(schema.comunicacoes)
+      .where(eq(schema.comunicacoes.id, p.comunicacaoId))
+      .limit(1);
+    if (!comunicacao) throw new Error("A intimação informada não existe. Confira o id em listar_intimacoes.");
+    if (processoId && comunicacao.processoId !== processoId) {
+      throw new Error("O processo informado não corresponde à intimação. Nenhum prazo foi gravado.");
+    }
+    processoId = comunicacao.processoId;
+    // Evita duplicar em reexecuções sequenciais. A proteção concorrente definitiva exige
+    // índice único/migração por comunicação e chave estável do ato (ainda fora deste schema).
+    const [existente] = await d
+      .select({ id: schema.prazos.id })
+      .from(schema.prazos)
+      .where(and(
+        eq(schema.prazos.comunicacaoId, p.comunicacaoId),
+        eq(schema.prazos.ato, p.ato),
+        ne(schema.prazos.status, "cancelado"),
+      ))
+      .limit(1);
+    if (existente) return { id: existente.id, criado: false };
+  }
   const [row] = await d
     .insert(schema.prazos)
     .values({
-      processoId: p.processoId,
+      processoId,
       comunicacaoId: p.comunicacaoId ?? null,
       ato: p.ato,
       regraAplicada: p.regraAplicada ?? null,
@@ -464,7 +503,7 @@ export async function inserirPrazoSugerido(p: NovoPrazo): Promise<{ id: string }
       divergencia: p.calculo.alertas.length > 0 ? { conferir: p.calculo.alertas } : null,
     })
     .returning({ id: schema.prazos.id });
-  return { id: row.id };
+  return { id: row.id, criado: true };
 }
 
 /**
@@ -492,6 +531,7 @@ export async function editarPrazo(
   patch: { dataFatal?: string; ato?: string; status?: string },
   editor: string,
 ): Promise<void> {
+  if (patch.dataFatal) parseISODate(patch.dataFatal);
   const d = getDb();
   await d
     .update(schema.prazos)
@@ -624,8 +664,9 @@ export async function registrarSincronizacao(
       mensagem: dados.mensagem ?? null,
       concluidoEm: new Date(),
     });
-  } catch {
+  } catch (e) {
     // Nunca deixar a telemetria derrubar a operação principal.
+    console.error(`[sincronizacao] Falha ao registrar ${fonte}: ${(e as Error).message}`);
   }
 }
 

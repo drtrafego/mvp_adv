@@ -19,7 +19,7 @@ export function PageHeader({
   icone?: LucideIcon;
 }) {
   return (
-    <div className="relative mb-6 overflow-hidden rounded-2xl border border-indigo-brand/30 bg-indigo-brand text-white shadow-sm shadow-black/10">
+    <div className="relative mb-6 overflow-hidden rounded-2xl border border-indigo-brand/30 bg-[#2a2c66] text-white shadow-sm shadow-black/10">
       {/* textura de pontos */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.12]"

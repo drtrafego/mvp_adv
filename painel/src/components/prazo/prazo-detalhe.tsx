@@ -33,7 +33,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { estiloStatus, diasRestantes, urgencia, formatarData } from "@/lib/prazo-ui";
+import { estiloStatus, diasRestantes, urgencia, formatarData, pendenciasDoPrazo } from "@/lib/prazo-ui";
 import { AnotacoesBloco } from "@/components/anotacoes-bloco";
 import {
   confirmarPrazoAction,
@@ -108,6 +108,7 @@ export function PrazoDetalhe({ detalhe }: { detalhe: DetalhePrazo }) {
         <div className="mt-4 flex flex-wrap gap-2">
           {!isHumano && <ConfirmarBtn id={prazo.id} />}
           <GerarPecaDialog prazoId={prazo.id} processoId={prazo.processoId} />
+          {prazo.comunicacaoId && <Button size="sm" variant="outline" render={<Link href={`/i/${prazo.comunicacaoId}`} />}><ExternalLink /> Ver intimação de origem</Button>}
           {processo && (
             <Button size="sm" variant="ghost" render={<Link href={`/p/${processo.id}`} />}>
               <ExternalLink /> Ver processo
@@ -145,11 +146,8 @@ export function PrazoDetalhe({ detalhe }: { detalhe: DetalhePrazo }) {
  * prazo em dobro recusado. O advogado precisa ver isso ANTES de confirmar.
  */
 function PendenciasConferir({ divergencia }: { divergencia: unknown }) {
-  const itens =
-    divergencia && typeof divergencia === "object" && "conferir" in divergencia
-      ? ((divergencia as { conferir?: unknown }).conferir ?? [])
-      : [];
-  if (!Array.isArray(itens) || itens.length === 0) return null;
+  const itens = pendenciasDoPrazo(divergencia);
+  if (itens.length === 0) return null;
   return (
     <div className="mt-2 rounded-md border border-amber-brand/30 bg-amber-tint px-2.5 py-2">
       <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-amber-brand">

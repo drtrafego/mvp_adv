@@ -20,7 +20,6 @@ import {
   StickyNote,
   Clock,
   Layers,
-  Upload,
   Download,
   ShieldCheck,
   History,
@@ -40,12 +39,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -55,7 +49,7 @@ import {
   DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { estiloStatus, diasRestantes, urgencia, formatarData } from "@/lib/prazo-ui";
+import { estiloStatus, diasRestantes, urgencia, formatarData, pendenciasDoPrazo } from "@/lib/prazo-ui";
 import {
   mudarFaseAction,
   adicionarMovimentacaoManualAction,
@@ -269,7 +263,7 @@ function ExcluirDialog({ processoId, numeroCnj }: { processoId: string; numeroCn
     startTransition(async () => {
       const r = await excluirProcessoAction(processoId);
       if (r.ok) {
-        toast.success("Processo excluído. Recuperável por 30 dias.");
+        toast.success("Processo removido da carteira. O registro permanece para recuperação administrativa.");
         setOpen(false);
         router.push("/");
         router.refresh();
@@ -288,7 +282,7 @@ function ExcluirDialog({ processoId, numeroCnj }: { processoId: string; numeroCn
         <DialogHeader>
           <DialogTitle className="font-serif">Excluir processo</DialogTitle>
           <DialogDescription>
-            Soft-delete: some da carteira, mas é recuperável por 30 dias. Para confirmar, digite o
+            O processo sai da carteira e permanece no banco para recuperação administrativa. Para confirmar, digite o
             número do processo.
           </DialogDescription>
         </DialogHeader>
@@ -338,6 +332,7 @@ function PrazoItem({ p }: { p: Prazo }) {
   const dias = diasRestantes(p.dataFatal);
   const urg = urgencia(dias);
   const isHumano = p.origem === "humana";
+  const pendencias = pendenciasDoPrazo(p.divergencia);
   const barra =
     dias < 0 || dias <= 1 ? "bg-destructive" : dias <= 7 ? "bg-amber-brand" : "bg-indigo-brand";
 
@@ -410,6 +405,7 @@ function PrazoItem({ p }: { p: Prazo }) {
               {p.justificativaIa}
             </p>
           )}
+          {pendencias.length > 0 && <div className="mt-3 rounded-lg border border-amber-brand/30 bg-amber-tint/60 p-3 text-xs text-amber-brand"><p className="font-semibold">Conferir antes de confirmar</p><ul className="mt-1 list-disc space-y-1 pl-4">{pendencias.map((item, i) => <li key={i}>{item}</li>)}</ul></div>}
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {!isHumano && (
               <Button size="sm" onClick={confirmar} disabled={pending}>

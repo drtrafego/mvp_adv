@@ -3,6 +3,7 @@
  * Espelha supabase/schema.sql. Fonte da verdade do sistema.
  */
 
+import { sql } from "drizzle-orm";
 import {
   pgTable,
   uuid,
@@ -16,7 +17,35 @@ import {
   jsonb,
   unique,
   index,
+  check,
 } from "drizzle-orm/pg-core";
+
+// Honorários simples. O valor é inteiro em centavos e o vencimento é data civil.
+// criadoPor/atualizadoPor são ids da sessão do painel, preservados sem FK de exclusão.
+export const cobrancas = pgTable(
+  "cobrancas",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clienteId: uuid("cliente_id").notNull().references(() => clientes.id, { onDelete: "restrict" }),
+    descricao: text("descricao").notNull(),
+    valorCentavos: integer("valor_centavos").notNull(),
+    vencimento: date("vencimento").notNull(),
+    status: text("status").$type<"pendente" | "pago" | "cancelado">().notNull().default("pendente"),
+    pagoEm: date("pago_em"),
+    criadoPor: text("criado_por").notNull(),
+    atualizadoPor: text("atualizado_por").notNull(),
+    criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+    atualizadoEm: timestamp("atualizado_em", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    idxVencimento: index("idx_cobrancas_vencimento").on(t.status, t.vencimento),
+    idxCliente: index("idx_cobrancas_cliente").on(t.clienteId, t.vencimento),
+    valorPositivo: check("cobrancas_valor_positivo", sql`${t.valorCentavos} > 0`),
+    descricaoValida: check("cobrancas_descricao_valida", sql`char_length(btrim(${t.descricao})) between 1 and 200`),
+    statusValido: check("cobrancas_status_valido", sql`${t.status} in ('pendente', 'pago', 'cancelado')`),
+    pagamentoCoerente: check("cobrancas_pagamento_coerente", sql`(${t.status} = 'pago') = (${t.pagoEm} is not null)`),
+  }),
+);
 
 export const processos = pgTable("processos", {
   id: uuid("id").primaryKey().defaultRandom(),

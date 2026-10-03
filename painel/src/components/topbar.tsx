@@ -58,7 +58,7 @@ export function Topbar() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-moss-brand/60" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-moss-brand" />
             </span>
-            sincronizado
+            escritório virtual
           </span>
           <ThemeToggle />
         </div>

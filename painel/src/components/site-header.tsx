@@ -16,15 +16,14 @@ export function SiteHeader({ resumo }: { resumo: Resumo }) {
       />
       <div className="absolute inset-0 bg-gradient-to-r from-[#0f1219]/95 via-[#0f1219]/78 to-[#0f1219]/35" />
       <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background/60 to-transparent" />
-      <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-7 px-6 pb-11 pt-12 sm:pt-14">
+      <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 pb-8 pt-8 sm:px-6 sm:pt-10">
         <div>
-          <p className="font-mono text-xs uppercase tracking-[0.2em] text-amber-300/90">~/gabinete</p>
-          <h1 className="mt-2 font-serif text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-            Gabinete
+          <p className="font-mono text-xs uppercase tracking-[0.2em] text-amber-300/90">escritório virtual · visão geral</p>
+          <h1 className="mt-2 font-serif text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+            Seu escritório, em ordem.
           </h1>
-          <p className="mt-3 max-w-xl font-serif text-lg italic text-white/70">
-            Coleta seus processos, calcula seus prazos, analisa seus documentos. A máquina propõe,
-            você dispõe.
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/75">
+            Comece pelas pendências, revise as sugestões e acompanhe cada caso.
           </p>
         </div>
 

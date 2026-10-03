@@ -3,10 +3,12 @@ import { PageHeader } from "@/components/page-header";
 import { PrazosBoard } from "@/components/prazos-board";
 import { IntimacoesSemPrazo } from "@/components/intimacoes-sem-prazo";
 import { listarPrazos, resumo } from "@/db/queries";
+import { filtroPrazoValido } from "@/lib/prazo-ui";
 
 export const dynamic = "force-dynamic";
 
-export default async function PrazosPage() {
+export default async function PrazosPage({ searchParams }: { searchParams: Promise<{ filtro?: string }> }) {
+  const filtro = filtroPrazoValido((await searchParams).filtro);
   const [prazos, dados] = await Promise.all([listarPrazos(), resumo()]);
 
   return (
@@ -24,7 +26,7 @@ export default async function PrazosPage() {
         </div>
       )}
 
-      <PrazosBoard prazos={prazos} />
+      <PrazosBoard prazos={prazos} filtro={filtro} />
     </div>
   );
 }

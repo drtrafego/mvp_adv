@@ -9,7 +9,9 @@ import {
   getUsuarioAtual,
   hashSenha,
   verificarSenha,
+  usuarioPodeAdministrar,
 } from "@/lib/auth";
+import { ehUuid } from "@/lib/seguranca";
 
 export type ImportState = { ok?: boolean; erro?: string; msg?: string };
 export type AcessoState = { ok?: boolean; erro?: string; msg?: string };
@@ -74,8 +76,11 @@ function mapear(row: Record<string, string>) {
 }
 
 export async function importarClientes(_prev: ImportState, formData: FormData): Promise<ImportState> {
+  const sessao = await exigirSessao();
+  if ("erro" in sessao) return { erro: sessao.erro };
   const file = formData.get("arquivo") as File | null;
-  if (!file || file.size === 0) return { erro: "Escolha um arquivo CSV para importar." };
+  if (!(file instanceof File) || file.size === 0) return { erro: "Escolha um arquivo CSV para importar." };
+  if (file.size > 2 * 1024 * 1024) return { erro: "O CSV precisa ter até 2 MB." };
   if (!db) return { erro: "Banco não conectado." };
 
   let linhas: Record<string, string>[];
@@ -85,6 +90,7 @@ export async function importarClientes(_prev: ImportState, formData: FormData): 
     return { erro: "Não consegui ler o arquivo. Salve a planilha como CSV e tente de novo." };
   }
   if (linhas.length === 0) return { erro: "A planilha está vazia ou sem cabeçalho." };
+  if (linhas.length > 5000) return { erro: "Importe até 5.000 clientes por arquivo." };
 
   const registros = linhas.map(mapear).filter((r) => r.nome);
   if (registros.length === 0)
@@ -99,6 +105,8 @@ export async function importarClientes(_prev: ImportState, formData: FormData): 
     const doc = (r.documento ?? "").replace(/\D/g, "");
     if (doc && docsExist.has(doc)) return false;
     if (!doc && nomesExist.has(norm(r.nome))) return false;
+    if (doc) docsExist.add(doc);
+    nomesExist.add(norm(r.nome));
     return true;
   });
 
@@ -120,16 +128,18 @@ export async function importarClientes(_prev: ImportState, formData: FormData): 
 
 const MIN_SENHA = 8;
 
-// Toda ação de acesso exige estar logado: quem já tem acesso administra o acesso.
-async function exigirSessao() {
+// A equipe usa o sistema; só o titular administra os acessos.
+async function exigirSessao(administracao = false) {
   if (!db) return { erro: "Banco não conectado." as const };
   const atual = await getUsuarioAtual();
   if (!atual) return { erro: "Sessão expirada. Entre de novo." as const };
+  if (administracao && !(await usuarioPodeAdministrar(atual))) return { erro: "Somente o titular pode administrar acessos." as const };
   return { atual };
 }
 
 function validarSenha(nova: string, confirma: string): string | null {
   if (nova.length < MIN_SENHA) return `A senha precisa ter pelo menos ${MIN_SENHA} caracteres.`;
+  if (Buffer.byteLength(nova, "utf8") > 72) return "A senha precisa ter até 72 bytes (acentos ocupam mais de um byte).";
   if (nova !== confirma) return "A confirmação não bate com a nova senha.";
   return null;
 }
@@ -175,7 +185,7 @@ export async function criarAcesso(
   _prev: AcessoState,
   formData: FormData,
 ): Promise<AcessoState> {
-  const sessao = await exigirSessao();
+  const sessao = await exigirSessao(true);
   if ("erro" in sessao) return { erro: sessao.erro };
 
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
@@ -184,7 +194,8 @@ export async function criarAcesso(
   const senha = String(formData.get("senha") ?? "");
   const confirma = String(formData.get("confirma") ?? "");
 
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { erro: "Informe um email válido." };
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { erro: "Informe um email válido." };
+  if (nome.length > 200 || oab.length > 100) return { erro: "Nome ou OAB muito longos." };
   const invalida = validarSenha(senha, confirma);
   if (invalida) return { erro: invalida };
 
@@ -209,10 +220,12 @@ export async function redefinirSenha(
   _prev: AcessoState,
   formData: FormData,
 ): Promise<AcessoState> {
-  const sessao = await exigirSessao();
+  const sessao = await exigirSessao(true);
   if ("erro" in sessao) return { erro: sessao.erro };
 
   const id = String(formData.get("id") ?? "");
+  if (!ehUuid(id)) return { erro: "Identificador inválido." };
+  if (id === sessao.atual.id) return { erro: "Use a troca de senha pessoal, informando a senha atual." };
   const nova = String(formData.get("nova") ?? "");
   const confirma = String(formData.get("confirma") ?? "");
 
@@ -236,11 +249,12 @@ export async function removerAcesso(
   _prev: AcessoState,
   formData: FormData,
 ): Promise<AcessoState> {
-  const sessao = await exigirSessao();
+  const sessao = await exigirSessao(true);
   if ("erro" in sessao) return { erro: sessao.erro };
   const { atual } = sessao;
 
   const id = String(formData.get("id") ?? "");
+  if (!ehUuid(id)) return { erro: "Identificador inválido." };
   if (id === atual.id) return { erro: "Você não pode remover o seu próprio acesso." };
 
   const total = (await db!.select({ n: sql<number>`count(*)::int` }).from(usuarios))[0]?.n ?? 0;

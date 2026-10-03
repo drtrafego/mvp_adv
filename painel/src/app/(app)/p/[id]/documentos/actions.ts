@@ -3,8 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { db, schema } from "@/db";
+import { head } from "@vercel/blob";
 import { getUsuarioAtual } from "@/lib/auth";
-import { ehCategoria } from "@/lib/documentos";
+import { ehCategoria, formatoDeExtensao, MIMES, montarStoragePath, TAMANHO_MAX_PAINEL } from "@/lib/documentos";
+import { ehDataIso, ehHashSha256, ehUuid, textoValido } from "@/lib/seguranca";
 
 /**
  * Server Action é um endpoint HTTP de id estável: sem checagem de sessão, quem descobrir o id
@@ -28,8 +30,9 @@ export async function verificarHashAction(
   try {
     await exigirUsuario();
     if (!db) return { ok: false as const, erro: "Banco não conectado." };
-    if (!alvo.processoId && !alvo.pecaId)
-      return { ok: false as const, erro: "Informe o processo ou a peça." };
+    if (Boolean(alvo.processoId) === Boolean(alvo.pecaId) ||
+        (alvo.processoId && !ehUuid(alvo.processoId)) || (alvo.pecaId && !ehUuid(alvo.pecaId)) || !ehHashSha256(hash))
+      return { ok: false as const, erro: "Informe um processo ou peça válido e o hash do arquivo." };
     const [existente] = await db
       .select({
         id: schema.documentos.id,
@@ -68,6 +71,7 @@ export interface DadosDocumento {
   tipo: string;
   descricao?: string;
   dataDocumento?: string;
+  uploadId?: string;
 }
 
 /**
@@ -100,6 +104,43 @@ export async function registrarDocumentoAction(dados: DadosDocumento) {
     if (!ehCategoria(dados.categoria))
       return { ok: false as const, erro: `Categoria inválida: ${dados.categoria}` };
 
+    if (Boolean(dados.processoId) === Boolean(dados.pecaId) ||
+        (dados.processoId && !ehUuid(dados.processoId)) || (dados.pecaId && !ehUuid(dados.pecaId)) ||
+        !textoValido(dados.titulo, 200) || !textoValido(dados.arquivoNome, 255) ||
+        !textoValido(dados.storagePath, 500) || !ehHashSha256(dados.hashSha256) ||
+        (dados.uploadId !== undefined && !ehUuid(dados.uploadId)) ||
+        !Number.isSafeInteger(dados.tamanhoBytes) || dados.tamanhoBytes <= 0 || dados.tamanhoBytes > TAMANHO_MAX_PAINEL ||
+        (dados.dataDocumento && !ehDataIso(dados.dataDocumento)) ||
+        (dados.descricao !== undefined && !textoValido(dados.descricao, 10_000, false))) {
+      return { ok: false as const, erro: "Metadados do documento inválidos." };
+    }
+
+    let numeroCnj: string | undefined;
+    if (dados.processoId) {
+      const [processo] = await db.select({ numeroCnj: schema.processos.numeroCnj }).from(schema.processos)
+        .where(and(eq(schema.processos.id, dados.processoId), isNull(schema.processos.excluidoEm))).limit(1);
+      if (!processo) return { ok: false as const, erro: "Processo não encontrado." };
+      numeroCnj = processo.numeroCnj;
+    } else {
+      const [peca] = await db.select({ id: schema.pecas.id }).from(schema.pecas).where(eq(schema.pecas.id, dados.pecaId!)).limit(1);
+      if (!peca) return { ok: false as const, erro: "Peça não encontrada." };
+    }
+    const extensao = (dados.arquivoNome.match(/\.[^.]+$/)?.[0] ?? "").toLowerCase();
+    const dataPath = dados.storagePath.match(/\/(\d{4}-\d{2}-\d{2})-/)?.[1];
+    if (!MIMES[extensao] || !ehDataIso(dataPath) || (dados.dataDocumento && dados.dataDocumento !== dataPath) ||
+        dados.mimeType !== MIMES[extensao] || dados.tipo !== formatoDeExtensao(extensao)) {
+      return { ok: false as const, erro: "Tipo, extensão ou data do arquivo inválidos." };
+    }
+    const esperado = montarStoragePath({ numeroCnj, pecaId: dados.pecaId, categoria: dados.categoria,
+      titulo: dados.titulo, hashSha256: dados.hashSha256, extensao, data: dataPath, uploadId: dados.uploadId });
+    if (dados.storagePath !== esperado) return { ok: false as const, erro: "O arquivo não pertence ao destino informado." };
+    const existente = await verificarHashAction({ processoId: dados.processoId, pecaId: dados.pecaId }, dados.hashSha256);
+    if (existente.ok && existente.existente) return { ok: true as const, id: existente.existente.id };
+    const arquivo = await head(esperado);
+    if (arquivo.pathname !== esperado || arquivo.size !== dados.tamanhoBytes || arquivo.contentType !== dados.mimeType) {
+      return { ok: false as const, erro: "O upload não confere com os metadados informados." };
+    }
+
     const clienteId = dados.processoId ? await clienteHumanoDoProcesso(dados.processoId) : null;
 
     const [row] = await db
@@ -122,7 +163,14 @@ export async function registrarDocumentoAction(dados: DadosDocumento) {
         descricao: dados.descricao?.trim() || null,
         dataDocumento: dados.dataDocumento || null,
       })
+      .onConflictDoNothing()
       .returning({ id: schema.documentos.id });
+
+    if (!row) {
+      const duplicado = await verificarHashAction({ processoId: dados.processoId, pecaId: dados.pecaId }, dados.hashSha256);
+      if (duplicado.ok && duplicado.existente) return { ok: true as const, id: duplicado.existente.id };
+      return { ok: false as const, erro: "Não foi possível registrar o documento. Tente novamente." };
+    }
 
     revalidatePath(dados.processoId ? `/p/${dados.processoId}` : `/pe/${dados.pecaId}`);
     return { ok: true as const, id: row.id };
@@ -139,9 +187,13 @@ export async function atualizarDocumentoAction(
   try {
     await exigirUsuario();
     if (!db) return { ok: false as const, erro: "Banco não conectado." };
+    if (!ehUuid(documentoId) || !ehUuid(processoId)) return { ok: false as const, erro: "Identificador inválido." };
     if (patch.categoria && !ehCategoria(patch.categoria))
       return { ok: false as const, erro: "Categoria inválida." };
-    await db
+    if ((patch.titulo !== undefined && !textoValido(patch.titulo, 200)) ||
+        (patch.descricao !== undefined && !textoValido(patch.descricao, 10_000, false)) ||
+        (patch.dataDocumento && !ehDataIso(patch.dataDocumento))) return { ok: false as const, erro: "Título, descrição ou data inválidos." };
+    const [atualizado] = await db
       .update(schema.documentos)
       .set({
         ...(patch.titulo ? { titulo: patch.titulo } : {}),
@@ -151,7 +203,9 @@ export async function atualizarDocumentoAction(
           ? { dataDocumento: patch.dataDocumento || null }
           : {}),
       })
-      .where(eq(schema.documentos.id, documentoId));
+      .where(and(eq(schema.documentos.id, documentoId), eq(schema.documentos.processoId, processoId), isNull(schema.documentos.excluidoEm)))
+      .returning({ id: schema.documentos.id });
+    if (!atualizado) return { ok: false as const, erro: "Documento não encontrado neste processo." };
     revalidatePath(`/p/${processoId}`);
     return { ok: true as const };
   } catch (e) {
@@ -164,10 +218,13 @@ export async function excluirDocumentoAction(documentoId: string, processoId: st
   try {
     await exigirUsuario();
     if (!db) return { ok: false as const, erro: "Banco não conectado." };
-    await db
+    if (!ehUuid(documentoId) || !ehUuid(processoId)) return { ok: false as const, erro: "Identificador inválido." };
+    const [excluido] = await db
       .update(schema.documentos)
       .set({ excluidoEm: new Date() })
-      .where(eq(schema.documentos.id, documentoId));
+      .where(and(eq(schema.documentos.id, documentoId), eq(schema.documentos.processoId, processoId), isNull(schema.documentos.excluidoEm)))
+      .returning({ id: schema.documentos.id });
+    if (!excluido) return { ok: false as const, erro: "Documento não encontrado neste processo." };
     revalidatePath(`/p/${processoId}`);
     return { ok: true as const };
   } catch (e) {

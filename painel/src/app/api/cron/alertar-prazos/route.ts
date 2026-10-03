@@ -1,4 +1,6 @@
 import { prazosVencendo, saudeColeta, diasSemIntimacaoNova } from "@/db/queries";
+import { autorizarCron } from "@/lib/seguranca";
+import { hojeEscritorio } from "@/lib/prazo-ui";
 
 export const dynamic = "force-dynamic";
 
@@ -54,20 +56,19 @@ async function alertasDeColeta(): Promise<string[]> {
  * POST JSON para o canal do advogado (WhatsApp/e-mail); senão, só retorna o resumo.
  *
  * Segurança: o Vercel Cron envia `Authorization: Bearer <CRON_SECRET>`. Se CRON_SECRET
- * estiver configurado, exigimos o header (bloqueia chamadas externas à rota).
+ * ausente, a rota permanece desativada. Nunca expõe informações de coleta publicamente.
  */
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
-  if (secret) {
-    const auth = req.headers.get("authorization");
-    if (auth !== `Bearer ${secret}`) {
-      return new Response("Não autorizado.", { status: 401 });
-    }
-  }
+  if (!secret) return new Response("Cron não configurado.", { status: 503 });
+  if (!autorizarCron(req.headers.get("authorization"), secret)) return new Response("Não autorizado.", { status: 401 });
 
   const dias = Number(process.env.ALERTA_DIAS ?? 3);
+  if (!Number.isInteger(dias) || dias < 1 || dias > 30) return new Response("ALERTA_DIAS precisa estar entre 1 e 30.", { status: 503 });
   const rows = await prazosVencendo(dias);
-  const limite = new Date(Date.now() + dias * 86400000).toISOString().slice(0, 10);
+  const diaLimite = new Date(`${hojeEscritorio()}T12:00:00Z`);
+  diaLimite.setUTCDate(diaLimite.getUTCDate() + dias);
+  const limite = diaLimite.toISOString().slice(0, 10);
   const avisosColeta = await alertasDeColeta();
 
   // Sem prazo à vista, o alerta ainda sai se a captação estiver doente: "nenhum prazo" só é
@@ -98,6 +99,7 @@ export async function GET(req: Request) {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ text: msg, prazos: rows, alertasColeta: avisosColeta }),
+        signal: AbortSignal.timeout(10_000),
       });
       enviado = r.ok;
     } catch {
@@ -111,5 +113,5 @@ export async function GET(req: Request) {
     ate: limite,
     enviado,
     alertasColeta: avisosColeta,
-  });
+  }, { headers: { "Cache-Control": "no-store" } });
 }

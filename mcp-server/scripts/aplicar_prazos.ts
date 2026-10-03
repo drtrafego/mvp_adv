@@ -28,7 +28,6 @@ import { calcularPrazo } from "../src/lib/prazos.js";
 import { buscarAto, CHAVES_ATO } from "../src/lib/catalogo-prazos.js";
 import {
   inserirPrazoSugerido,
-  marcarComunicacaoProcessada,
   carregarFeriadosForenses,
   bancoConfigurado,
 } from "../src/lib/db.js";
@@ -96,8 +95,9 @@ for (const c of classificacoes) {
 
   if (!c.gera_prazo) {
     semPrazo++;
-    console.log(`- ${i.data_disponibilizacao} ${i.numero_cnj ?? "-"} :: sem prazo a praticar`);
-    if (aplicar) await marcarComunicacaoProcessada(c.id);
+    console.log(`- ${i.data_disponibilizacao} ${i.numero_cnj ?? "-"} :: sem prazo sugerido; aguarda revisão no painel`);
+    // Uma classificação do modelo sem prazo não equivale a leitura encerrada pelo advogado.
+    // Mantém a intimação pendente até a decisão humana no painel.
     continue;
   }
 
@@ -126,7 +126,7 @@ for (const c of classificacoes) {
   );
 
   if (aplicar) {
-    await inserirPrazoSugerido({
+    const resultado = await inserirPrazoSugerido({
       processoId: i.processo_id,
       comunicacaoId: c.id,
       ato: rotulo,
@@ -135,7 +135,7 @@ for (const c of classificacoes) {
       calculo: { ...r, alertas },
       justificativaIA: [c.justificativa, r.memoria.join(" ")].filter(Boolean).join(" — "),
     });
-    await marcarComunicacaoProcessada(c.id);
+    if (!resultado.criado) console.log(`    Já existia prazo ${resultado.id}; nenhum registro foi alterado.`);
   }
   gravados++;
 }

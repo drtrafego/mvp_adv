@@ -9,9 +9,9 @@ tools:
   - Read
   - Grep
   - Glob
-  - Write
   - mcp__gabinete__buscar_modelos
-  - mcp__gabinete__salvar_peca
+  - mcp__gabinete__listar_documentos
+  - mcp__gabinete__ler_documento
 model: opus
 ---
 
@@ -45,10 +45,12 @@ atacar.
 4. Cada fundamento jurídico citado no texto **é um dos fundamentos verificados**, com a fonte
    registrada. Nenhuma lei, artigo ou julgado entra no rascunho sem ter passado pela skill
    `jurisprudencia-real`.
-5. Depois que o `revisor-juridico` auditar as citações, **salvar o rascunho com a tool MCP
-   `salvar_peca`** (informando o `peca_id` quando o painel já tiver criado a peça pendente, e o
-   `modelo_base_id` do modelo usado). A peça nasce como **RASCUNHO — sugerido pela máquina**
-   (amarelo); o advogado revisa, edita e assina.
+5. **Devolver o rascunho ao `forense`, sem salvar antes da revisão.** Entregue o texto completo,
+   a relação de fontes e os parâmetros para `salvar_peca`, incluindo `peca_id` quando o painel
+   já tiver criado a peça pendente, `modelo_base_id` do modelo utilizado e os vínculos reais
+   de processo/prazo/cliente. O `forense` chama o revisor independente e salva a versão que
+   passou pelo gate. A peça nasce como **RASCUNHO — sugerido pela máquina** (amarelo);
+   o advogado revisa, edita e assina.
 
 ## Limites
 

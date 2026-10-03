@@ -112,6 +112,7 @@ export function UploadDocumento({
       }
 
       const tituloFinal = titulo.trim() || arquivo.name.replace(/\.[^.]+$/, "");
+      const uploadId = crypto.randomUUID();
       const storagePath = montarStoragePath({
         numeroCnj,
         pecaId,
@@ -120,6 +121,7 @@ export function UploadDocumento({
         hashSha256: hash,
         extensao,
         data: dataDocumento || undefined,
+        uploadId,
       });
 
       // Os bytes vão direto do browser para o Blob: função serverless tem teto de 4,5 MB.
@@ -138,6 +140,8 @@ export function UploadDocumento({
           categoria,
           titulo: tituloFinal,
           hash,
+          dataDocumento,
+          uploadId,
         }),
       });
 
@@ -154,6 +158,7 @@ export function UploadDocumento({
         tipo: formatoDeExtensao(extensao),
         descricao,
         dataDocumento,
+        uploadId,
       });
       if (!reg.ok) {
         toast.error(reg.erro ?? "Falha ao registrar o documento.");

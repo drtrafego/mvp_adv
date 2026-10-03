@@ -1,95 +1,114 @@
-# Gabinete
+# Gabinete — escritório virtual
 
-Sistema para advogado que **coleta processos, calcula prazos e analisa documentos**, comandado
-pelo terminal (Claude Code) via um MCP jurídico, com painel web e banco no Neon. Implementação de
-referência do documento mestre da mentoria "Gabinete".
+Painel e MCP para organizar clientes, processos, intimações, prazos, documentos,
+análises, minutas e honorários de um escritório. O sistema funciona de forma independente,
+com o advogado e a equipe usando o painel. O MCP local já existente oferece ferramentas
+para uma sessão de terminal, quando necessário.
 
-Princípio central: **a máquina propõe, o humano dispõe.** Todo dado nasce sugerido (máquina); o
-advogado confirma e vira definitivo. O campo crítico (data fatal do prazo) é sempre calculado por
-código determinístico, nunca por LLM.
+O painel registra a revisão humana. O agente produz sugestões e rascunhos; não
+assume a identidade de quem confirmou um prazo, aprovou uma peça ou recebeu um pagamento.
 
-## Arquitetura
+## O que está implementado
 
-```
-[terminal / Claude Code]  --usa-->  [MCP jurídico (mcp-server/)]
-                                          |  tools
-                    DataJud (CNJ) <-------+-------> Comunica/DJEN (CNJ)
-                                          |
-                                     [Neon (Postgres)]  <-- fonte da verdade
-                                          |
-                                   [painel (Next.js/Vercel)] --> vê e edita, atualiza sozinho
-```
+- Carteira de processos, movimentações, partes e pasta do cliente.
+- Coleta DataJud e DJEN, com paginação e indicação de erro ou resultado parcial.
+- Inteiro teor de intimações paginado pelo MCP e pré-análises vinculadas à comunicação.
+- Motor determinístico de prazos com sugestões, revisão, fontes e pendências visíveis.
+- Análises, modelos, peças e exportação DOCX; aprovação vinculada ao texto/versão revisados.
+- Documentos privados, extração de texto e proteção das rotas e ações de alteração.
+- Honorários por cliente, vencimentos, recebimentos, cancelamentos e rascunhos de cobrança.
+- Dashboard com atalhos, filtros de urgência, pendências e saúde real das últimas coletas.
+- Squad jurídico já existente para sessões assistidas de terminal, com revisão antes da persistência.
 
-- **`mcp-server/`** — servidor MCP (stdio, TypeScript). 18 tools: `consultar_processo`,
-  `adicionar_processo`, `sincronizar_carteira`, `pesquisar_carteira`, `status_sincronizacao`,
-  `buscar_intimacoes`, `processar_intimacoes`, `reconciliar_intimacoes`, `catalogo_prazos`,
-  `calcular_prazo`, `listar_prazos`, `confirmar_prazo`, `editar_prazo`, `registrar_feriado`,
-  `salvar_analise`, `buscar_modelos`, `salvar_peca`, `baixar_autos`.
-  Motor de prazos determinístico com catálogo por rito
-  (`lib/catalogo-prazos.ts`): dias úteis no cível (CPC art. 219) e no trabalhista (CLT art. 775),
-  dias corridos e contínuos no penal (CPP art. 798) e na recuperação judicial (Lei 11.101
-  art. 189 §1º I). Com testes.
-- **`painel/`** — Next.js 16 + shadcn/ui + Tailwind v4 + Drizzle/Neon. Lista de prazos com cores
-  por estado, edição inline (vira humana), atualização automática a cada 30s.
-- **`supabase/schema.sql`** e **`painel/drizzle/`** — schema do banco (7 tabelas). O nome da pasta
-  é histórico; o banco é Neon (Postgres puro).
-- **`.claude/skills/prazos-cpc/`** — skill que ancora a classificação do ato ao RITO (cível,
-  penal, trabalhista, juizado, recuperação judicial, execução fiscal, prazo material).
-- **`docs/01_APIS_JUDICIARIO.md`** — pesquisa das APIs do judiciário e requisitos de acesso.
-- **`CLAUDE.md`** — contexto do escritório para o agente.
+Cobranças têm preparação e envio manual pelo WhatsApp; o envio automático exige canal
+e fila adicionais. O protocolo de petições é manual. Não há adaptador de envio ao tribunal.
 
-## Fontes de dados (ver `docs/01_APIS_JUDICIARIO.md`)
+O agente orquestrador do escritório terá o nome escolhido pelo advogado e será baseado
+no projeto reutilizável `luana`. Ele será integrado posteriormente como cliente de uma API
+autenticada do Gabinete, ainda não implementada. A revisão atual melhora o Gabinete;
+não incorpora o agente ao sistema, não conecta Telegram e não cria
+uma dependência de agente para usar o painel.
 
-- **DataJud (CNJ)** — metadados e movimentações. Gratuito, chave pública embutida. Testado ao vivo.
-- **Comunica/DJEN (CNJ)** — intimações por OAB, com inteiro teor. Gratuito. Fonte oficial dos prazos.
-  Atenção: chamadas de servidor podem tomar 403 (Cloudflare); ver o doc para os fallbacks.
-- **Documentos dos autos** — camada paga (Judit/Escavador) ou MNI com certificado. Fase 2.
+## Estrutura
 
-## Setup
+| Pasta | Função |
+| --- | --- |
+| `painel/` | Next.js 16, React, Tailwind, Drizzle e autenticação por sessão. |
+| `mcp-server/` | MCP stdio, consultas e coleta, motor de prazos e ferramentas financeiras. |
+| `.claude/agents/` | Especialistas jurídicos existentes, opcionais para sessões assistidas de terminal. |
+| `.claude/skills/` | Instruções jurídicas já existentes no projeto. |
+| `painel/drizzle/` | Migrações SQL de implantação. |
+| `docs/` | Revisão técnica, implantação e desenho da integração futura. |
+| `docs/futuro/` | Exemplos inativos de perfis e configuração para uma integração posterior. |
 
-Pré-requisitos: Node 20+, pnpm, uma conta Neon e uma conta Vercel.
+O Postgres é a fonte da verdade. Painel e MCP usam o mesmo banco e o mesmo Blob
+privado **deste escritório**. A instalação é compartilhada pela equipe de um único
+escritório; não há isolamento de clientes SaaS/tenants na mesma instância.
 
-### 1. Banco (Neon)
-1. Crie um projeto no Neon e copie a connection string (pooled).
-2. `cd painel && cp .env.example .env` e cole em `DATABASE_URL`.
-3. Rode as migrações: `pnpm db:push` (ou aplique `painel/drizzle/0000_gabinete_init.sql`).
+## Instalação e validação
 
-### 2. MCP jurídico
+Pré-requisitos: Node 22.6+ (recomendado Node 24), pnpm 11+, Postgres/Neon e Blob privado
+quando houver anexos. Os lockfiles são versionados. Os arquivos `.env.example` são
+modelos sem credenciais reais.
+
 ```bash
 cd mcp-server
-pnpm install
+pnpm install --frozen-lockfile
+cp .env.example .env
+pnpm test
+pnpm typecheck
 pnpm build
-pnpm test        # roda os testes do motor de prazos
 ```
-Configure no Claude Code (arquivo `.mcp.json` do projeto já traz o exemplo). Defina `DATABASE_URL`
-no ambiente para persistir. Sem banco, o MCP ainda consulta DataJud e Comunica.
 
-### 3. Painel
 ```bash
 cd painel
-pnpm install
-pnpm dev         # http://localhost:3000
+pnpm install --frozen-lockfile
+cp .env.example .env
+pnpm lint
+pnpm exec tsc --noEmit
+node --experimental-strip-types --test tests/*.test.mjs
+node --experimental-strip-types --test scripts/financeiro.test.mts
+pnpm build
+pnpm dev
 ```
-Deploy no Vercel: importe o repositório, defina `DATABASE_URL` nas env vars, deploy.
 
-## Uso (modelo sob comando)
+Preencha os ambientes e aplique as migrações **antes** de implantar. Para banco novo
+ou existente, siga [o roteiro de implantação](docs/09_IMPLANTACAO.md). Não use
+`db:push` no banco existente sem revisar a proposta de alteração. O journal histórico
+não representa toda a sequência manual de migrações.
 
-No terminal, com o Claude Code e o MCP ativos:
+Na sessão automatizada mantenha `GABINETE_MCP_MODO_HUMANO=0`. Configure administração
+pelo `ADMIN_EMAILS`. A rota de cron permanece fechada enquanto `CRON_SECRET` estiver
+vazio. O padrão de dia civil do painel é Cuiabá; alinhe o MCP e os agendamentos ao
+mesmo fuso.
 
-- "adiciona o processo 1002345-67.2026.8.26.0100 do cliente Marlene"
-- "puxa minhas intimações de hoje" → grava as comunicações e sugere prazos
-- "o que vence esta semana?" → `listar_prazos`
-- "analisa a contestação do processo da Marlene e me dá os pontos fracos"
+## Aplicação no VPS e integração futura
 
-O advogado confirma/edita cada prazo no painel (amarelo → verde). A partir daí é palavra final.
+O projeto [drtrafego/luana](https://github.com/drtrafego/luana) fornece identidade,
+memória, canal Telegram e instruções de supervisão como base reutilizável. O advogado
+terá um agente orquestrador próprio, com nome configurável e subagentes especializados.
+Esse agente será externo à aplicação do Gabinete no VPS e acessará uma API autenticada
+a ser construída em outra etapa. Um MCP poderá funcionar como adaptador dessa API.
 
-## A fronteira
+O MCP desta versão usa **stdio local**. Ele não é uma API HTTP nem um endpoint MCP
+remoto autenticado. As rotas HTTP que já atendem o painel não constituem uma API de
+agentes pronta. Consulte [o desenho futuro](docs/07_LUANA_ESCRITORIO.md) e
+[as permissões do MCP existente](docs/08_MCP_COLETA_E_PERMISSOES.md).
+Os quatro perfis novos e o exemplo VPS ficam em `docs/futuro/`, fora da configuração
+ativa. Não são necessários para implantar ou validar esta versão.
 
-O sistema coleta, organiza, analisa e sugere prazos. **Não peticiona, não decide, não é
-consultoria.** Para na informação pronta para agir. Peticionar e assinar é do advogado.
+O destino previsto para o painel é o VPS como aplicação própria, com banco, documentos
+privados e agendamentos configurados. A presença de arquivos Vercel no projeto não obriga
+esse destino nem instala os agendamentos no VPS automaticamente.
 
-## Custo
+## Revisão e próximos passos
 
-Sob comando: motor = a própria assinatura Claude do advogado; APIs do CNJ gratuitas; Neon e Vercel
-no free tier no começo. Automação (coleta de madrugada) é Fase 2/3 e usa API key (ver documento
-mestre da mentoria).
+A [auditoria e o roteiro de evolução](docs/10_AUDITORIA_E_ROADMAP.md) registram o que
+foi encontrado, o que mudou, as validações e os limites restantes. Os próximos passos
+são validar o sistema independente no ambiente de teste, revisar o catálogo/calendário
+por fontes oficiais e ampliar o ciclo dos prazos e a auditoria. A integração externa
+com o agente do escritório e o protocolo por agente ficam para uma etapa posterior.
+
+A [referência do sistema financeiro](docs/12_REFERENCIA_FINANCEIRO.md) registra os
+padrões que podem orientar uma API futura e os limites de reaproveitamento. O módulo
+de honorários desta entrega pertence ao Gabinete; não há incorporação do financeiro pessoal/PF.

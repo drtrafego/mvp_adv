@@ -12,9 +12,7 @@ import { aliasDataJud, limparCNJ, formatarCNJ } from "./cnj.js";
 
 const BASE = "https://api-publica.datajud.cnj.jus.br";
 // Permite sobrescrever por env; cai na chave pública oficial se ausente.
-const API_KEY =
-  process.env.DATAJUD_API_KEY ??
-  "cDZHYzlZa0JadVREZDJCendQbXY6SkJlTzNjLV9TRENyQk1RdnFKZGRQdw==";
+const CHAVE_PUBLICA = "cDZHYzlZa0JadVREZDJCendQbXY6SkJlTzNjLV9TRENyQk1RdnFKZGRQdw==";
 
 export interface MovimentacaoDataJud {
   codigo: number | null;
@@ -95,10 +93,11 @@ export async function consultarProcesso(
   const resp = await fetch(url, {
     method: "POST",
     headers: {
-      Authorization: `APIKey ${API_KEY}`,
+      Authorization: `APIKey ${process.env.DATAJUD_API_KEY ?? CHAVE_PUBLICA}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(20_000),
   });
 
   if (!resp.ok) {

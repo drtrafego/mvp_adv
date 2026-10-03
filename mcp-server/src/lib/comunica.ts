@@ -11,6 +11,7 @@
  */
 
 import { ehDoAdvogado, parseOab, type IdentidadeOab } from "./oab.js";
+import { parseISODate } from "./feriados.js";
 
 const BASE = "https://comunicaapi.pje.jus.br/api/v1";
 
@@ -69,6 +70,9 @@ export class ComunicaError extends Error {
     message: string,
     public readonly status?: number,
     public readonly bloqueadoPorWAF = false,
+    /** Dados já coletados antes da falha; nunca apresentar como cobertura completa. */
+    public readonly itensParciais: ComunicacaoDJEN[] = [],
+    public readonly coletaParcial = false,
   ) {
     super(message);
     this.name = "ComunicaError";
@@ -170,36 +174,100 @@ export async function buscarIntimacoes(
   params: BuscarIntimacoesParams,
   tentativas = 3,
 ): Promise<ComunicacaoDJEN[]> {
+  if (!Number.isInteger(tentativas) || tentativas < 1 || tentativas > 5) {
+    throw new ComunicaError("Tentativas deve ser um inteiro de 1 a 5.");
+  }
+  if (params.dataInicio) parseISODate(params.dataInicio);
+  if (params.dataFim) parseISODate(params.dataFim);
+  if (params.dataInicio && params.dataFim && params.dataInicio > params.dataFim) {
+    throw new ComunicaError("A data inicial não pode ser posterior à data final.");
+  }
   const variantes = variantesDeOab(params.numeroOab, params.letraOab);
 
   // União das variantes, deduplicada pelo hash do DJEN (a mesma comunicação pode aparecer
   // nas duas consultas). Sem hash, cai para processo + data como chave.
   const porChave = new Map<string, ComunicacaoDJEN>();
-  let ultimoErro: unknown = null;
+  const falhas: Array<{ variante: string; erro: unknown }> = [];
   let algumaOk = false;
+  const adicionar = (itens: ComunicacaoDJEN[]) => {
+    for (const c of itens) {
+      const chave = chaveComunicacao(c);
+      if (!porChave.has(chave)) porChave.set(chave, c);
+    }
+  };
   for (const numeroOab of variantes) {
     try {
       const itens = await buscarIntimacoesRaw({ ...params, numeroOab }, tentativas);
       algumaOk = true;
-      for (const c of itens) {
-        const chave = c.hash ?? `${c.numeroProcesso ?? "?"}|${c.dataDisponibilizacao ?? "?"}|${c.texto.slice(0, 40)}`;
-        if (!porChave.has(chave)) porChave.set(chave, c);
-      }
+      adicionar(itens);
     } catch (e) {
-      ultimoErro = e;
+      falhas.push({ variante: numeroOab, erro: e });
+      if (e instanceof ComunicaError) adicionar(e.itensParciais);
     }
   }
-  // Se NENHUMA variante respondeu, é falha: não devolver lista vazia, que se confunde com
-  // "não há intimação".
-  if (!algumaOk && ultimoErro) throw ultimoErro;
-
   const itens = [...porChave.values()];
   const alvos = params.oabsAlvo;
-  if (!alvos || alvos.length === 0) return itens;
-  return itens.filter((c) => c.advogados.some((a) => a.oab != null && ehDoAdvogado(a.oab, alvos)));
+  const filtrados = !alvos || alvos.length === 0
+    ? itens
+    : itens.filter((c) => c.advogados.some((a) => a.oab != null && ehDoAdvogado(a.oab, alvos)));
+  // A forma com letra e a forma sem letra cobrem conjuntos diferentes. Uma responder não
+  // transforma a falha da outra em sucesso: os consumidores devem registrar parcial/erro.
+  if (falhas.length) {
+    const primeira = falhas[0].erro;
+    throw new ComunicaError(
+      `Coleta DJEN incompleta: ${falhas.map(({ variante, erro }) =>
+        `${variante}: ${erro instanceof Error ? erro.message : String(erro)}`).join(" | ")}`,
+      primeira instanceof ComunicaError ? primeira.status : undefined,
+      falhas.some(({ erro }) => erro instanceof ComunicaError && erro.bloqueadoPorWAF),
+      filtrados,
+      algumaOk || itens.length > 0,
+    );
+  }
+  return filtrados;
+}
+
+function chaveComunicacao(c: ComunicacaoDJEN): string {
+  return c.hash ?? `${c.numeroProcesso ?? "?"}|${c.dataDisponibilizacao ?? "?"}|${c.texto}`;
 }
 
 async function buscarIntimacoesRaw(
+  params: BuscarIntimacoesParams,
+  tentativas: number,
+): Promise<ComunicacaoDJEN[]> {
+  const tamanho = params.itensPorPagina ?? 100;
+  const primeiraPagina = params.pagina ?? 1;
+  if (!Number.isInteger(tamanho) || tamanho < 1 || tamanho > 100 ||
+      !Number.isInteger(primeiraPagina) || primeiraPagina < 1) {
+    throw new ComunicaError("Paginação inválida: página >= 1 e itensPorPagina de 1 a 100.");
+  }
+  const porChave = new Map<string, ComunicacaoDJEN>();
+  const MAX_PAGINAS = 500;
+  try {
+    for (let deslocamento = 0; deslocamento < MAX_PAGINAS; deslocamento++) {
+      const pagina = primeiraPagina + deslocamento;
+      const itens = await buscarPaginaIntimacoes({ ...params, pagina, itensPorPagina: tamanho }, tentativas);
+      let novos = 0;
+      for (const item of itens) {
+        const chave = chaveComunicacao(item);
+        if (!porChave.has(chave)) { porChave.set(chave, item); novos++; }
+      }
+      if (itens.length === 0) return [...porChave.values()];
+      if (novos === 0) throw new ComunicaError(`DJEN repetiu dados na página ${pagina}; paginação interrompida.`);
+      if (itens.length < tamanho) return [...porChave.values()];
+    }
+    throw new ComunicaError(`Coleta excedeu ${MAX_PAGINAS} páginas. Divida a janela de datas.`);
+  } catch (e) {
+    throw new ComunicaError(
+      e instanceof Error ? e.message : String(e),
+      e instanceof ComunicaError ? e.status : undefined,
+      e instanceof ComunicaError && e.bloqueadoPorWAF,
+      [...porChave.values()],
+      porChave.size > 0,
+    );
+  }
+}
+
+async function buscarPaginaIntimacoes(
   params: BuscarIntimacoesParams,
   tentativas: number,
 ): Promise<ComunicacaoDJEN[]> {
@@ -209,7 +277,7 @@ async function buscarIntimacoesRaw(
   for (let i = 0; i < tentativas; i++) {
     let resp: Response;
     try {
-      resp = await fetch(url, { headers: BROWSER_HEADERS });
+      resp = await fetch(url, { headers: BROWSER_HEADERS, signal: AbortSignal.timeout(20_000) });
     } catch (e) {
       if (i === tentativas - 1)
         throw new ComunicaError(`Falha de rede ao chamar a Comunica: ${(e as Error).message}`);
@@ -220,7 +288,8 @@ async function buscarIntimacoesRaw(
     ultimoStatus = resp.status;
     if (resp.ok) {
       const json = (await resp.json()) as { items?: ComunicaRawItem[] };
-      return (json.items ?? []).map(normalizar);
+      if (!Array.isArray(json.items)) throw new ComunicaError("DJEN respondeu sem a lista items; não é uma coleta vazia válida.");
+      return json.items.map(normalizar);
     }
     if (resp.status === 403) {
       if (i === tentativas - 1) {
@@ -244,7 +313,7 @@ async function buscarIntimacoesRaw(
       await sleep(700 * (i + 1));
       continue;
     }
-    if (resp.status >= 500) {
+    if (resp.status >= 500 || resp.status === 429) {
       if (i === tentativas - 1)
         throw new ComunicaError(`Comunica indisponível (${resp.status}).`, resp.status);
       await sleep(700 * (i + 1));

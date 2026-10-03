@@ -17,6 +17,7 @@ export async function fazerLogin(
 
   if (!db) return { erro: "Banco não conectado. Defina DATABASE_URL." };
   if (!email || !senha) return { erro: "Preencha email e senha." };
+  if (email.length > 254 || senha.length > 1024) return { erro: "Email ou senha incorretos." };
 
   const encontrado = (
     await db.select().from(usuarios).where(eq(usuarios.email, email)).limit(1)

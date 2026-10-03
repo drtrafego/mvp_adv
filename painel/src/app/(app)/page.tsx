@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
-import { Scale, FileText, Clock, TriangleAlert } from "lucide-react";
+import { Scale, FileText, Clock, TriangleAlert, Wallet, ArrowUpRight, Workflow } from "lucide-react";
+import { SaudeEscritorio } from "@/components/saude-escritorio";
 import { SiteHeader } from "@/components/site-header";
 import { PrazosBoard } from "@/components/prazos-board";
 import { ProcessosList } from "@/components/processos-list";
@@ -8,17 +8,18 @@ import { IntimacoesSemPrazo } from "@/components/intimacoes-sem-prazo";
 import { ChegouAgora } from "@/components/chegou-agora";
 import { Reveal } from "@/components/motion-primitives";
 import { bancoConectado } from "@/db";
-import { intimacoesRecentes, listarPrazos, listarProcessos, resumo } from "@/db/queries";
+import { intimacoesRecentes, listarPrazos, listarProcessos, resumo, saudeColeta } from "@/db/queries";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const conectado = bancoConectado();
-  const [dados, prazos, processos, recentes] = await Promise.all([
+  const [dados, prazos, processos, recentes, coletas] = await Promise.all([
     resumo(),
     listarPrazos(),
     listarProcessos(),
     intimacoesRecentes(7),
+    saudeColeta(),
   ]);
 
   return (
@@ -27,6 +28,12 @@ export default async function Home() {
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">
         {!conectado && <BancoDesconectado />}
+
+        <div className="mb-8 grid gap-3 sm:grid-cols-3">
+          <Atalho href="/inicial" icon={<FileText className="h-5 w-5" />} titulo="Preparar nova ação" detalhe="Organize o caso e solicite a minuta" />
+          <Atalho href="/financeiro" icon={<Wallet className="h-5 w-5" />} titulo="Acompanhar honorários" detalhe="Vencimentos, pagamentos e cobranças" />
+          <Atalho href="/operacao" icon={<Workflow className="h-5 w-5" />} titulo="Ver operação" detalhe="Coletas e rotinas do escritório" />
+        </div>
 
         <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
           <Reveal as="section">
@@ -37,10 +44,11 @@ export default async function Home() {
               </div>
             )}
 
-            {/* O que chegou nos últimos 7 dias, com a leitura da máquina. Fica ANTES do quadro de
-                prazos porque é a primeira pergunta do dia: saiu intimação, o que ela quer dizer? */}
+            <PrazosBoard prazos={prazos} mostrarFiltros={false} />
+            <Link href="/prazos" className="mt-4 inline-flex items-center gap-1 text-sm text-indigo-brand hover:underline">Abrir todos os prazos e filtros <ArrowUpRight className="h-4 w-4" /></Link>
+
             {recentes.length > 0 && (
-              <div className="mb-6">
+              <div className="mt-8">
                 <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
                   <h3 className="font-mono text-[0.7rem] uppercase tracking-[0.15em] text-muted-foreground">
                     Chegou agora · últimos 7 dias
@@ -52,39 +60,22 @@ export default async function Home() {
                     ver todas
                   </Link>
                 </div>
-                <ChegouAgora intimacoes={recentes} />
+                <ChegouAgora intimacoes={recentes.slice(0, 6)} />
+                {recentes.length > 6 && <Link href="/intimacoes" className="mt-3 inline-flex text-xs text-indigo-brand hover:underline">Continuar na lista de intimações</Link>}
               </div>
             )}
 
-            <PrazosBoard prazos={prazos} />
           </Reveal>
 
           <aside className="space-y-8">
             <Reveal as="section" delay={0.08}>
               <SectionTitle icon={<Scale className="h-4 w-4" />} titulo="Carteira" subtitulo="seus processos" />
-              <ProcessosList processos={processos} />
+              <ProcessosList processos={processos.slice(0, 5)} />
+              {dados.totalProcessos > 5 && <Link href="/processos" className="mt-3 inline-flex items-center gap-1 text-sm text-indigo-brand hover:underline">Ver toda a carteira <ArrowUpRight className="h-4 w-4" /></Link>}
             </Reveal>
 
-            <Reveal as="section" delay={0.14} className="group overflow-hidden rounded-xl border bg-card shadow-sm shadow-black/[0.03] transition-shadow hover:shadow-md">
-              <div className="relative h-40 w-full overflow-hidden">
-                <Image
-                  src="/images/justica.png"
-                  alt="Justiça"
-                  fill
-                  sizes="400px"
-                  className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                />
-              </div>
-              <div className="p-5">
-                <div className="flex items-center gap-2 font-serif text-base font-semibold">
-                  <FileText className="h-4 w-4 text-amber-brand" /> Análise de documentos
-                </div>
-                <p className="mt-1.5 text-sm text-muted-foreground">
-                  No terminal, peça{" "}
-                  <span className="font-mono text-foreground">&quot;analise a contestação do processo tal&quot;</span>{" "}
-                  e a análise estruturada aparece aqui, editável campo a campo.
-                </p>
-              </div>
+            <Reveal as="section" delay={0.14}>
+              <SaudeEscritorio coletas={coletas} conectado={conectado} />
             </Reveal>
           </aside>
         </div>
@@ -117,10 +108,9 @@ function BancoDesconectado() {
         <TriangleAlert className="h-5 w-5" />
       </span>
       <div>
-        <div className="font-serif text-lg font-semibold text-amber-brand">Banco (Neon) não conectado</div>
+        <div className="font-serif text-lg font-semibold text-amber-brand">O escritório ainda não está conectado</div>
         <p className="mt-1 text-sm text-muted-foreground">
-          Defina <span className="font-mono">DATABASE_URL</span> no ambiente do painel (string do Neon) e
-          rode as migrações. Sem isso, o painel mostra a interface, mas não há dados.
+          Nenhum dado real foi carregado. Conclua a configuração de acesso e do banco antes de cadastrar clientes ou acompanhar prazos.
         </p>
       </div>
     </div>
@@ -131,18 +121,22 @@ function RodapeFronteira() {
   return (
     <div className="mt-12 overflow-hidden rounded-xl border bg-card shadow-sm shadow-black/[0.03]">
       <div className="flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center">
-        <div className="relative hidden h-20 w-28 shrink-0 overflow-hidden rounded-lg sm:block">
-          <Image src="/images/mesa.png" alt="Mesa do advogado" fill sizes="112px" className="object-cover" />
-        </div>
+        <Scale className="h-8 w-8 shrink-0 text-indigo-brand" />
         <div>
-          <div className="font-serif text-base font-semibold">A fronteira do sistema</div>
+          <div className="font-serif text-base font-semibold">Preparação assistida, decisão registrada</div>
           <p className="mt-1 text-sm text-muted-foreground">
-            O Gabinete coleta, organiza, analisa e sugere prazos. Ele não peticiona, não decide, não é
-            consultoria. Leva você até a beira da decisão e para. Peticionar, traçar estratégia e
-            assinar a peça é seu. A máquina propõe, o profissional dispõe.
+            Confira as análises, revise as minutas e confirme os prazos sugeridos. As decisões e as versões dos documentos ficam registradas no escritório.
           </p>
         </div>
       </div>
     </div>
   );
+}
+
+function Atalho({ href, icon, titulo, detalhe }: { href: string; icon: React.ReactNode; titulo: string; detalhe: string }) {
+  return <Link href={href} className="group flex items-start gap-3 rounded-xl border bg-card p-4 shadow-sm transition-colors hover:border-indigo-brand/40">
+    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-indigo-tint text-indigo-brand">{icon}</span>
+    <span className="min-w-0 flex-1"><span className="block text-sm font-semibold">{titulo}</span><span className="mt-1 block text-xs leading-relaxed text-muted-foreground">{detalhe}</span></span>
+    <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-indigo-brand" />
+  </Link>;
 }

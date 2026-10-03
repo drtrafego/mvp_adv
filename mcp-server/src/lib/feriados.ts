@@ -14,22 +14,41 @@
 
 /** Cria um Date em UTC a partir de 'YYYY-MM-DD'. */
 export function parseISODate(iso: string): Date {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+    throw new Error(`Data inválida: '${iso}'. Use YYYY-MM-DD.`);
+  }
   const [y, m, d] = iso.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, d));
+  const date = new Date(0);
+  date.setUTCFullYear(y, m - 1, d);
+  date.setUTCHours(0, 0, 0, 0);
+  if (y < 1 || date.getUTCFullYear() !== y || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d) {
+    throw new Error(`Data inexistente no calendário: '${iso}'.`);
+  }
+  return date;
+}
+
+function validarDate(date: Date): void {
+  if (!Number.isFinite(date.getTime()) || date.getUTCFullYear() < 1 || date.getUTCFullYear() > 9999) {
+    throw new Error("Data inválida ou fora do intervalo suportado (0001 a 9999).");
+  }
 }
 
 /** Formata um Date UTC como 'YYYY-MM-DD'. */
 export function formatISODate(date: Date): string {
+  validarDate(date);
   const y = date.getUTCFullYear();
   const m = String(date.getUTCMonth() + 1).padStart(2, "0");
   const d = String(date.getUTCDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+  return `${String(y).padStart(4, "0")}-${m}-${d}`;
 }
 
 /** Retorna uma nova data somando `days` dias (UTC). */
 export function addDays(date: Date, days: number): Date {
+  validarDate(date);
+  if (!Number.isSafeInteger(days)) throw new Error("A quantidade de dias precisa ser um inteiro finito.");
   const r = new Date(date.getTime());
   r.setUTCDate(r.getUTCDate() + days);
+  validarDate(r);
   return r;
 }
 
@@ -123,7 +142,7 @@ export interface CalendarioOptions {
 export function criarCalendario(opts: CalendarioOptions = {}) {
   const incluirForensesMoveis = opts.incluirForensesMoveis ?? true;
   const aplicarRecesso = opts.aplicarRecesso ?? true;
-  const forensesLocais = new Set(opts.feriadosForenses ?? []);
+  const forensesLocais = new Set((opts.feriadosForenses ?? []).map((data) => formatISODate(parseISODate(data))));
 
   // cache de feriados móveis por ano
   const moveisPorAno = new Map<number, Set<string>>();
@@ -141,6 +160,7 @@ export function criarCalendario(opts: CalendarioOptions = {}) {
   }
 
   function ehDiaUtil(date: Date): boolean {
+    validarDate(date);
     const dow = date.getUTCDay(); // 0 domingo, 6 sábado
     if (dow === 0 || dow === 6) return false;
     if (FERIADOS_FIXOS.has(mmdd(date))) return false;

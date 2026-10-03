@@ -16,6 +16,31 @@ describe("cálculo da Páscoa (Meeus)", () => {
   });
 });
 
+describe("validação de entradas do calendário", () => {
+  it.each(["2026-02-31", "2025-02-29", "2026-13-01", "2026-00-01", "2026-01-00", "03/03/2026", "", "não é data"])(
+    "rejeita data impossível ou malformada: %s", (data) => {
+      expect(() => parseISODate(data)).toThrow(/Data/);
+    },
+  );
+  it("aceita 29 de fevereiro apenas no ano bissexto", () => {
+    expect(formatISODate(parseISODate("2028-02-29"))).toBe("2028-02-29");
+  });
+  it("não entra em laço ao receber Invalid Date ou feriado inválido", () => {
+    expect(() => criarCalendario().proximoDiaUtil(new Date(NaN))).toThrow(/Data inválida/);
+    expect(() => criarCalendario({ feriadosForenses: ["2026-02-31"] })).toThrow(/Data/);
+  });
+  it.each([NaN, Infinity, -1, 0, 1.5, 36_501])("rejeita duração inválida: %s", (dias) => {
+    expect(() => calcularPrazo({ dataDisponibilizacao: "2026-03-03", dias })).toThrow(/inteiro finito/);
+  });
+  it("bloqueia aproximação de prazo em anos como 730 dias", () => {
+    expect(() => calcularPrazo({
+      dataDisponibilizacao: "2023-03-03",
+      dataPublicacaoConhecida: "2023-03-03",
+      atoChave: "acao-rescisoria",
+    })).toThrow(/730 dias/);
+  });
+});
+
 describe("recesso forense art. 220", () => {
   it("marca 20/12 a 20/01 como recesso", () => {
     expect(ehRecessoForense(parseISODate("2026-12-20"))).toBe(true);

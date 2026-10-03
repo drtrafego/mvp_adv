@@ -1,5 +1,6 @@
 import { detalhePeca } from "@/db/queries";
 import { getUsuarioAtual } from "@/lib/auth";
+import { ehUuid } from "@/lib/seguranca";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +66,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   if (!usuario) return new Response("Não autorizado.", { status: 401 });
 
   const { id } = await params;
+  if (!ehUuid(id)) return new Response("Peça não encontrada.", { status: 404 });
   const detalhe = await detalhePeca(id);
   if (!detalhe) return new Response("Peça não encontrada.", { status: 404 });
 
@@ -92,6 +94,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     headers: {
       "Content-Type": "application/rtf; charset=utf-8",
       "Content-Disposition": `attachment; filename="${nome}"`,
+      "Cache-Control": "private, no-store",
+      "X-Content-Type-Options": "nosniff",
     },
   });
 }

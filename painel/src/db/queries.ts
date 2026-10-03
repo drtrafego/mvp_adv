@@ -1,6 +1,7 @@
 import "server-only";
 import { and, asc, desc, eq, gte, ilike, isNull, lte, ne, or, sql } from "drizzle-orm";
 import { db, schema } from "./index";
+import { hojeEscritorio } from "../lib/prazo-ui";
 
 export interface PrazoRow {
   id: string;
@@ -15,11 +16,14 @@ export interface PrazoRow {
   numeroCnj: string | null;
   clienteNome: string | null;
   tribunal: string | null;
+  divergencia?: unknown;
+  comunicacaoId?: string | null;
 }
 
 /** Lista prazos não cancelados, ordenados pela data fatal. */
 export async function listarPrazos(): Promise<PrazoRow[]> {
   if (!db) return [];
+  const hoje = hojeEscritorio();
   const rows = await db
     .select({
       id: schema.prazos.id,
@@ -34,16 +38,18 @@ export async function listarPrazos(): Promise<PrazoRow[]> {
       numeroCnj: schema.processos.numeroCnj,
       clienteNome: schema.processos.clienteNome,
       tribunal: schema.processos.tribunal,
+      divergencia: schema.prazos.divergencia,
+      comunicacaoId: schema.prazos.comunicacaoId,
     })
     .from(schema.prazos)
     .leftJoin(schema.processos, eq(schema.prazos.processoId, schema.processos.id))
-    .where(ne(schema.prazos.status, "cancelado"))
+    .where(and(ne(schema.prazos.status, "cancelado"), isNull(schema.processos.excluidoEm)))
     // O que ainda dá para cumprir vem primeiro, do mais urgente ao menos. O vencido desce para
     // o fim, do mais recente ao mais antigo: ordenar tudo por data fatal crescente jogava um
     // prazo perdido há meses acima do que vence amanhã.
     .orderBy(
-      sql`(${schema.prazos.dataFatal} < current_date) asc`,
-      sql`case when ${schema.prazos.dataFatal} >= current_date then ${schema.prazos.dataFatal} end asc`,
+      sql`(${schema.prazos.dataFatal} < ${hoje}::date) asc`,
+      sql`case when ${schema.prazos.dataFatal} >= ${hoje}::date then ${schema.prazos.dataFatal} end asc`,
       sql`${schema.prazos.dataFatal} desc`,
     );
   return rows as PrazoRow[];
@@ -136,7 +142,7 @@ export async function detalheProcesso(id: string): Promise<DetalheProcesso | nul
   const [processo] = await db
     .select()
     .from(schema.processos)
-    .where(eq(schema.processos.id, id))
+    .where(and(eq(schema.processos.id, id), isNull(schema.processos.excluidoEm)))
     .limit(1);
   if (!processo) return null;
 
@@ -298,8 +304,32 @@ const dataFatalSql = sql<string | null>`(
 )`;
 
 /** Últimas intimações/comunicações (DJEN), da mais recente para a mais antiga. */
-export async function listarIntimacoes(): Promise<IntimacaoRow[]> {
+export type FiltroIntimacao = "todas" | "sem-prazo" | "sem-analise" | "cuidadas";
+
+export async function contarIntimacoes(): Promise<Record<FiltroIntimacao, number>> {
+  if (!db) return { todas: 0, "sem-prazo": 0, "sem-analise": 0, cuidadas: 0 };
+  const [contagem] = await db.select({
+    todas: sql<number>`count(*)::int`,
+    semPrazo: sql<number>`count(*) filter (where ${pendenteSql})::int`,
+    semAnalise: sql<number>`count(*) filter (where ${schema.comunicacoes.processada} is not true and not ${temAnaliseSql})::int`,
+    cuidadas: sql<number>`count(*) filter (where ${schema.comunicacoes.processada} is true)::int`,
+  }).from(schema.comunicacoes);
+  return {
+    todas: contagem?.todas ?? 0,
+    "sem-prazo": contagem?.semPrazo ?? 0,
+    "sem-analise": contagem?.semAnalise ?? 0,
+    cuidadas: contagem?.cuidadas ?? 0,
+  };
+}
+
+export async function listarIntimacoes(opcoes: { filtro?: FiltroIntimacao; pagina?: number } = {}): Promise<IntimacaoRow[]> {
   if (!db) return [];
+  const filtro = opcoes.filtro ?? "todas";
+  const pagina = Math.max(1, Math.min(10000, Math.trunc(opcoes.pagina ?? 1)));
+  const condicao = filtro === "sem-prazo" ? pendenteSql
+    : filtro === "sem-analise" ? sql`${schema.comunicacoes.processada} is not true and not ${temAnaliseSql}`
+    : filtro === "cuidadas" ? eq(schema.comunicacoes.processada, true)
+    : undefined;
   const rows = await db
     .select({
       id: schema.comunicacoes.id,
@@ -319,8 +349,10 @@ export async function listarIntimacoes(): Promise<IntimacaoRow[]> {
     })
     .from(schema.comunicacoes)
     .leftJoin(schema.processos, eq(schema.comunicacoes.processoId, schema.processos.id))
-    .orderBy(desc(schema.comunicacoes.dataDisponibilizacao))
-    .limit(100);
+    .where(condicao)
+    .orderBy(desc(schema.comunicacoes.dataDisponibilizacao), desc(schema.comunicacoes.id))
+    .limit(100)
+    .offset((pagina - 1) * 100);
   return rows as IntimacaoRow[];
 }
 
@@ -578,23 +610,27 @@ export async function resumo(): Promise<Resumo> {
       partesAConfirmar: 0,
       clientesSugeridos: 0,
     };
-  const hoje = new Date().toISOString().slice(0, 10);
-  const daqui7 = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
-  const [tp] = await db.select({ n: sql<number>`count(*)::int` }).from(schema.processos);
+  const hoje = hojeEscritorio();
+  const daqui7 = new Date(new Date(`${hoje}T00:00:00Z`).getTime() + 7 * 86400000).toISOString().slice(0, 10);
+  const [tp] = await db.select({ n: sql<number>`count(*)::int` }).from(schema.processos).where(isNull(schema.processos.excluidoEm));
   const [pa] = await db
     .select({ n: sql<number>`count(*)::int` })
     .from(schema.prazos)
-    .where(ne(schema.prazos.status, "cancelado"));
+    .leftJoin(schema.processos, eq(schema.prazos.processoId, schema.processos.id))
+    .where(and(ne(schema.prazos.status, "cancelado"), isNull(schema.processos.excluidoEm)));
   const [sg] = await db
     .select({ n: sql<number>`count(*)::int` })
     .from(schema.prazos)
-    .where(eq(schema.prazos.status, "sugerido"));
+    .leftJoin(schema.processos, eq(schema.prazos.processoId, schema.processos.id))
+    .where(and(eq(schema.prazos.status, "sugerido"), isNull(schema.processos.excluidoEm)));
   const [v7] = await db
     .select({ n: sql<number>`count(*)::int` })
     .from(schema.prazos)
+    .leftJoin(schema.processos, eq(schema.prazos.processoId, schema.processos.id))
     .where(
       and(
         ne(schema.prazos.status, "cancelado"),
+        isNull(schema.processos.excluidoEm),
         gte(schema.prazos.dataFatal, hoje),
         lte(schema.prazos.dataFatal, daqui7),
       ),
@@ -707,8 +743,9 @@ export async function detalhePeca(id: string) {
       .limit(1);
   }
 
-  // Documentos do CASO, presos à peça: numa inicial ainda não existe processo, mas já existe
-  // contrato, comprovante e procuração para o squad usar. Sem a coluna `texto` (pesada).
+  // Documentos do caso antes e depois da distribuição: os anexos antigos ficam ligados à
+  // peça, e os novos vão para o processo. A tela precisa mostrar os dois vínculos.
+  // Sem a coluna `texto` (pesada).
   const documentos = await db
     .select({
       id: schema.documentos.id,
@@ -723,7 +760,12 @@ export async function detalhePeca(id: string) {
       createdAt: schema.documentos.createdAt,
     })
     .from(schema.documentos)
-    .where(and(eq(schema.documentos.pecaId, id), isNull(schema.documentos.excluidoEm)))
+    .where(and(
+      peca.processoId
+        ? or(eq(schema.documentos.pecaId, id), eq(schema.documentos.processoId, peca.processoId))
+        : eq(schema.documentos.pecaId, id),
+      isNull(schema.documentos.excluidoEm),
+    ))
     .orderBy(desc(schema.documentos.createdAt));
 
   return { peca, processo: processo ?? null, documentos };
@@ -959,7 +1001,12 @@ export interface BuscaResultado {
 export async function buscaGlobal(termo: string): Promise<BuscaResultado> {
   const vazio: BuscaResultado = { processos: [], clientes: [], prazos: [] };
   if (!db || !termo.trim()) return vazio;
-  const q = `%${termo.trim()}%`;
+  // Parâmetros continuam vinculados pelo Drizzle. Escapar os curingas faz a busca literal.
+  const q = `%${termo.trim().slice(0, 200).replace(/[\\%_]/g, "\\$&")}%`;
+  const digitos = termo.replace(/\D/g, "");
+  const numeroNormalizado = digitos.length >= 7
+    ? sql`regexp_replace(${schema.processos.numeroCnj}, '[^0-9]', '', 'g') like ${`%${digitos}%`}`
+    : undefined;
 
   const processos = await db
     .select({
@@ -971,16 +1018,18 @@ export async function buscaGlobal(termo: string): Promise<BuscaResultado> {
     .where(
       and(
         isNull(schema.processos.excluidoEm),
-        or(ilike(schema.processos.numeroCnj, q), ilike(schema.processos.clienteNome, q)),
+        or(ilike(schema.processos.numeroCnj, q), ilike(schema.processos.clienteNome, q), numeroNormalizado),
       ),
     )
-    .limit(12);
+    .orderBy(asc(schema.processos.numeroCnj))
+    .limit(30);
 
   const clientes = await db
     .select({ id: schema.clientes.id, nome: schema.clientes.nome })
     .from(schema.clientes)
     .where(ilike(schema.clientes.nome, q))
-    .limit(12);
+    .orderBy(asc(schema.clientes.nome))
+    .limit(30);
 
   const prazos = await db
     .select({
@@ -991,8 +1040,13 @@ export async function buscaGlobal(termo: string): Promise<BuscaResultado> {
     })
     .from(schema.prazos)
     .leftJoin(schema.processos, eq(schema.prazos.processoId, schema.processos.id))
-    .where(and(ne(schema.prazos.status, "cancelado"), ilike(schema.prazos.ato, q)))
-    .limit(12);
+    .where(and(
+      ne(schema.prazos.status, "cancelado"),
+      isNull(schema.processos.excluidoEm),
+      or(ilike(schema.prazos.ato, q), ilike(schema.processos.numeroCnj, q), ilike(schema.processos.clienteNome, q), numeroNormalizado),
+    ))
+    .orderBy(asc(schema.prazos.dataFatal))
+    .limit(30);
 
   return { processos, clientes, prazos };
 }

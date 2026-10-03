@@ -30,10 +30,11 @@ try {
 
 const { getDb } = await import("../dist/lib/db.js");
 const schema = await import("../dist/lib/schema.js");
+const { hojeEscritorio, diasOperacionais, deslocarData } = await import("../dist/lib/tempo.js");
 
-const dias = Number(process.argv[2] ?? 3);
-const hoje = new Date().toISOString().slice(0, 10);
-const limite = new Date(Date.now() + dias * 86400000).toISOString().slice(0, 10);
+const dias = diasOperacionais(process.argv[2] ?? 3, 365);
+const hoje = hojeEscritorio();
+const limite = deslocarData(hoje, dias);
 
 const db = getDb();
 const rows = await db
@@ -76,11 +77,14 @@ if (webhook) {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ text: msg, prazos: rows }),
+      signal: AbortSignal.timeout(15_000),
     });
+    if (!r.ok) throw new Error(`Webhook recusou o alerta (HTTP ${r.status}).`);
     console.log(`Alerta enviado ao webhook (HTTP ${r.status}).`);
   } catch (e) {
     console.error("Falha ao enviar alerta ao webhook:", e.message);
     console.log(msg);
+    process.exit(1);
   }
 } else {
   console.log(msg);

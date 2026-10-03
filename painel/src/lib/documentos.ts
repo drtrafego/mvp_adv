@@ -92,7 +92,7 @@ export function slug(s: string): string {
 /**
  * Caminho do arquivo no Blob. Imutável depois de gravado.
  *
- *   processos/<cnj só dígitos>/<categoria>/<AAAA-MM-DD>-<slug>-<hash8>.<ext>
+ *   processos/<cnj só dígitos>/<categoria>/<AAAA-MM-DD>-<slug>-<hash8>[-<upload-id>].<ext>
  *
  * O prefixo por processo permite listar e apagar por processo; a categoria como pasta é a
  * divisão das peças por tipo, legível para quem abrir o storage direto.
@@ -107,11 +107,14 @@ export function montarStoragePath(params: {
   hashSha256: string;
   extensao: string;
   data?: string;
+  /** Cada tentativa tem um id próprio: reenvio nunca sobrescreve um original retido. */
+  uploadId?: string;
 }): string {
   const data = params.data ?? new Date().toISOString().slice(0, 10);
   const hash8 = params.hashSha256.slice(0, 8);
   const ext = params.extensao.toLowerCase().replace(/^\.?/, ".");
-  const nome = `${data}-${slug(params.titulo)}-${hash8}${ext}`;
+  const tentativa = params.uploadId ? `-${params.uploadId}` : "";
+  const nome = `${data}-${slug(params.titulo)}-${hash8}${tentativa}${ext}`;
   const cnj = (params.numeroCnj ?? "").replace(/\D/g, "");
   // Caso novo ainda não tem número de processo, então o documento fica sob a peça. Quando o
   // processo for distribuído, o vínculo passa a ser o processo; o arquivo não precisa mudar

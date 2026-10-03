@@ -1,6 +1,7 @@
 // Coleta movimentacoes dos processos da carteira via DataJud (funciona de qualquer IP)
 // e grava no Neon. Reporta as dos ultimos 30 dias. Idempotente (dedup no upsert).
 import { readFileSync } from "node:fs";
+import { and, eq, isNull } from "drizzle-orm";
 
 try {
   const env = readFileSync(new URL("../.env", import.meta.url), "utf8");
@@ -17,7 +18,8 @@ const schema = await import("../dist/lib/schema.js");
 const db = getDb();
 const procs = await db
   .select({ id: schema.processos.id, numeroCnj: schema.processos.numeroCnj })
-  .from(schema.processos);
+  .from(schema.processos)
+  .where(and(eq(schema.processos.status, "ativo"), isNull(schema.processos.excluidoEm)));
 console.log(`Carteira: ${procs.length} processos\n`);
 
 const LIMITE = new Date(Date.now() - 30 * 86400000);
@@ -45,8 +47,8 @@ for (const p of procs) {
 
 await registrarSincronizacao("datajud", {
   escopo: "movimentacoes carteira",
-  status: erros > 0 ? "parcial" : "ok",
-  itens: procs.length,
+  status: erros > 0 ? (ok > 0 ? "parcial" : "erro") : "ok",
+  itens: ok,
   novos: totalNovas,
   mensagem: `${ok} ok, ${erros} sem dados, ${totalNovas} mov novas`,
 });
@@ -55,4 +57,4 @@ console.log(`\n=== RESUMO ===`);
 console.log(`Processos consultados: ${procs.length} | com dados: ${ok} | sem dados: ${erros}`);
 console.log(`Movimentacoes dos ultimos 30 dias encontradas: ${total30}`);
 console.log(`Movimentacoes NOVAS gravadas no banco: ${totalNovas}`);
-process.exit(0);
+process.exit(erros > 0 ? 1 : 0);

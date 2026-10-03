@@ -1,5 +1,10 @@
 # Coleta na máquina do advogado (Brasil)
 
+> Documento histórico de uma opção de coleta local. A implantação atual prevista
+> para o Gabinete é uma aplicação própria no VPS, seguindo `docs/09_IMPLANTACAO.md`.
+> A hospedagem e as restrições de rede descritas abaixo precisam ser verificadas no
+> ambiente real; este documento não exige agente residente nem integração Telegram.
+
 ## Por que roda na máquina do advogado, e não num servidor externo
 
 As intimações vêm do **DJEN (CNJ)**, que **bloqueia acesso de fora do Brasil** (retorna HTTP 403).
