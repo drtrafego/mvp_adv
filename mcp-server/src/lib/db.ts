@@ -42,6 +42,36 @@ export function getDb(): NeonHttpDatabase<typeof schema> {
   return db;
 }
 
+const travasExecucao = new Map<string, Promise<unknown>>();
+
+/**
+ * Serializa execuções concorrentes dentro do mesmo processo por chave estável (ex.: por intimação/ato
+ * ou por alvo de análise) para evitar duplicação e corrida de versionamento.
+ */
+export async function executarSerializado<T>(chave: string, fn: () => Promise<T>): Promise<T> {
+  const anterior = travasExecucao.get(chave) ?? Promise.resolve();
+  let resolver: () => void;
+  const proxima = new Promise<void>((r) => {
+    resolver = r;
+  });
+  travasExecucao.set(
+    chave,
+    anterior.then(
+      () => proxima,
+      () => proxima,
+    ),
+  );
+  try {
+    await anterior;
+    return await fn();
+  } finally {
+    resolver!();
+    if (travasExecucao.get(chave) === proxima) {
+      travasExecucao.delete(chave);
+    }
+  }
+}
+
 export async function upsertProcesso(
   p: ProcessoDataJud,
   clienteNome?: string,
@@ -293,34 +323,43 @@ export async function salvarAnalise(a: {
       return { ok: false, motivo: "processo_fora_carteira" };
   }
 
-  const anteriores = await d
-    .select({ versao: schema.analises.versao, status: schema.analises.status })
-    .from(schema.analises)
-    .where(
-      a.comunicacaoId
-        ? eq(schema.analises.comunicacaoId, a.comunicacaoId)
-        : a.documentoId
-          ? eq(schema.analises.documentoId, a.documentoId)
-          : and(eq(schema.analises.processoId, processoId as string), eq(schema.analises.tipo, a.tipo)),
-    );
-  const versao = anteriores.reduce((maior, x) => Math.max(maior, x.versao ?? 1), 0) + 1;
-  const jaConfirmada = anteriores.some((x) => x.status === "confirmada");
+  const tipoNorm = a.tipo.trim();
+  const chaveSerializacao = a.comunicacaoId
+    ? `analise:comunicacao:${a.comunicacaoId}:${tipoNorm.toLowerCase()}`
+    : a.documentoId
+      ? `analise:documento:${a.documentoId}:${tipoNorm.toLowerCase()}`
+      : `analise:processo:${processoId ?? "avulso"}:${tipoNorm.toLowerCase()}`;
 
-  const [row] = await d
-    .insert(schema.analises)
-    .values({
-      processoId,
-      comunicacaoId: a.comunicacaoId ?? null,
-      documentoId: a.documentoId ?? null,
-      tipo: a.tipo,
-      conteudo: a.conteudo as any,
-      versao,
-      status: "sugerida",
-      origem: "maquina",
-      modelo: a.modelo ?? null,
-    })
-    .returning({ id: schema.analises.id });
-  return { ok: true, id: row.id, versao, processoId, jaConfirmada };
+  return await executarSerializado(chaveSerializacao, async () => {
+    const anteriores = await d
+      .select({ versao: schema.analises.versao, status: schema.analises.status })
+      .from(schema.analises)
+      .where(
+        a.comunicacaoId
+          ? eq(schema.analises.comunicacaoId, a.comunicacaoId)
+          : a.documentoId
+            ? eq(schema.analises.documentoId, a.documentoId)
+            : and(eq(schema.analises.processoId, processoId as string), eq(schema.analises.tipo, tipoNorm)),
+      );
+    const versao = anteriores.reduce((maior, x) => Math.max(maior, x.versao ?? 1), 0) + 1;
+    const jaConfirmada = anteriores.some((x) => x.status === "confirmada");
+
+    const [row] = await d
+      .insert(schema.analises)
+      .values({
+        processoId,
+        comunicacaoId: a.comunicacaoId ?? null,
+        documentoId: a.documentoId ?? null,
+        tipo: tipoNorm,
+        conteudo: a.conteudo as any,
+        versao,
+        status: "sugerida",
+        origem: "maquina",
+        modelo: a.modelo ?? null,
+      })
+      .returning({ id: schema.analises.id });
+    return { ok: true, id: row.id, versao, processoId, jaConfirmada };
+  });
 }
 
 // ===== Peças e modelos do escritório =====
@@ -458,52 +497,58 @@ export interface NovoPrazo {
 export async function inserirPrazoSugerido(p: NovoPrazo): Promise<{ id: string; criado: boolean }> {
   const d = getDb();
   let processoId = p.processoId;
-  if (p.comunicacaoId) {
-    const [comunicacao] = await d
-      .select({ processoId: schema.comunicacoes.processoId })
-      .from(schema.comunicacoes)
-      .where(eq(schema.comunicacoes.id, p.comunicacaoId))
-      .limit(1);
-    if (!comunicacao) throw new Error("A intimação informada não existe. Confira o id em listar_intimacoes.");
-    if (processoId && comunicacao.processoId !== processoId) {
-      throw new Error("O processo informado não corresponde à intimação. Nenhum prazo foi gravado.");
+  const atoNorm = p.ato.trim();
+  const chaveSerializacao = p.comunicacaoId
+    ? `prazo:comunicacao:${p.comunicacaoId}:${atoNorm.toLowerCase()}`
+    : `prazo:processo:${processoId ?? "avulso"}:${atoNorm.toLowerCase()}`;
+
+  return await executarSerializado(chaveSerializacao, async () => {
+    if (p.comunicacaoId) {
+      const [comunicacao] = await d
+        .select({ processoId: schema.comunicacoes.processoId })
+        .from(schema.comunicacoes)
+        .where(eq(schema.comunicacoes.id, p.comunicacaoId))
+        .limit(1);
+      if (!comunicacao) throw new Error("A intimação informada não existe. Confira o id em listar_intimacoes.");
+      if (processoId && comunicacao.processoId !== processoId) {
+        throw new Error("O processo informado não corresponde à intimação. Nenhum prazo foi gravado.");
+      }
+      processoId = comunicacao.processoId;
+      // Evita duplicar em reexecuções sequenciais ou concorrentes com chave de ato normalizada.
+      const [existente] = await d
+        .select({ id: schema.prazos.id })
+        .from(schema.prazos)
+        .where(and(
+          eq(schema.prazos.comunicacaoId, p.comunicacaoId),
+          ilike(schema.prazos.ato, atoNorm),
+          ne(schema.prazos.status, "cancelado"),
+        ))
+        .limit(1);
+      if (existente) return { id: existente.id, criado: false };
     }
-    processoId = comunicacao.processoId;
-    // Evita duplicar em reexecuções sequenciais. A proteção concorrente definitiva exige
-    // índice único/migração por comunicação e chave estável do ato (ainda fora deste schema).
-    const [existente] = await d
-      .select({ id: schema.prazos.id })
-      .from(schema.prazos)
-      .where(and(
-        eq(schema.prazos.comunicacaoId, p.comunicacaoId),
-        eq(schema.prazos.ato, p.ato),
-        ne(schema.prazos.status, "cancelado"),
-      ))
-      .limit(1);
-    if (existente) return { id: existente.id, criado: false };
-  }
-  const [row] = await d
-    .insert(schema.prazos)
-    .values({
-      processoId,
-      comunicacaoId: p.comunicacaoId ?? null,
-      ato: p.ato,
-      regraAplicada: p.regraAplicada ?? null,
-      dias: p.calculo.dias,
-      contagem: p.calculo.contagem,
-      dataPublicacao: p.calculo.dataPublicacao,
-      dataInicio: p.calculo.dataInicioContagem,
-      dataFatalSugerida: p.calculo.dataFatal,
-      dataFatal: p.calculo.dataFatal,
-      status: "sugerido",
-      origem: "maquina",
-      justificativaIa: p.justificativaIA ?? p.calculo.memoria.join(" "),
-      // Pendências [CONFERIR] do cálculo (divergência de rito, termo inicial incerto, dobro
-      // recusado). O painel mostra ao advogado antes da confirmação.
-      divergencia: p.calculo.alertas.length > 0 ? { conferir: p.calculo.alertas } : null,
-    })
-    .returning({ id: schema.prazos.id });
-  return { id: row.id, criado: true };
+    const [row] = await d
+      .insert(schema.prazos)
+      .values({
+        processoId,
+        comunicacaoId: p.comunicacaoId ?? null,
+        ato: atoNorm,
+        regraAplicada: p.regraAplicada ?? null,
+        dias: p.calculo.dias,
+        contagem: p.calculo.contagem,
+        dataPublicacao: p.calculo.dataPublicacao,
+        dataInicio: p.calculo.dataInicioContagem,
+        dataFatalSugerida: p.calculo.dataFatal,
+        dataFatal: p.calculo.dataFatal,
+        status: "sugerido",
+        origem: "maquina",
+        justificativaIa: p.justificativaIA ?? p.calculo.memoria.join(" "),
+        // Pendências [CONFERIR] do cálculo (divergência de rito, termo inicial incerto, dobro
+        // recusado). O painel mostra ao advogado antes da confirmação.
+        divergencia: p.calculo.alertas.length > 0 ? { conferir: p.calculo.alertas } : null,
+      })
+      .returning({ id: schema.prazos.id });
+    return { id: row.id, criado: true };
+  });
 }
 
 /**

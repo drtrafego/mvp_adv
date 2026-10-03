@@ -105,6 +105,72 @@ test("detecção já confirmada por humano não pode ser descartada por tela des
   assert.match(resultado.erro, /já foi decidida/);
 });
 
+test("confirmarPrazoAction rejeita confirmação quando a data ou ato foi alterado em outra aba", async () => {
+  const updateQuery = {
+    set() { return this; },
+    where() { return this; },
+    async returning() { return []; },
+  };
+  const selectQuery = {
+    from() { return this; },
+    where() { return this; },
+    async limit() {
+      return [{ status: "editado", dataFatal: "2026-10-15", ato: "Contestação" }];
+    },
+  };
+  const banco = {
+    update() { return updateQuery; },
+    select() { return selectQuery; },
+  };
+  const actions = moduloComMocks("../src/app/actions.ts", {
+    "next/cache": { revalidatePath() {} },
+    "drizzle-orm": { eq: () => true, ne: () => true, and: () => true, inArray: () => true, isNull: () => true },
+    "@/db": { db: banco, schema: { prazos: { id: "id", status: "status", dataFatal: "data_fatal", ato: "ato" } } },
+    "@/lib/auth": { getUsuarioAtual: async () => ({ id: "titular", email: "titular@example.test" }) },
+    "@/lib/seguranca": validacao,
+    "@/lib/partes": {},
+  });
+
+  const resultado = await actions.confirmarPrazoAction("12345678-1234-4321-8123-123456789abc", {
+    dataFatal: "2026-10-10",
+    ato: "Contestação",
+    status: "sugerido",
+  });
+
+  assert.equal(resultado.ok, false);
+  assert.match(resultado.erro, /alterado em outra aba/);
+});
+
+test("confirmarParteAction rejeita decisão se a detecção foi decidida concorrentemente", async () => {
+  const selectQuery = {
+    from() { return this; },
+    where() { return this; },
+    async limit() { return [{ id: "12345678-1234-4321-8123-123456789abc", status: "sugerido", nome: "Cliente Teste", polo: "A", processoId: "00000000-0000-4000-8000-000000000001" }]; },
+  };
+  const updateQuery = {
+    set() { return this; },
+    where() { return this; },
+    async returning() { return []; },
+  };
+  const banco = {
+    select() { return selectQuery; },
+    update() { return updateQuery; },
+    insert() { throw new Error("Não deve inserir vínculo se a decisão concorrente falhou"); },
+  };
+  const actions = moduloComMocks("../src/app/actions.ts", {
+    "next/cache": { revalidatePath() {} },
+    "drizzle-orm": { eq: () => true, and: () => true, ne: () => true, inArray: () => true, isNull: () => true },
+    "@/db": { db: banco, schema: { partesDetectadas: { id: "id", status: "status" } } },
+    "@/lib/auth": { getUsuarioAtual: async () => ({ id: "titular", email: "titular@example.test" }) },
+    "@/lib/seguranca": validacao,
+    "@/lib/partes": { papelDoPolo: () => "autor", poloOposto: () => "P", normalizarNome: (n) => n },
+  });
+
+  const resultado = await actions.confirmarParteAction("12345678-1234-4321-8123-123456789abc");
+  assert.equal(resultado.ok, false);
+  assert.match(resultado.erro, /já foi decidida/);
+});
+
 test("cron desconfigurado ou sem autorização não consulta processos nem dispara webhook", async () => {
   const cron = moduloComMocks("../src/app/api/cron/alertar-prazos/route.ts", {
     "@/db/queries": new Proxy({}, { get() { throw new Error("Cron desautorizado consultou dados"); } }),

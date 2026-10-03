@@ -33,9 +33,9 @@ export function PrazosBoard({ prazos, filtro = "todos", mostrarFiltros = true }:
   // A coleta é diária (o robô roda 1x/dia). O painel atualiza quando você age (confirmar/editar)
   // ou ao recarregar a página, sem ficar consultando o banco a cada poucos segundos.
 
-  function confirmar(id: string) {
+  function confirmar(id: string, snapshot?: { dataFatal?: string; ato?: string; status?: string }) {
     startTransition(async () => {
-      const r = await confirmarPrazoAction(id);
+      const r = await confirmarPrazoAction(id, snapshot);
       if (r.ok) toast.success("Prazo confirmado. Virou palavra final.");
       else toast.error(r.erro ?? "Falha ao confirmar.");
       router.refresh();
@@ -148,7 +148,7 @@ function PrazoCard({
   pending,
 }: {
   p: PrazoRow;
-  onConfirmar: (id: string) => void;
+  onConfirmar: (id: string, snapshot?: { dataFatal?: string; ato?: string; status?: string }) => void;
   onCancelar: (id: string) => void;
   pending: boolean;
 }) {
@@ -214,7 +214,15 @@ function PrazoCard({
   );
 }
 
-function RevisarPrazoDialog({ p, onConfirmar, pending }: { p: PrazoRow; onConfirmar: (id: string) => void; pending: boolean }) {
+function RevisarPrazoDialog({
+  p,
+  onConfirmar,
+  pending,
+}: {
+  p: PrazoRow;
+  onConfirmar: (id: string, snapshot?: { dataFatal?: string; ato?: string; status?: string }) => void;
+  pending: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const pendencias = pendenciasDoPrazo(p.divergencia);
   return (
@@ -229,7 +237,7 @@ function RevisarPrazoDialog({ p, onConfirmar, pending }: { p: PrazoRow; onConfir
         </dl>
         {p.justificativaIa && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{p.justificativaIa}</p>}
         {pendencias.length > 0 && <div className="rounded-lg border border-amber-brand/30 bg-amber-tint p-3 text-sm text-amber-brand"><p className="font-semibold">Pontos a conferir</p><ul className="mt-2 list-disc space-y-1 pl-4">{pendencias.map((item, i) => <li key={i}>{item}</li>)}</ul></div>}
-        <DialogFooter><Button variant="outline" render={<Link href={p.comunicacaoId ? `/i/${p.comunicacaoId}` : `/pz/${p.id}`} />} onClick={() => setOpen(false)}>{p.comunicacaoId ? "Ver intimação" : "Ver detalhes"}</Button><Button disabled={pending} onClick={() => { onConfirmar(p.id); setOpen(false); }}><ShieldCheck /> Conferi e confirmo</Button></DialogFooter>
+        <DialogFooter><Button variant="outline" render={<Link href={p.comunicacaoId ? `/i/${p.comunicacaoId}` : `/pz/${p.id}`} />} onClick={() => setOpen(false)}>{p.comunicacaoId ? "Ver intimação" : "Ver detalhes"}</Button><Button disabled={pending} onClick={() => { onConfirmar(p.id, { dataFatal: p.dataFatal, ato: p.ato, status: p.status }); setOpen(false); }}><ShieldCheck /> Conferi e confirmo</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   );

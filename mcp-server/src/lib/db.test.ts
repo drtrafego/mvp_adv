@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@neondatabase/serverless", () => ({ neon: vi.fn() }));
 vi.mock("drizzle-orm/neon-http", () => ({ drizzle: () => mocks }));
 
-import { carregarFeriadosForenses, inserirPrazoSugerido, registrarFeriado, salvarPeca } from "./db.js";
+import { carregarFeriadosForenses, executarSerializado, inserirPrazoSugerido, registrarFeriado, salvarPeca } from "./db.js";
 import { calcularPrazo } from "./prazos.js";
 
 const processoId = "00000000-0000-4000-8000-000000000001";
@@ -92,5 +92,32 @@ describe("persistência de sugestões sem decisão humana", () => {
       calculo: calcularPrazo({ dataDisponibilizacao: "2026-03-03", atoChave: "replica" }),
     })).rejects.toThrow(/não corresponde/);
     expect(mocks.insert).not.toHaveBeenCalled();
+  });
+
+  it("normaliza ato com espaços extras para identificar prazo existente", async () => {
+    mocks.limite.mockResolvedValueOnce([{ processoId }]).mockResolvedValueOnce([{ id: "prazo-existente" }]);
+    const resultado = await inserirPrazoSugerido({
+      processoId, comunicacaoId, ato: "   Réplica   ",
+      calculo: calcularPrazo({ dataDisponibilizacao: "2026-03-03", atoChave: "replica" }),
+    });
+    expect(resultado).toEqual({ id: "prazo-existente", criado: false });
+    expect(mocks.insert).not.toHaveBeenCalled();
+  });
+
+  it("serializa chamadas concorrentes garantindo ordem de execução sem corrida", async () => {
+    const ordem: number[] = [];
+    const p1 = executarSerializado("chave-teste", async () => {
+      await new Promise((r) => setTimeout(r, 20));
+      ordem.push(1);
+      return 1;
+    });
+    const p2 = executarSerializado("chave-teste", async () => {
+      ordem.push(2);
+      return 2;
+    });
+    const [r1, r2] = await Promise.all([p1, p2]);
+    expect(r1).toBe(1);
+    expect(r2).toBe(2);
+    expect(ordem).toEqual([1, 2]);
   });
 });

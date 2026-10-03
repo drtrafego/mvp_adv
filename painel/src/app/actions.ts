@@ -26,18 +26,86 @@ const FASES_VALIDAS = [
   "arquivado",
 ] as const;
 
+export interface SnapshotPrazoRevisao {
+  dataFatal?: string;
+  ato?: string;
+  status?: string;
+}
+
 /** Confirma um prazo: status 'confirmado', origem 'humana'. O motor não sobrescreve mais. */
-export async function confirmarPrazoAction(prazoId: string) {
+export async function confirmarPrazoAction(
+  prazoId: string,
+  snapshotEsperado?: SnapshotPrazoRevisao,
+) {
   const sessao = await sessaoParaMutacao();
   if ("erro" in sessao) return { ok: false, erro: sessao.erro };
   if (!db) return { ok: false, erro: "Banco não conectado." };
   if (!ehUuid(prazoId)) return { ok: false, erro: "Identificador inválido." };
+
+  if (snapshotEsperado) {
+    if (snapshotEsperado.dataFatal !== undefined && !ehDataIso(snapshotEsperado.dataFatal)) {
+      return { ok: false, erro: "Data fatal informada inválida." };
+    }
+    if (snapshotEsperado.ato !== undefined && !textoValido(snapshotEsperado.ato, 1000)) {
+      return { ok: false, erro: "Ato informado inválido." };
+    }
+    if (snapshotEsperado.status !== undefined && !textoValido(snapshotEsperado.status, 50)) {
+      return { ok: false, erro: "Status informado inválido." };
+    }
+  }
+
+  const condicoes = [
+    eq(schema.prazos.id, prazoId),
+    ne(schema.prazos.status, "cancelado"),
+  ];
+  if (snapshotEsperado?.dataFatal !== undefined) {
+    condicoes.push(eq(schema.prazos.dataFatal, snapshotEsperado.dataFatal));
+  }
+  if (snapshotEsperado?.ato !== undefined) {
+    condicoes.push(eq(schema.prazos.ato, snapshotEsperado.ato));
+  }
+  if (snapshotEsperado?.status !== undefined) {
+    condicoes.push(eq(schema.prazos.status, snapshotEsperado.status));
+  }
+
   const [atualizado] = await db
     .update(schema.prazos)
-    .set({ status: "confirmado", origem: "humana", editadoPor: sessao.autor, editadoEm: new Date() })
-    .where(and(eq(schema.prazos.id, prazoId), ne(schema.prazos.status, "cancelado")))
+    .set({
+      status: "confirmado",
+      origem: "humana",
+      editadoPor: sessao.autor,
+      editadoEm: new Date(),
+    })
+    .where(and(...condicoes))
     .returning({ id: schema.prazos.id });
-  if (!atualizado) return { ok: false, erro: "Prazo não encontrado ou já cancelado." };
+
+  if (!atualizado) {
+    const [atual] = await db
+      .select({
+        status: schema.prazos.status,
+        dataFatal: schema.prazos.dataFatal,
+        ato: schema.prazos.ato,
+      })
+      .from(schema.prazos)
+      .where(eq(schema.prazos.id, prazoId))
+      .limit(1);
+
+    if (!atual) return { ok: false, erro: "Prazo não encontrado." };
+    if (atual.status === "cancelado") return { ok: false, erro: "Prazo já cancelado." };
+    if (
+      snapshotEsperado &&
+      ((snapshotEsperado.dataFatal !== undefined && atual.dataFatal !== snapshotEsperado.dataFatal) ||
+        (snapshotEsperado.ato !== undefined && atual.ato !== snapshotEsperado.ato) ||
+        (snapshotEsperado.status !== undefined && atual.status !== snapshotEsperado.status))
+    ) {
+      return {
+        ok: false,
+        erro: "O prazo foi alterado em outra aba. Recarregue a página e revise as alterações antes de confirmar.",
+      };
+    }
+    return { ok: false, erro: "Prazo não encontrado ou já cancelado." };
+  }
+
   revalidatePath("/", "layout");
   return { ok: true };
 }
@@ -391,10 +459,35 @@ export async function confirmarParteAction(
   if (!det) return { ok: false, erro: "Detecção não encontrada." };
   if (det.status !== "sugerido") return { ok: false, erro: "Esta detecção já foi decidida. Recarregue a página." };
 
+  const agora = new Date();
+  // Transição atômica condicional: somente a ação que encontra status = 'sugerido' consegue decidir.
+  const [detDecidida] = await db
+    .update(schema.partesDetectadas)
+    .set({
+      status: "confirmado",
+      decididoPor: sessao.autor,
+      decididoEm: agora,
+    })
+    .where(
+      and(
+        eq(schema.partesDetectadas.id, parteDetectadaId),
+        eq(schema.partesDetectadas.status, "sugerido"),
+      ),
+    )
+    .returning({ id: schema.partesDetectadas.id });
+
+  if (!detDecidida) {
+    return { ok: false, erro: "Esta detecção já foi decidida em outra aba ou por outro usuário. Recarregue a página." };
+  }
+
   const papel = opcoes.papel?.trim() || det.papelSugerido || papelDoPolo(det.polo);
   const principal = opcoes.principal ?? true;
   const clienteId = await acharOuCriarCliente(det.nome);
-  const agora = new Date();
+
+  await db
+    .update(schema.partesDetectadas)
+    .set({ clienteId })
+    .where(eq(schema.partesDetectadas.id, parteDetectadaId));
 
   await db
     .insert(schema.processoPartes)
@@ -431,11 +524,6 @@ export async function confirmarParteAction(
       .set({ clienteNome: det.nome })
       .where(eq(schema.processos.id, det.processoId));
   }
-
-  await db
-    .update(schema.partesDetectadas)
-    .set({ status: "confirmado", clienteId, decididoPor: sessao.autor, decididoEm: agora })
-    .where(eq(schema.partesDetectadas.id, parteDetectadaId));
 
   const oposto = poloOposto(det.polo);
   if (oposto) {
@@ -476,10 +564,21 @@ export async function descartarParteAction(parteDetectadaId: string) {
   if (!det) return { ok: false, erro: "Detecção não encontrada." };
   if (det.status !== "sugerido") return { ok: false, erro: "Esta detecção já foi decidida. Recarregue a página." };
 
-  await db
+  const agora = new Date();
+  const [descartada] = await db
     .update(schema.partesDetectadas)
-    .set({ status: "descartado", decididoPor: sessao.autor, decididoEm: new Date() })
-    .where(eq(schema.partesDetectadas.id, parteDetectadaId));
+    .set({ status: "descartado", decididoPor: sessao.autor, decididoEm: agora })
+    .where(
+      and(
+        eq(schema.partesDetectadas.id, parteDetectadaId),
+        eq(schema.partesDetectadas.status, "sugerido"),
+      ),
+    )
+    .returning({ id: schema.partesDetectadas.id });
+
+  if (!descartada) {
+    return { ok: false, erro: "Esta detecção já foi decidida em outra aba ou por outro usuário. Recarregue a página." };
+  }
 
   if (det.clienteId) {
     await db

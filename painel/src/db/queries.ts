@@ -845,7 +845,7 @@ async function processosDoCliente(clienteId: string, nome: string): Promise<Proc
  * A pasta do cliente: os três caminhos por onde um documento chega até ele, sem a coluna `texto`
  * (ela tem megabytes e não se lê na tela).
  *
- * 1. documentos dos processos do cliente (via `processo_partes`);
+ * 1. documentos dos processos do cliente (via `processo_partes` com vínculo humano confirmado);
  * 2. documentos presos às peças do cliente (caso novo, ainda sem processo);
  * 3. documentos com `cliente_id` direto (preenchido só a partir de vínculo humano).
  */
@@ -872,7 +872,7 @@ export async function documentosDoCliente(clienteId: string): Promise<DocumentoD
         OR pe.cliente_id = ${clienteId}
         OR EXISTS (
           SELECT 1 FROM processo_partes pp
-          WHERE pp.processo_id = d.processo_id AND pp.cliente_id = ${clienteId}
+          WHERE pp.processo_id = d.processo_id AND pp.cliente_id = ${clienteId} AND pp.origem = 'humana'
         )
       )
     ORDER BY d.id, d.created_at DESC
