@@ -1,6 +1,6 @@
 import { prazosVencendo, saudeColeta, diasSemIntimacaoNova } from "@/db/queries";
 import { autorizarCron } from "@/lib/seguranca";
-import { hojeEscritorio } from "@/lib/prazo-ui";
+import { janelaPrazos } from "@/lib/prazo-ui";
 
 export const dynamic = "force-dynamic";
 
@@ -65,10 +65,9 @@ export async function GET(req: Request) {
 
   const dias = Number(process.env.ALERTA_DIAS ?? 3);
   if (!Number.isInteger(dias) || dias < 1 || dias > 30) return new Response("ALERTA_DIAS precisa estar entre 1 e 30.", { status: 503 });
-  const rows = await prazosVencendo(dias);
-  const diaLimite = new Date(`${hojeEscritorio()}T12:00:00Z`);
-  diaLimite.setUTCDate(diaLimite.getUTCDate() + dias);
-  const limite = diaLimite.toISOString().slice(0, 10);
+  const agora = new Date();
+  const { limite } = janelaPrazos(dias, agora);
+  const rows = await prazosVencendo(dias, agora);
   const avisosColeta = await alertasDeColeta();
 
   // Sem prazo à vista, o alerta ainda sai se a captação estiver doente: "nenhum prazo" só é
@@ -93,6 +92,8 @@ export async function GET(req: Request) {
 
   const webhook = process.env.ALERTA_WEBHOOK_URL;
   let enviado = false;
+  let estadoEntrega = "nao_configurado";
+  let statusHttp = 200;
   if (webhook) {
     try {
       const r = await fetch(webhook, {
@@ -102,16 +103,23 @@ export async function GET(req: Request) {
         signal: AbortSignal.timeout(10_000),
       });
       enviado = r.ok;
-    } catch {
+      estadoEntrega = enviado ? "enviado" : "falhou";
+      if (!enviado) statusHttp = 502;
+    } catch (e) {
       enviado = false;
+      const timeout = e && typeof e === "object" && "name" in e && (e.name === "TimeoutError" || e.name === "AbortError");
+      // Timeout não prova que o destinatário deixou de receber. Não reenviamos automaticamente.
+      estadoEntrega = timeout ? "incerto" : "falhou";
+      statusHttp = timeout ? 504 : 502;
     }
   }
 
   return Response.json({
-    ok: true,
+    ok: !webhook || enviado,
     prazos: rows.length,
     ate: limite,
     enviado,
+    estadoEntrega,
     alertasColeta: avisosColeta,
-  }, { headers: { "Cache-Control": "no-store" } });
+  }, { status: statusHttp, headers: { "Cache-Control": "no-store" } });
 }

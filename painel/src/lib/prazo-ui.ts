@@ -12,6 +12,14 @@ export function hojeEscritorio(agora = new Date()): string {
   }).format(agora);
 }
 
+/** Janela de alerta em dias civis, a partir de um único instante do escritório. */
+export function janelaPrazos(dias: number, agora = new Date()): { hoje: string; limite: string } {
+  const hoje = hojeEscritorio(agora);
+  const fim = new Date(`${hoje}T12:00:00Z`);
+  fim.setUTCDate(fim.getUTCDate() + dias);
+  return { hoje, limite: fim.toISOString().slice(0, 10) };
+}
+
 export interface EstiloStatus {
   label: string;
   /** classes Tailwind para o badge */

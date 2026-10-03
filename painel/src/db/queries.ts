@@ -1,7 +1,7 @@
 import "server-only";
 import { and, asc, desc, eq, gte, ilike, isNull, lte, ne, or, sql } from "drizzle-orm";
 import { db, schema } from "./index";
-import { hojeEscritorio } from "../lib/prazo-ui";
+import { hojeEscritorio, janelaPrazos } from "../lib/prazo-ui";
 
 export interface PrazoRow {
   id: string;
@@ -962,10 +962,9 @@ export interface PrazoVencendo {
 }
 
 /** Prazos não cancelados cuja data fatal cai entre hoje e hoje+dias. */
-export async function prazosVencendo(dias: number): Promise<PrazoVencendo[]> {
+export async function prazosVencendo(dias: number, agora = new Date()): Promise<PrazoVencendo[]> {
   if (!db) return [];
-  const hoje = new Date().toISOString().slice(0, 10);
-  const limite = new Date(Date.now() + dias * 86400000).toISOString().slice(0, 10);
+  const { hoje, limite } = janelaPrazos(dias, agora);
   const rows = await db
     .select({
       ato: schema.prazos.ato,

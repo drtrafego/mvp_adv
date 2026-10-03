@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PgDialect } from "drizzle-orm/pg-core";
 
 const mocks = vi.hoisted(() => ({
@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@neondatabase/serverless", () => ({ neon: vi.fn() }));
 vi.mock("drizzle-orm/neon-http", () => ({ drizzle: () => mocks }));
 
-import { inserirPrazoSugerido, salvarPeca } from "./db.js";
+import { carregarFeriadosForenses, inserirPrazoSugerido, registrarFeriado, salvarPeca } from "./db.js";
 import { calcularPrazo } from "./prazos.js";
 
 const processoId = "00000000-0000-4000-8000-000000000001";
@@ -29,6 +29,39 @@ beforeEach(() => {
   const insert = { values: vi.fn(), returning: mocks.retornarInsert };
   insert.values.mockReturnValue(insert);
   mocks.insert.mockReturnValue(insert);
+});
+
+afterEach(() => vi.unstubAllEnvs());
+
+describe("calendário forense sem falha silenciosa", () => {
+  it("propaga falha real da consulta mockada, em vez de devolver lista vazia", async () => {
+    const falhaBanco = new Error("Consulta indisponível no teste");
+    mocks.select.mockReturnValueOnce({
+      from: () => ({ where: vi.fn().mockRejectedValue(falhaBanco) }),
+    });
+    const erro = await carregarFeriadosForenses("TJMT").catch((e) => e);
+    expect(erro).toBeInstanceOf(Error);
+    expect(erro.message).toContain("O cálculo foi interrompido");
+    expect(erro.cause).toBe(falhaBanco);
+    expect(mocks.select).toHaveBeenCalledOnce();
+  });
+
+  it("calendário consultado com sucesso pode estar vazio", async () => {
+    mocks.select.mockReturnValueOnce({ from: () => ({ where: vi.fn().mockResolvedValue([]) }) });
+    expect(await carregarFeriadosForenses("TJMT")).toEqual([]);
+    expect(mocks.select).toHaveBeenCalledOnce();
+  });
+
+  it("banco ausente não vira calendário vazio válido", async () => {
+    vi.stubEnv("DATABASE_URL", "");
+    await expect(carregarFeriadosForenses("TJMT")).rejects.toThrow(/cálculo foi interrompido/);
+    expect(mocks.select).not.toHaveBeenCalled();
+  });
+
+  it.each(["2026-02-31", "infinity", "03/10/2026"])("recusa feriado inválido antes de persistir: %s", async (data) => {
+    await expect(registrarFeriado("TJMT", data)).rejects.toThrow(/Data/);
+    expect(mocks.insert).not.toHaveBeenCalled();
+  });
 });
 
 describe("persistência de sugestões sem decisão humana", () => {

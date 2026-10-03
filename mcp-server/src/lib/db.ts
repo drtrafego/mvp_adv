@@ -603,6 +603,7 @@ export async function registrarFeriado(
   descricao?: string,
   tipo = "feriado",
 ): Promise<void> {
+  parseISODate(data);
   const d = getDb();
   await d
     .insert(schema.feriadosForenses)
@@ -614,7 +615,6 @@ export async function registrarFeriado(
 }
 
 export async function carregarFeriadosForenses(tribunal: string): Promise<string[]> {
-  if (!bancoConfigurado()) return [];
   try {
     const d = getDb();
     const rows = await d
@@ -622,8 +622,14 @@ export async function carregarFeriadosForenses(tribunal: string): Promise<string
       .from(schema.feriadosForenses)
       .where(eq(schema.feriadosForenses.tribunal, tribunal));
     return rows.map((r) => r.data as string);
-  } catch {
-    return [];
+  } catch (e) {
+    // Falha de calendário não equivale a tribunal sem feriados cadastrados. Interrompa
+    // o cálculo em vez de produzir uma data com suspensões locais silenciosamente ausentes.
+    throw new Error(
+      `Não foi possível carregar o calendário forense de ${tribunal}. O cálculo foi ` +
+        "interrompido; verifique a conexão e o cadastro de feriados locais.",
+      { cause: e },
+    );
   }
 }
 

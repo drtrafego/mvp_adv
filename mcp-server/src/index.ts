@@ -846,7 +846,8 @@ server.registerTool(
   {
     title: "Registrar feriado forense",
     description:
-      "Registra uma suspensão/feriado forense de um tribunal, que passa a entrar no cálculo de prazos.",
+      "Exclusivo de sessão humana: registra uma suspensão/feriado forense de um tribunal. " +
+      "Bloqueado por padrão para agentes; altera o calendário usado no cálculo de prazos.",
     inputSchema: {
       tribunal: z.string().describe("Sigla do tribunal (ex.: TJSP)."),
       data: z.string().describe("YYYY-MM-DD."),
@@ -857,6 +858,7 @@ server.registerTool(
   async ({ tribunal, data, descricao, tipo }) => {
     if (!bancoConfigurado()) return erro("Banco (Neon) não configurado.");
     try {
+      exigirModoHumano();
       await registrarFeriado(tribunal, data, descricao, tipo ?? "feriado");
       return texto(`✓ Feriado forense registrado: ${tribunal} em ${data}.`);
     } catch (e) {
