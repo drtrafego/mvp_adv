@@ -1,0 +1,26 @@
+﻿VALIDAÇÃO DO PACOTE — 14/10/2026
+
+Executado: Node 24, HTML autocontido reconstruído a partir das fontes.
+15 testes automatizados de interação/integração simulada e instalação passaram.
+Cobertura: telão e períodos, setores, equipe/especialidade, personagem persistido,
+escape de dados, fluxo até revisão humana sem rede, leitura autenticada por fixture,
+falha de fonte sem fallback fictício, API financeira de leitura e instalação sem sobrescrita.
+
+Os testes usam JSDOM com APIs de janela simuladas. Não são testes de layout ou browser real.
+As cenas pixel e isométrica foram renderizadas por Sharp e inspecionadas visualmente, sem captura de navegador.
+A sintaxe TS/TSX dos dois adaptadores foi validada por transpileModule.
+Não equivale a typecheck/build do Next com o banco real ou a teste no servidor do cliente.
+JSONs, referências do OpenAPI e registro de agentes foram conferidos.
+
+19 personagens: 17 agentes e 2 humanos. Sete agentes jurídicos são reaproveitamentos
+explícitos do mvp_adv; dez perfis operacionais adicionais estão preparados/desativados.
+
+Não executado: deploy, migração SQL, autenticação real do cliente, APIs de tribunais,
+ZapConversa, ZapSign, agenda, financeiro do cliente, runtime Hermes ou Claude Code.
+Não foi possível auditar o repositório de contratos/procurações (404 no caminho consultado).
+
+O executor deve fazer os checks completos do checkout atual e QA em navegador durante
+a integração, sem marcar os conectores propostos como prontos.
+
+VERSÃO 1.1: alternância de vista, circulação por setor e caminhada com retorno à
+estação também foram exercitadas, além do cadastro com personalidade.

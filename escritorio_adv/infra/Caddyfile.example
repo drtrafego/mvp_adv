@@ -1,0 +1,41 @@
+# Domínios são valores de ambiente do Caddy; preencher os domínios REAIS do cliente.
+# Apps devem escutar apenas em 127.0.0.1. Não publicar 3001/3002/3003/5432 no firewall.
+{$ARAO_GABINETE_DOMAIN} {
+  encode zstd gzip
+  @machine path /api/agent/*
+  respond @machine 404
+  reverse_proxy 127.0.0.1:3001 {
+    header_up -X-Vercel-Forwarded-For
+    header_up X-Forwarded-For {remote_host}
+    header_up X-Real-IP {remote_host}
+  }
+}
+
+{$ARAO_FINANCEIRO_DOMAIN} {
+  encode zstd gzip
+  @machine path /api/agent/*
+  respond @machine 404
+  reverse_proxy 127.0.0.1:3002 {
+    header_up -X-Vercel-Forwarded-For
+    header_up X-Forwarded-For {remote_host}
+    header_up X-Real-IP {remote_host}
+  }
+}
+
+# Entrada privada de máquina: headers são criados aqui, não aceitos da Internet.
+# TRUSTED_IPS=127.0.0.1 no financeiro. Bearer continua obrigatório e os escopos vêm do gateway.
+http://127.0.0.1:3102 {
+  bind 127.0.0.1
+  @api path /api/agent/v1/*
+  handle @api {
+    reverse_proxy 127.0.0.1:3002 {
+      header_up -X-Vercel-Forwarded-For
+      header_up X-Forwarded-For 127.0.0.1
+      header_up X-Real-IP 127.0.0.1
+    }
+  }
+  handle { respond 404 }
+}
+
+# O serviço de contratos só entra depois da auditoria do repositório/porta/rotas reais.
+# A futura API interna do Gabinete pode usar entrada loopback equivalente com auth própria.

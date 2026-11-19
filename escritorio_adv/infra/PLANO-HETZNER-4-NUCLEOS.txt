@@ -1,0 +1,95 @@
+﻿UM SERVIDOR HETZNER DE 4 vCPU — PLANO DE IMPLANTAÇÃO
+
+A quantidade de RAM, disco e o modelo exato da instância não foram informados.
+Quatro núcleos, isoladamente, não permitem garantir capacidade. Medir antes de implantar:
+nproc
+free -h
+df -h
+uname -a
+Verificar também processos existentes e seu consumo. Não desligar serviços de outro cliente.
+
+TOPOLOGIA
+No host: Caddy + Next Gabinete + Next Financeiro + Contratos + 1 worker + 1 gateway.
+Postgres local pode ficar no compose de base, preso a 127.0.0.1:5432.
+Todos no MESMO Hetzner; a separação é de processos/usuários/bancos.
+Sem Redis obrigatório na primeira etapa: usar a fila Postgres especificada.
+Sem modelo local e sem um runtime permanente por personagem.
+
+PERFIL DE REFERÊNCIA PARA 8 GB — ORÇAMENTO, NÃO MEDIÇÃO
+SO/proxy/monitoramento              700–1000 MB
+Postgres                            600–1000 MB
+Gabinete em produção                500–900 MB
+Financeiro em produção              450–800 MB
+Contratos (stack a confirmar)        300–700 MB
+Gateway + Claude Code remoto         500–1200 MB
+Worker/OCR/documentos                300–800 MB, apenas 1 tarefa pesada por vez
+Reservar folga. Picos de build/OCR não estão contidos por uma média de operação.
+Os limites systemd/compose são exemplos para esse perfil e precisam de medição.
+
+SE HOUVER 4 GB DE RAM
+Não prometer todos os serviços simultâneos sem teste. Começar com Gabinete + leitura,
+modelos remotos, worker único, builds fora da máquina ou em janela controlada.
+Contratos/financeiro/gateway entram conforme a folga medida. Swap pode amortecer pico,
+mas não resolve sobrecarga sustentada nem substitui RAM. A limitação deve ficar visível.
+Não exigir outro servidor por padrão; primeiro medir e adequar o mesmo host ao uso real.
+
+CPU E FILA
+1 job pesado global: geração documental, OCR, pesquisa extensa ou cadeia jurídica.
+Até 2 jobs leves de rede, limitados por provider. Priorizar prazos e falha de coleta.
+O coordenador pode atender texto, mas não disparar builds/OCR paralelos fora do limite.
+Não rodar três builds Next ao mesmo tempo. Usar artefatos de build reproduzíveis ou
+janela de implantação com fila drenada e rollback preparado.
+Os muitos bonecos representam perfis e tarefas, não 17 servidores de agentes.
+
+USUÁRIOS E DIRETÓRIOS
+gastao-setup: SSH de configuração e administração autorizada, revogável.
+arao-gabinete /srv/arao/gabinete
+arao-financeiro /srv/arao/financeiro
+arao-contratos /srv/arao/contratos (após auditar o repo)
+arao-worker /srv/arao/worker
+arao-coordenador /srv/arao/coordenador e diretório próprio de conta/memória
+/etc/arao/*.env: proprietário/permissões restritos por serviço.
+/var/lib/arao/documentos: privado, servido somente por rota autenticada.
+Separação de usuário não substitui controle de API, mas reduz leitura/gravação acidental.
+
+POSTGRES LOCAL
+Criar bancos/roles diferentes; não usar o usuário de administração nos apps.
+Revisar suporte do MCP ao driver Postgres local antes da coleta, conforme inventário.
+Aplicar migrações do MVP na sequência revisada; a fila tem migração separada proposta.
+Migrar dados e arquivos existentes com backup, contagem de registros e hashes conferidos.
+Não iniciar com seed de clientes/financeiro pessoal da instalação de Gastão.
+
+WEB / AUTENTICAÇÃO
+Caddy público somente em 80/443. Portas de apps e banco no loopback.
+O Caddyfile inclui rota interna 3102 para a API financeira; não publicar essa porta.
+Configurar domínios reais, TLS, cookies secure e callback URLs dos provedores.
+Sessão humana continua no Gabinete. A API de agentes tem credencial própria e escopos.
+Configurar autenticação do financeiro para o cliente; a dependência Stack não desaparece
+ao mover o app. Para tudo local, planejar e testar migração de auth de forma específica.
+
+AGENDAMENTOS
+Migrar os cron existentes para systemd timers/scheduler do host com logs e lock.
+Uma fonte = um agendamento ativo. Evitar duplicidade entre Vercel cron antigo e VPS.
+Documentar fuso, última execução, próxima execução e última coleta bem-sucedida.
+Hermes cron pode solicitar tarefas; a execução durável continua na fila do Gabinete.
+
+GATEWAY
+Preferir a instalação oficial do serviço do usuário no runtime escolhido.
+No Hermes: hermes gateway setup; hermes gateway install; validar status e logs.
+Configuração administrativa de lingering mantém o serviço do usuário após logout.
+Não habilitar token idêntico em dois gateways. Não usar sudo no processo operacional.
+Cliente autentica o Claude Code oficial; Gastão não fornece sua própria conta.
+
+BACKUP E RECUPERAÇÃO
+Postgres: backup consistente e criptografado com retenção definida pelo cliente.
+Arquivos: cópia dos documentos e hashes/manifesto; não depender só de backup da VM.
+Testar restauração isolada antes de chamar a instalação de pronta.
+Mesmo com execução concentrada no Hetzner, cópia de recuperação precisa sair do host;
+destino/conta são definidos pelo cliente. Não confundir backup com um segundo servidor operacional.
+Credenciais e login do cliente seguem o mecanismo oficial de recuperação do provedor.
+
+OBSERVABILIDADE / ENSAIO
+Medir CPU/RAM, tamanho da fila, leases expirados, disco, falhas e idade da última coleta.
+Testar navegação com um job jurídico em curso, webhook repetido, restart do worker,
+API indisponível, envio com timeout, alteração de audiência e recuperação de backup.
+Só ampliar concorrência após medir responsividade e margens. O front-end não mascara erros.

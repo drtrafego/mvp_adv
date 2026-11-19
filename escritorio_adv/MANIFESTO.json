@@ -1,0 +1,255 @@
+{
+  "title": "Escritório Virtual Arao Mendes",
+  "version": "1.1",
+  "date": "2026-10-14",
+  "status": "prototype-and-implementation-handoff",
+  "defaultView": "pixel",
+  "reference": "https://www.instagram.com/reel/DeSE73VOtPW/",
+  "files": [
+    {
+      "file": "LEIA-PRIMEIRO.txt",
+      "sizeBytes": 4328,
+      "sha256": "3083ed64ab62a18b812737b3d93fdf6ba77affc391874bad1748914e5f64a5de"
+    },
+    {
+      "file": "PROMPT-PARA-O-AGENTE-EXECUTOR.txt",
+      "sizeBytes": 6918,
+      "sha256": "9e25d609779d9ed430c85c999bdff42cbc87e6e115c2484c6c7c878bcfa7cf15"
+    },
+    {
+      "file": "Previa-Escritorio-Arao-Mendes.png",
+      "sizeBytes": 173788,
+      "sha256": "ae0cfe7845b5d6921861039f8572a6442193ddff41779d7a4998a4f894b7c322"
+    },
+    {
+      "file": "VALIDACAO.txt",
+      "sizeBytes": 1677,
+      "sha256": "751a3e6836fefb8e4db23f9ce0a136a50237b10f353aae248f7f3b52f701cf4f"
+    },
+    {
+      "file": "adaptadores/escritorio.page.tsx",
+      "sizeBytes": 554,
+      "sha256": "87b87f8b8462fc2afd64944d6ef5aff257536f9526f61ab1e7990898aab9161e"
+    },
+    {
+      "file": "adaptadores/financeiro-read.mjs",
+      "sizeBytes": 1309,
+      "sha256": "4694cfd36b8b9a65f5c3e04a5de53a8caefd6daa1a3e9eefd8d4e1f48da80016"
+    },
+    {
+      "file": "adaptadores/gabinete-estado.route.ts",
+      "sizeBytes": 3173,
+      "sha256": "5c0f457be418ca65f83cb999fc3f59475627829683b2c790151ab7623af36d70"
+    },
+    {
+      "file": "adaptadores/instalar-visual.mjs",
+      "sizeBytes": 1716,
+      "sha256": "d0e251bc0985aa03c74886bb3764271c4aa1b932c7c6803c669f511b6427f750"
+    },
+    {
+      "file": "agentes/andamentos-intimacoes.txt",
+      "sizeBytes": 2433,
+      "sha256": "50a659f7bad43caeba2826df90c0c551ed27e5bc5499f5553336c26edb1d87fd"
+    },
+    {
+      "file": "agentes/apoio-etica-oab.txt",
+      "sizeBytes": 2422,
+      "sha256": "e61ec8d4daa21a692c3bf985608699e2bf604f0ed9ed049fa9652b2746b005cc"
+    },
+    {
+      "file": "agentes/closer-juridico.txt",
+      "sizeBytes": 2429,
+      "sha256": "09057de492ad271284e8654cc1af78e347088f12c5fdece9950b70ab9dba64f0"
+    },
+    {
+      "file": "agentes/coordenador-escritorio.txt",
+      "sizeBytes": 2447,
+      "sha256": "29dbdd419147c5b6b9aff01daa3807e2107ed5a36d3de3106aff5f772f7b0dda"
+    },
+    {
+      "file": "agentes/gestor-agenda-relacionamento.txt",
+      "sizeBytes": 2472,
+      "sha256": "ead3a5be60946a9fe342205f6d377766501230f69357b7c6eab00c07af053027"
+    },
+    {
+      "file": "agentes/gestor-assinaturas.txt",
+      "sizeBytes": 2418,
+      "sha256": "645d30de3db4162102b64f49e0d57cd2adf7e5c07ef840c11d7f0f1ef2d4f80d"
+    },
+    {
+      "file": "agentes/gestor-contratos-procuracoes.txt",
+      "sizeBytes": 2470,
+      "sha256": "ced482b629946f128c1fcb7d4343b27b66762cd6d6fa185d441ae9717204c95e"
+    },
+    {
+      "file": "agentes/gestor-financeiro.txt",
+      "sizeBytes": 2404,
+      "sha256": "e20eb383a2cd85b435cbfb25f8abb78fb94435025876e9a3f99a26d8ec4f9831"
+    },
+    {
+      "file": "agentes/gestor-prazos.txt",
+      "sizeBytes": 2397,
+      "sha256": "b525354d9ee426d6542d1c0884868b893759b765898927172e973cb9b223c1b1"
+    },
+    {
+      "file": "agentes/registro-agentes.json",
+      "sizeBytes": 14946,
+      "sha256": "e3d49ec8efc4649d84764f2a1024a66828e688711f5bbc46fdd841d35b4dd09e"
+    },
+    {
+      "file": "agentes/sdr-juridico.txt",
+      "sizeBytes": 2412,
+      "sha256": "b7b1df37e277af3ca9c31732d0cf8e28e98588acb188568dc72647664a694529"
+    },
+    {
+      "file": "contratos/001-office-runtime.sql",
+      "sizeBytes": 4960,
+      "sha256": "1a44b981bd86a32283b9ac0d9a711333e0457d296ddd83c5cf59574a7c7bb28f"
+    },
+    {
+      "file": "contratos/INTEGRACAO-CONTRATOS.txt",
+      "sizeBytes": 2436,
+      "sha256": "eff822c751d63013991b86710a4c4939bf5656b81fd73e6d6f250232638970a5"
+    },
+    {
+      "file": "contratos/RUNTIME-E-IDEMPOTENCIA.txt",
+      "sizeBytes": 4187,
+      "sha256": "f2c9eff74d90410fc47723f1cae250f61eca4ce06754306baf076faf50b493e0"
+    },
+    {
+      "file": "contratos/event.schema.json",
+      "sizeBytes": 1986,
+      "sha256": "f1e7cfd5606ac4b33bf872dcb63274a94d29bc51840f7fdca6962eaf7b5d040f"
+    },
+    {
+      "file": "contratos/office-api.openapi.json",
+      "sizeBytes": 39182,
+      "sha256": "d4e7f309b00e86ebf4922c5cf6443f9581597cefe72b98c897f253ce6c8571e5"
+    },
+    {
+      "file": "contratos/procuracao-input.example.json",
+      "sizeBytes": 466,
+      "sha256": "46413763dea3af50da26895179accd6125ed13f7a7d5ee3a8e383ea87b36f329"
+    },
+    {
+      "file": "gerar-registro.mjs",
+      "sizeBytes": 11080,
+      "sha256": "60d689af3022f0d0d9af4e1dffdfa3a743bc280cbffe6ab89d450a9d8879bb80"
+    },
+    {
+      "file": "infra/Caddyfile.example",
+      "sizeBytes": 1335,
+      "sha256": "f0f2b8119479d3b8cd9f472c1a5fd8afcfbfe6d61df1099320ed0fae0f6989b9"
+    },
+    {
+      "file": "infra/PLANO-HETZNER-4-NUCLEOS.txt",
+      "sizeBytes": 5594,
+      "sha256": "0ffabc5ad6b18367c1173482616e207bff86ba41736a4d9edb5318c90ef1e0e9"
+    },
+    {
+      "file": "infra/ambientes.example.txt",
+      "sizeBytes": 2130,
+      "sha256": "2c8d73d46e5b2449d7ae75168d2ae53e8aeb93ef6ee6ddf95a40fe86ef79c8a8"
+    },
+    {
+      "file": "infra/arao-app@.service.example",
+      "sizeBytes": 781,
+      "sha256": "e0dcafdc69291dc355eae0a8bb5a5aa81fcd0ea11968ea7285abe8991b3a6ead"
+    },
+    {
+      "file": "infra/compose.postgres.example.yml",
+      "sizeBytes": 803,
+      "sha256": "419a6e66c1f7fc9098474fa8930cbf160a91db48942f053f87124c449a79d938"
+    },
+    {
+      "file": "package-lock.json",
+      "sizeBytes": 18355,
+      "sha256": "66c2c8580df97f78e6951c4ded6d52a312556a78f62405cda61212d116b8bf13"
+    },
+    {
+      "file": "package.json",
+      "sizeBytes": 241,
+      "sha256": "113ae26d6a41cb634c214ca8c418c82fb322229c7bdd7b4cc8185434a6632b85"
+    },
+    {
+      "file": "planejamento/01-REPOSITORIOS-E-REAPROVEITAMENTO.txt",
+      "sizeBytes": 7722,
+      "sha256": "7b2c994f175c6784c3c921f66eb995d8e970244799e1cc3251e3f2fd51d92dec"
+    },
+    {
+      "file": "planejamento/02-ARQUITETURA-E-FLUXOS.txt",
+      "sizeBytes": 10097,
+      "sha256": "94e267539745380735c06163c27096fb4f4708844936efd9265cde4bb41b4d08"
+    },
+    {
+      "file": "planejamento/03-LAYOUT-E-INTERACOES.txt",
+      "sizeBytes": 5868,
+      "sha256": "fc22b3050e90fd8935ff732de7b82a7b6e019630008549921cd1e7c1a63c501f"
+    },
+    {
+      "file": "planejamento/04-EXECUCAO-E-ACEITE.txt",
+      "sizeBytes": 7009,
+      "sha256": "5303f3e965cdb5464316a7efc4bea1a38391fb195c6bd3accc2942bd55b03ee1"
+    },
+    {
+      "file": "planejamento/05-HERMES-E-FONTES-OFICIAIS.txt",
+      "sizeBytes": 6235,
+      "sha256": "cc0b6a340fdff37406058c35448f20d31ed94f47c4a1b0155e015ebd7ae0d990"
+    },
+    {
+      "file": "planejamento/06-REFERENCIA-DO-REEL.txt",
+      "sizeBytes": 3118,
+      "sha256": "9e75fe2f89f207b8d3b78d43dffc332d2e00e685788b6a35b9d906c4cafe25e3"
+    },
+    {
+      "file": "prototipo/build.mjs",
+      "sizeBytes": 852,
+      "sha256": "1bad61c1af1bf3ac10a6d28ec75da09ad2e6de0f4188d51f2612635dbf3fc5fd"
+    },
+    {
+      "file": "prototipo/index.html",
+      "sizeBytes": 100448,
+      "sha256": "c2ecbf8da660647e9a3cd0048bf8da49abc8e9c5a7fceb95f5e7ad4214f1891d"
+    },
+    {
+      "file": "prototipo/src/app.mjs",
+      "sizeBytes": 40380,
+      "sha256": "0f37869e61729fb0186c8ad7645fafdcf5b556ebebb02f6badd9134225590312"
+    },
+    {
+      "file": "prototipo/src/model.mjs",
+      "sizeBytes": 10882,
+      "sha256": "cdb6c823e09eaf929d260a7bb7d0d011960afc7c0b0b7c014e88e88d0962a954"
+    },
+    {
+      "file": "prototipo/src/pixel-scene.mjs",
+      "sizeBytes": 11513,
+      "sha256": "47b70aab7c598a33ff7d716ea1b5b59528217c98c0e1a3fbee19f47a3e3ca1ad"
+    },
+    {
+      "file": "prototipo/src/scene.mjs",
+      "sizeBytes": 10634,
+      "sha256": "8015a4ea8a5bf1b37387beafd44b49aec70c7885be68d9f7e185d0dafe9ed49e"
+    },
+    {
+      "file": "prototipo/src/shell.html",
+      "sizeBytes": 5258,
+      "sha256": "5b0295ab00c4a1bef9c73798bf5d4b0ebbf51ea099618bff50fe22cf2bc10ffa"
+    },
+    {
+      "file": "prototipo/src/style.css",
+      "sizeBytes": 22434,
+      "sha256": "a629464bc344ac2fe53c848ad4dd9ce394d7112bdf69c732de2e052eabfac810"
+    },
+    {
+      "file": "testes/instalador.test.mjs",
+      "sizeBytes": 1331,
+      "sha256": "4182ad93f056021bf0ebda4c50e9d3983604811bb637d6335bfa9fbdbfddb825"
+    },
+    {
+      "file": "testes/office.test.mjs",
+      "sizeBytes": 10119,
+      "sha256": "5deb8a3f3c439e685124905192738ed04b39cce9e69b949f2b47e160455f1c4d"
+    }
+  ]
+}

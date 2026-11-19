@@ -1,0 +1,43 @@
+﻿INTERFACE DOCUMENTAL PARA O REPOSITÓRIO EXISTENTE
+
+Estado: contrato proposto. A API do repositório de contratos ainda não foi inspecionada.
+Não tratar os nomes abaixo como rotas reais desse sistema.
+
+DocumentGenerator
+  getTemplate(templateId, version)
+  validateFields(templateId, version, clientRef, lawyerRef, fields, specialPowerIds)
+  createDraft({ idempotencyKey, caseRef, clientRef, templateId, templateVersion,
+                lawyerRef, fields, authorizedPowerIds, sourceRefs })
+  getDraft(draftId)
+  exportDraft(draftId, version, format) → arquivo/sha256
+
+SignatureProvider
+  createRequest({ approvedDocumentRef, approvalHash, signerRefs, callbackRef,
+                  idempotencyKey })
+  getDocumentStatus(providerDocumentId)
+  getSignerStatus(providerDocumentId)
+  downloadCompletedDocument(providerDocumentId) → arquivo/sha256
+  normalizeAuthenticatedWebhook(headers, rawBody) → evento normalizado
+
+Usar IDs/vínculos persistidos, sem colocar CPF/telefone no path de auditoria.
+Validação humana é outra identidade. Nenhum campo agentApproved=true substitui aprovação.
+Edição de dados, poderes, modelo ou conteúdo gera versão nova e invalida aprovação antiga.
+O modelo de procuração e seus poderes devem ser aprovados pelo advogado da banca.
+Não incluir poderes especiais apenas porque “costumam constar” em procurações.
+
+Se o repo existente usar Autentique, preservar seu histórico e encapsular pelo mesmo
+SignatureProvider. O ZapSign pedido agora pode ser o provider desta instalação após
+configuração; não reescrever os estados antigos como se tivessem sido assinados nele.
+
+MAPEAMENTO OBRIGATÓRIO APÓS O ACESSO
+1. Tecnologia/versão, autenticação, AGENTS.md, schema e migrações.
+2. Geração atual de contrato, renderização DOCX/PDF e variáveis de modelo.
+3. Suporte existente a procuração ou extensão necessária do catálogo.
+4. Provedor de assinatura real, token de documento/signatários, callbacks e estados.
+5. Correspondência cliente jurídico ↔ cliente documental ↔ cliente financeiro.
+6. Local de armazenamento e acesso privado aos documentos.
+7. Idempotência, retries, versão/hash e aprovação humana.
+8. Implantação no Hetzner sem misturar banco, marca ou credencial de outro cliente.
+
+O JSON de exemplo contém IDs fictícios e campos vazios deliberadamente.
+O documento não deve ser gerado até validar os campos obrigatórios do modelo real.

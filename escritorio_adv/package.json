@@ -1,0 +1,8 @@
+{
+  "name":"arao-mendes-escritorio-handoff",
+  "private":true,
+  "type":"module",
+  "scripts":{"build":"node prototipo/build.mjs","test":"node --test testes/*.test.mjs"},
+  "devDependencies":{"jsdom":"30.1.2"},
+  "engines":{"node":">=24"}
+}

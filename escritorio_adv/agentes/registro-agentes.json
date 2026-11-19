@@ -1,0 +1,611 @@
+{
+  "schemaVersion": 1,
+  "office": "Daniel Felix",
+  "mode": "planning",
+  "coordinatorNameConfigurable": true,
+  "sectors": {
+    "all": {
+      "name": "Todo o escritório",
+      "color": "#d6b673"
+    },
+    "comercial": {
+      "name": "Relacionamento & entrada",
+      "short": "COMERCIAL",
+      "color": "#64baa5",
+      "box": [
+        30,
+        55,
+        310,
+        255
+      ]
+    },
+    "administrativo": {
+      "name": "Controladoria & agenda",
+      "short": "ADMINISTRATIVO",
+      "color": "#e8ae62",
+      "box": [
+        395,
+        55,
+        300,
+        255
+      ]
+    },
+    "contratos": {
+      "name": "Contratos & assinaturas",
+      "short": "CONTRATOS",
+      "color": "#92a7e8",
+      "box": [
+        750,
+        55,
+        305,
+        255
+      ]
+    },
+    "juridico": {
+      "name": "Núcleo jurídico",
+      "short": "JURÍDICO",
+      "color": "#ad96d8",
+      "box": [
+        30,
+        405,
+        340,
+        385
+      ]
+    },
+    "diretoria": {
+      "name": "Mesa da direção",
+      "short": "DIRETORIA",
+      "color": "#d6b673",
+      "box": [
+        415,
+        440,
+        280,
+        255
+      ]
+    },
+    "financeiro": {
+      "name": "Gestão financeira",
+      "short": "FINANCEIRO",
+      "color": "#80b89a",
+      "box": [
+        760,
+        405,
+        295,
+        190
+      ]
+    },
+    "etica": {
+      "name": "Ética e OAB · apoio interno",
+      "short": "ÉTICA E OAB",
+      "color": "#d1a3af",
+      "box": [
+        760,
+        665,
+        295,
+        130
+      ]
+    }
+  },
+  "agents": [
+    {
+      "id": "sdr",
+      "displayName": "Lia",
+      "role": "SDR · triagem",
+      "kind": "agent",
+      "sector": "comercial",
+      "practiceAreas": [
+        "Geral"
+      ],
+      "avatar": {
+        "shirt": "#66bda8",
+        "skin": "#cf9873",
+        "hair": "#372b27",
+        "accessory": "headset"
+      },
+      "station": {
+        "x": 110,
+        "y": 195
+      },
+      "runtimeEnabled": false,
+      "personality": "Acolhedor no atendimento, claro ao explicar próximos passos.",
+      "technicalName": "sdr-juridico",
+      "profileFile": "agentes/sdr-juridico.txt",
+      "proposedScopes": [
+        "conversations:read",
+        "dossiers:propose",
+        "jobs:create"
+      ]
+    },
+    {
+      "id": "closer",
+      "displayName": "Caio",
+      "role": "Closer · contratação",
+      "kind": "agent",
+      "sector": "comercial",
+      "practiceAreas": [
+        "Geral"
+      ],
+      "avatar": {
+        "shirt": "#479b86",
+        "skin": "#cf9873",
+        "hair": "#372b27",
+        "accessory": "tie"
+      },
+      "station": {
+        "x": 255,
+        "y": 230
+      },
+      "runtimeEnabled": false,
+      "personality": "Organizado, objetivo e colaborativo.",
+      "technicalName": "closer-juridico",
+      "profileFile": "agentes/closer-juridico.txt",
+      "proposedScopes": [
+        "dossiers:read",
+        "contract-drafts:create",
+        "message-drafts:create"
+      ]
+    },
+    {
+      "id": "controladoria",
+      "displayName": "Clara",
+      "role": "Gestora de prazos",
+      "kind": "agent",
+      "sector": "administrativo",
+      "practiceAreas": [
+        "Cível"
+      ],
+      "avatar": {
+        "shirt": "#dba761",
+        "skin": "#cf9873",
+        "hair": "#372b27",
+        "accessory": "glasses"
+      },
+      "station": {
+        "x": 475,
+        "y": 185
+      },
+      "runtimeEnabled": false,
+      "personality": "Analítico, preciso e atento às fontes e pendências.",
+      "technicalName": "gestor-prazos",
+      "profileFile": "agentes/gestor-prazos.txt",
+      "proposedScopes": [
+        "notices:read",
+        "deadlines:propose",
+        "jobs:create"
+      ]
+    },
+    {
+      "id": "agenda",
+      "displayName": "Nina",
+      "role": "Agenda & relacionamento",
+      "kind": "agent",
+      "sector": "administrativo",
+      "practiceAreas": [
+        "Geral"
+      ],
+      "avatar": {
+        "shirt": "#cb8f49",
+        "skin": "#cf9873",
+        "hair": "#372b27",
+        "accessory": "headset"
+      },
+      "station": {
+        "x": 625,
+        "y": 230
+      },
+      "runtimeEnabled": false,
+      "personality": "Acolhedor no atendimento, claro ao explicar próximos passos.",
+      "technicalName": "gestor-agenda-relacionamento",
+      "profileFile": "agentes/gestor-agenda-relacionamento.txt",
+      "proposedScopes": [
+        "dossiers:read",
+        "calendar:read",
+        "calendar:hold",
+        "calendar:book",
+        "message-drafts:create"
+      ]
+    },
+    {
+      "id": "movimentacoes",
+      "displayName": "Breno",
+      "role": "Andamentos & intimações",
+      "kind": "agent",
+      "sector": "administrativo",
+      "practiceAreas": [
+        "Geral"
+      ],
+      "avatar": {
+        "shirt": "#d3a16a",
+        "skin": "#cf9873",
+        "hair": "#372b27",
+        "accessory": "glasses"
+      },
+      "station": {
+        "x": 510,
+        "y": 290
+      },
+      "runtimeEnabled": false,
+      "personality": "Analítico, preciso e atento às fontes e pendências.",
+      "technicalName": "andamentos-intimacoes",
+      "profileFile": "agentes/andamentos-intimacoes.txt",
+      "proposedScopes": [
+        "cases:read",
+        "notices:read",
+        "collections:request",
+        "jobs:create"
+      ]
+    },
+    {
+      "id": "contratos",
+      "displayName": "Davi",
+      "role": "Contratos & procurações",
+      "kind": "agent",
+      "sector": "contratos",
+      "practiceAreas": [
+        "Geral"
+      ],
+      "avatar": {
+        "shirt": "#93a6e0",
+        "skin": "#cf9873",
+        "hair": "#372b27",
+        "accessory": "tie"
+      },
+      "station": {
+        "x": 830,
+        "y": 195
+      },
+      "runtimeEnabled": false,
+      "personality": "Organizado, objetivo e colaborativo.",
+      "technicalName": "gestor-contratos-procuracoes",
+      "profileFile": "agentes/gestor-contratos-procuracoes.txt",
+      "proposedScopes": [
+        "dossiers:read",
+        "contract-drafts:create",
+        "documents:read"
+      ]
+    },
+    {
+      "id": "assinaturas",
+      "displayName": "Bia",
+      "role": "Assinaturas · ZapSign",
+      "kind": "agent",
+      "sector": "contratos",
+      "practiceAreas": [
+        "Geral"
+      ],
+      "avatar": {
+        "shirt": "#738bc9",
+        "skin": "#cf9873",
+        "hair": "#372b27",
+        "accessory": "glasses"
+      },
+      "station": {
+        "x": 995,
+        "y": 230
+      },
+      "runtimeEnabled": false,
+      "personality": "Analítico, preciso e atento às fontes e pendências.",
+      "technicalName": "gestor-assinaturas",
+      "profileFile": "agentes/gestor-assinaturas.txt",
+      "proposedScopes": [
+        "signatures:read",
+        "documents:read",
+        "jobs:create"
+      ]
+    },
+    {
+      "id": "forense",
+      "displayName": "Forense",
+      "role": "Coordenador jurídico",
+      "kind": "agent",
+      "sector": "juridico",
+      "practiceAreas": [
+        "Geral"
+      ],
+      "avatar": {
+        "shirt": "#ac91cf",
+        "skin": "#cf9873",
+        "hair": "#372b27",
+        "accessory": "tie"
+      },
+      "station": {
+        "x": 90,
+        "y": 530
+      },
+      "runtimeEnabled": false,
+      "personality": "Organizado, objetivo e colaborativo.",
+      "technicalName": "forense",
+      "sourceRepository": "drtrafego/mvp_adv",
+      "sourcePath": ".claude/agents/forense.md",
+      "action": "reuse-existing"
+    },
+    {
+      "id": "tese",
+      "displayName": "Íris",
+      "role": "Construtora de tese",
+      "kind": "agent",
+      "sector": "juridico",
+      "practiceAreas": [
+        "Consumidor"
+      ],
+      "avatar": {
+        "shirt": "#a787c7",
+        "skin": "#cf9873",
+        "hair": "#372b27",
+        "accessory": "glasses"
+      },
+      "station": {
+        "x": 205,
+        "y": 530
+      },
+      "runtimeEnabled": false,
+      "personality": "Analítico, preciso e atento às fontes e pendências.",
+      "technicalName": "construtor-tese",
+      "sourceRepository": "drtrafego/mvp_adv",
+      "sourcePath": ".claude/agents/construtor-tese.md",
+      "action": "reuse-existing"
+    },
+    {
+      "id": "pesquisador",
+      "displayName": "Theo",
+      "role": "Pesquisa jurídica",
+      "kind": "agent",
+      "sector": "juridico",
+      "practiceAreas": [
+        "Cível"
+      ],
+      "avatar": {
+        "shirt": "#978ac9",
+        "skin": "#cf9873",
+        "hair": "#372b27",
+        "accessory": "glasses"
+      },
+      "station": {
+        "x": 320,
+        "y": 530
+      },
+      "runtimeEnabled": false,
+      "personality": "Analítico, preciso e atento às fontes e pendências.",
+      "technicalName": "pesquisador-juridico",
+      "sourceRepository": "drtrafego/mvp_adv",
+      "sourcePath": ".claude/agents/pesquisador-juridico.md",
+      "action": "reuse-existing"
+    },
+    {
+      "id": "analista",
+      "displayName": "Eva",
+      "role": "Análise documental",
+      "kind": "agent",
+      "sector": "juridico",
+      "practiceAreas": [
+        "Penal"
+      ],
+      "avatar": {
+        "shirt": "#baa3dc",
+        "skin": "#cf9873",
+        "hair": "#372b27",
+        "accessory": "tie"
+      },
+      "station": {
+        "x": 90,
+        "y": 650
+      },
+      "runtimeEnabled": false,
+      "personality": "Organizado, objetivo e colaborativo.",
+      "technicalName": "analista-documento",
+      "sourceRepository": "drtrafego/mvp_adv",
+      "sourcePath": ".claude/agents/analista-documento.md",
+      "action": "reuse-existing"
+    },
+    {
+      "id": "estrategista",
+      "displayName": "Otto",
+      "role": "Estratégia de defesa",
+      "kind": "agent",
+      "sector": "juridico",
+      "practiceAreas": [
+        "Penal"
+      ],
+      "avatar": {
+        "shirt": "#9d8fbb",
+        "skin": "#cf9873",
+        "hair": "#372b27",
+        "accessory": "tie"
+      },
+      "station": {
+        "x": 205,
+        "y": 650
+      },
+      "runtimeEnabled": false,
+      "personality": "Organizado, objetivo e colaborativo.",
+      "technicalName": "estrategista-defesa",
+      "sourceRepository": "drtrafego/mvp_adv",
+      "sourcePath": ".claude/agents/estrategista-defesa.md",
+      "action": "reuse-existing"
+    },
+    {
+      "id": "redator",
+      "displayName": "Maya",
+      "role": "Redação forense",
+      "kind": "agent",
+      "sector": "juridico",
+      "practiceAreas": [
+        "Consumidor"
+      ],
+      "avatar": {
+        "shirt": "#c19ed8",
+        "skin": "#cf9873",
+        "hair": "#372b27",
+        "accessory": "glasses"
+      },
+      "station": {
+        "x": 320,
+        "y": 650
+      },
+      "runtimeEnabled": false,
+      "personality": "Analítico, preciso e atento às fontes e pendências.",
+      "technicalName": "redator-forense",
+      "sourceRepository": "drtrafego/mvp_adv",
+      "sourcePath": ".claude/agents/redator-forense.md",
+      "action": "reuse-existing"
+    },
+    {
+      "id": "revisor",
+      "displayName": "Noah",
+      "role": "Revisão jurídica",
+      "kind": "agent",
+      "sector": "juridico",
+      "practiceAreas": [
+        "Cível"
+      ],
+      "avatar": {
+        "shirt": "#b19ccb",
+        "skin": "#cf9873",
+        "hair": "#372b27",
+        "accessory": "glasses"
+      },
+      "station": {
+        "x": 205,
+        "y": 760
+      },
+      "runtimeEnabled": false,
+      "personality": "Analítico, preciso e atento às fontes e pendências.",
+      "technicalName": "revisor-juridico",
+      "sourceRepository": "drtrafego/mvp_adv",
+      "sourcePath": ".claude/agents/revisor-juridico.md",
+      "action": "reuse-existing"
+    },
+    {
+      "id": "coordenador",
+      "displayName": "Coordenador",
+      "role": "Orquestração · nome a definir",
+      "kind": "agent",
+      "sector": "diretoria",
+      "practiceAreas": [
+        "Geral"
+      ],
+      "avatar": {
+        "shirt": "#d6b673",
+        "skin": "#cf9873",
+        "hair": "#372b27",
+        "accessory": "gold"
+      },
+      "station": {
+        "x": 550,
+        "y": 400
+      },
+      "runtimeEnabled": false,
+      "personality": "Organizado, objetivo e colaborativo.",
+      "technicalName": "coordenador-escritorio",
+      "profileFile": "agentes/coordenador-escritorio.txt",
+      "proposedScopes": [
+        "office:read",
+        "jobs:create",
+        "jobs:read",
+        "message-drafts:create"
+      ]
+    },
+    {
+      "id": "daniel",
+      "displayName": "Daniel",
+      "role": "Advogado humano",
+      "kind": "human",
+      "sector": "diretoria",
+      "practiceAreas": [
+        "Geral"
+      ],
+      "avatar": {
+        "shirt": "#e5d7bc",
+        "skin": "#cf9873",
+        "hair": "#372b27",
+        "accessory": "tie"
+      },
+      "station": {
+        "x": 480,
+        "y": 560
+      },
+      "runtimeEnabled": false,
+      "personality": "Decisões claras e revisão responsável.",
+      "identityBinding": "pending-client-identity"
+    },
+    {
+      "id": "proprietario",
+      "displayName": "Proprietário",
+      "role": "Direção humana",
+      "kind": "human",
+      "sector": "diretoria",
+      "practiceAreas": [
+        "Geral"
+      ],
+      "avatar": {
+        "shirt": "#d7b273",
+        "skin": "#cf9873",
+        "hair": "#372b27",
+        "accessory": "gold"
+      },
+      "station": {
+        "x": 635,
+        "y": 560
+      },
+      "runtimeEnabled": false,
+      "personality": "Decisões claras e revisão responsável.",
+      "identityBinding": "pending-client-identity"
+    },
+    {
+      "id": "financeiro",
+      "displayName": "Rui",
+      "role": "Financeiro · honorários",
+      "kind": "agent",
+      "sector": "financeiro",
+      "practiceAreas": [
+        "Geral"
+      ],
+      "avatar": {
+        "shirt": "#7cb795",
+        "skin": "#cf9873",
+        "hair": "#372b27",
+        "accessory": "glasses"
+      },
+      "station": {
+        "x": 910,
+        "y": 540
+      },
+      "runtimeEnabled": false,
+      "personality": "Analítico, preciso e atento às fontes e pendências.",
+      "technicalName": "gestor-financeiro",
+      "profileFile": "agentes/gestor-financeiro.txt",
+      "proposedScopes": [
+        "finance:read",
+        "message-drafts:create"
+      ]
+    },
+    {
+      "id": "etica",
+      "displayName": "Elisa",
+      "role": "Ética e OAB · apoio interno",
+      "kind": "agent",
+      "sector": "etica",
+      "practiceAreas": [
+        "Ética e OAB"
+      ],
+      "avatar": {
+        "shirt": "#c598aa",
+        "skin": "#cf9873",
+        "hair": "#372b27",
+        "accessory": "glasses"
+      },
+      "station": {
+        "x": 910,
+        "y": 780
+      },
+      "runtimeEnabled": false,
+      "personality": "Analítico, preciso e atento às fontes e pendências.",
+      "technicalName": "apoio-etica-oab",
+      "profileFile": "agentes/apoio-etica-oab.txt",
+      "proposedScopes": [
+        "dossiers:read",
+        "ethical-reviews:propose"
+      ]
+    }
+  ]
+}

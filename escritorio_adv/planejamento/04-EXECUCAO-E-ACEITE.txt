@@ -1,0 +1,98 @@
+﻿ROTEIRO PARA O AGENTE EXECUTOR
+
+ETAPA 0 — CONFERIR BASE E AMBIENTE
+• Ler AGENTS.md/CLAUDE.md dos repositórios e suas instruções atuais.
+• Comparar HEAD atual com os commits do inventário; não aplicar mudanças sobre premissas antigas.
+• Usar branch/worktree própria e registrar arquivos existentes antes da instalação.
+• Confirmar URL de contratos, RAM/disco/SO do Hetzner, domínios, fuso, seccional OAB,
+  canal/instância ZapConversa, agenda, conta ZapSign e identidades humanas.
+• Essas informações bloqueiam conectores específicos, não o avanço do visual e da leitura do MVP.
+• Não pedir chaves em arquivo de chat/Git; o cliente configura credenciais no ambiente apropriado.
+
+ETAPA 1 — COLOCAR O ESCRITÓRIO NO GABINETE
+• Executar prototipo/build.mjs e o instalador visual em checkout local.
+• Instalar /escritorio, /api/escritorio/estado e public/escritorio-visual/index.html.
+• Adicionar atalho à sidebar existente com ícone de escritório.
+• Validar login, 401 sem sessão, no-store e falha de banco sem dados fictícios.
+• Confirmar que números e registros batem com /processos, /prazos e /intimacoes.
+• Abrir processos, intimações e prazos pelos mesmos IDs e URLs existentes.
+• Preservar as proteções humanas, DOCX, versões e dossiês.
+Aceite: o advogado explora seu acompanhamento processual dentro do escritório.
+
+ETAPA 2 — RUNTIME E FILA
+• Criar cadastro persistente de agentes, estações e permissões de administração.
+• Criar API remota com Bearer próprio/escopos e vincular identidade ao escritório.
+• Tratar o OpenAPI proposto como projeto a implementar, não como endpoint já disponível.
+• Implementar tarefas, leases, tentativas, eventos, outbox e reconciliação.
+• Limitar execução pesada global a 1 inicialmente; prioridade para prazos/alertas.
+• Definir estados queued, running, waiting_human, waiting_external, succeeded, failed, cancelled.
+• Reiniciar worker no meio de uma tarefa e provar retomada sem duplicar gravações/envios.
+Aceite: cada estado/animação real corresponde a tarefa, autor, evidência e resultado persistidos.
+
+ETAPA 3 — REAPROVEITAR COLETORES E AGENTES ESPECÍFICOS
+• Não recriar coleta DataJud/DJEN; ajustar seus drivers se o Postgres for local.
+• Registrar agendamentos existentes uma única vez (systemd timer OU scheduler já adotado).
+• Mapear Breno a andamentos/intimações e Clara ao fluxo do motor de prazo.
+• Expor a leitura integral e preservar o estado parcial/falha das fontes.
+• Reaproveitar Forense e seus seis especialistas, incluindo gate de citações reais.
+• Não fazer o LLM calcular prazo em texto livre nem confirmar a própria proposta.
+Aceite: um evento coletado aparece uma vez, vira sugestão e chega à revisão humana.
+
+ETAPA 4 — CONTRATOS, ZAPSIGN, WHATSAPP E AGENDA
+• Auditar o repositório de contratos com acesso real antes de codificar o adaptador.
+• Implementar a interface documental, preservando o gerador/modelos existentes.
+• Conferir dados/poderes da procuração e revisar a versão exata antes do envio.
+• Configurar webhook ZapSign autenticado e inbox persistida; doc_signed é por signatário.
+• Identificar qual ZapConversa é a instalação do cliente; não usar payloads de outro produto.
+• Guardar mensagem recebida, resumo, consentimentos/políticas e vínculo confirmado ao cliente.
+• Integrar agenda com hold, revalidação, confirmação e reconciliação pós-timeout.
+• Criar mensagens operacionais com dados mínimos, sem expor conteúdo sensível no preview.
+Aceite: em ambiente de teste autorizado, procuração e call são rastreáveis do início ao fim.
+
+ETAPA 5 — FINANCEIRO PRÓPRIO DO CLIENTE
+• Subir gerenciador_financeiro com banco, autenticação, marca, APIs e WhatsApp do cliente.
+• Proteger acesso interno por escopos; remover dependência do IP embutido da instalação antiga.
+• Consumir métricas existentes pelo adaptador de servidor; nunca expor Bearer ao browser.
+• Migrar honorários legados com conferência e corte de origem; não somar dois livros.
+• Confirmar que o telão e o painel financeiro mostram os mesmos valores e períodos.
+Aceite: caixa e contas a receber batem, sem dados PF de Gastão e sem cobrança duplicada.
+
+ETAPA 6 — TELEGRAM DO CLIENTE E PILOTO HERMES
+• Instalar gateway sob usuário próprio, e somente um consumidor para o mesmo bot.
+• Cliente faz login oficial no Claude Code da instância dele.
+• Começar com o canal Claude Code já usado pela base Luana OU validar Hermes no piloto.
+• Se usar provider Hermes+Claude Code: seguir documentação atual e fixar versão testada;
+  é experimental e não carrega automaticamente os subagentes .claude do MVP.
+• Para esses subagentes, registrar uma ferramenta do Hermes que despacha job jurídico
+  para worker separado. O worker usa o projeto/squad existentes e ferramentas restritas.
+• Preservar fila da aplicação: uma conversa Telegram restaurada não prova retomada de job.
+• Limites de assinatura e extra usage pertencem à conta do cliente; não prometer ilimitado.
+Aceite: cliente comanda a própria operação; revogar SSH de Gastão não derruba o serviço.
+
+VERIFICAÇÃO FINAL NECESSÁRIA
+1. Sem login não há leitura de casos pela nova API.
+2. Máquina não confirma prazo/aprova peça/atribui assinatura humana.
+3. Jurisprudência com fonte ausente não aparece como citação verificada.
+4. Evento duplicado não duplica movimentação, documento, cobrança ou agendamento.
+5. Assinatura parcial não vira documento concluído.
+6. Falha de agenda, WhatsApp, DataJud, DJEN ou financeiro fica visível e reconciliável.
+7. Mensagem/call usam cliente e advogado corretos; trocas de número não cruzam dossiês.
+8. Edição de peça invalida aprovação da versão anterior.
+9. Calendários cível/penal/especial são tratados conforme regra aplicável e revisão.
+10. Sob carga, navegação e alertas continuam responsivos com apenas um job pesado.
+11. Reinício do servidor recupera serviços/fila e não envia mensagens repetidas.
+12. Backup é restaurado em ambiente isolado e os hashes dos documentos conferem.
+13. Desktop/celular, teclado, foco, modais, movimento reduzido e acréscimo de agentes conferidos.
+
+CHECKS DO MVP, CONFORME README INSPECIONADO
+mcp-server: pnpm test; pnpm typecheck; pnpm build.
+painel: pnpm lint; pnpm exec tsc --noEmit;
+node --experimental-strip-types --test tests/*.test.mjs;
+node --experimental-strip-types --test scripts/financeiro.test.mts; pnpm build.
+Usar versões/lockfiles do checkout atual e ler os guias da versão instalada do Next.
+Não usar db:push sobre banco existente como forma de “resolver” migração.
+
+NÃO DECLARAR CONCLUÍDO SEM EVIDÊNCIA
+O presente pacote prepara o visual, a leitura, os contratos e o roteiro.
+Cada conector só passa a “conectado” após teste autorizado e resultado verificável.
+O executor entrega diff, resultados dos checks, evidências de fluxo e pendências reais.

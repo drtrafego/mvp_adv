@@ -1,0 +1,47 @@
+﻿REVISÃO VISUAL 1.1 — REFERÊNCIA ENVIADA PELO USUÁRIO
+
+Referência: https://www.instagram.com/reel/DeSE73VOtPW/
+Publicação recuperada: perfil andrevale.dev, André Vale, vídeo de aproximadamente 30 segundos.
+A página direta não abriu nos leitores comuns; os dados públicos e o vídeo foram recuperados.
+Foram inspecionados quadros ao longo do vídeo para entender a referência visual.
+
+O QUE FOI OBSERVADO
+• Linguagem de pixel art, com vista superior e personagens vistos de frente.
+• Salas independentes e corredores, com móveis, cadeiras, plantas e áreas compartilhadas.
+• Agrupamento por projetos/equipes e rótulos de tarefas sobre os agentes.
+• Interface lateral de agentes; a legenda descreve personalidades e habilidades próprias.
+
+O vídeo é uma referência visual. Não foi identificado/comprovado o código-fonte,
+a licença de um eventual projeto ou como seu backend integra agentes reais.
+Não alegar que usamos o mesmo software nem que a aparência comprova execução autônoma.
+Nenhum sprite, vídeo, textura ou quadro do Reel foi incluído como asset deste pacote.
+A arte do escritório Arao Mendes foi desenhada em código original.
+
+ALTERAÇÕES JÁ FEITAS NO PROTÓTIPO
+• Vista PIXEL passou a ser o padrão, com salas para os setores jurídicos do pedido.
+• Cada setor recebeu paredes, passagem, piso, placa e estações independentes.
+• Personagens receberam sprites próprios, roupas/acessórios e balões de tarefa.
+• Circulação demonstrativa usa corredores/saídas por setor e volta à estação.
+• O telão continua clicável e amplia métricas, gráficos e dados tabelados.
+• Cadastro de novos personagens inclui campo de personalidade/jeito de comunicar.
+• A vista isométrica permanece disponível pelo botão de alternância do HTML.
+• Seleção, personagens, integração de leitura do MVP e dados continuam os mesmos entre vistas.
+
+APLICAÇÃO AO ESCRITÓRIO DE ADVOCACIA
+Projetos/salas do vídeo foram traduzidos em comercial, acompanhamento processual,
+contratos/assinaturas, jurídico, direção, financeiro e apoio de Ética/OAB.
+Daniel e Proprietário continuam únicos na mesa central; o coordenador é outro personagem.
+Os sete agentes jurídicos nativos seguem preservados. Breno/Clara mantêm suas funções
+específicas de andamentos/intimações e prazos do MVP.
+
+PERSONALIDADE, HABILIDADES E EXECUÇÃO
+A descrição de personalidade configura o comportamento desejado do agente, mas não
+concede ferramentas ou autoridade. O runtime deve receber esse perfil explicitamente.
+O cadastro visual não instala um agente no servidor nem cria um bot novo no Telegram.
+Na produção, tarefas/estado vêm da fila persistida e os movimentos são sua representação.
+No modo Gabinete desta entrega, os balões indicam execução não conectada quando necessário.
+As caminhadas dos fluxos offline são demonstrações identificadas, sem operação externa.
+
+NOVO ARQUIVO-FONTE
+prototipo/src/pixel-scene.mjs: salas, sprites, móveis, telão e rotas da vista pixel.
+scene.mjs escolhe o renderer. O build inclui os dois em um HTML autocontido.

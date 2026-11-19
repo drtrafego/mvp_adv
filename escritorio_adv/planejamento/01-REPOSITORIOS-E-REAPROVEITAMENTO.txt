@@ -1,0 +1,117 @@
+﻿INVENTÁRIO VERIFICADO EM 14/10/2026
+
+1. GABINETE / JURÍDICO
+https://github.com/drtrafego/mvp_adv
+Commit lido: e758f5ced1bd8cd5bdb23d616e671b2dfdd73e7d
+
+Estrutura encontrada: painel Next.js 16.2.10/React 19, Drizzle/Postgres,
+MCP TypeScript stdio, esquemas e migrações, coletores e agentes Claude Code.
+O projeto atende um escritório por instalação; não tem isolamento SaaS multi-tenant.
+
+PRONTO NO CÓDIGO E A PRESERVAR
+• Processos, movimentações, intimações, partes, documentos e pasta do cliente.
+• DataJud em mcp-server/src/lib/datajud.ts e scripts/coleta_movimentacoes.mjs.
+• DJEN em mcp-server/src/lib/comunica.ts e scripts/coleta_diaria.mjs.
+• Saúde de coleta e indicação de falha/parcialidade, não “zero = tudo certo”.
+• Motor de prazo, catálogo, calendário e distinção sugestão/revisão humana.
+• Análises, modelos, peças, versões, DOCX e aprovação vinculada ao conteúdo revisado.
+• Autenticação de sessão e checagem nas ações/rotas sensíveis.
+• Honorários simples legados, que precisarão de transição explícita ao financeiro escolhido.
+
+AGENTES JURÍDICOS EXISTENTES — NÃO RECRIAR COM OUTROS NOMES
+forense                   .claude/agents/forense.md
+analista-documento        .claude/agents/analista-documento.md
+construtor-tese           .claude/agents/construtor-tese.md
+pesquisador-juridico      .claude/agents/pesquisador-juridico.md
+estrategista-defesa       .claude/agents/estrategista-defesa.md
+redator-forense           .claude/agents/redator-forense.md
+revisor-juridico          .claude/agents/revisor-juridico.md
+
+Os nomes visuais Eva/Íris/Theo/Otto/Maya/Noah são rótulos de personagens.
+O identificador técnico e as instruções dos especialistas permanecem os existentes.
+Forense coordena o núcleo jurídico; não deve absorver SDR, agenda, financeiro ou prazos.
+
+INTEGRAÇÃO VISUAL JÁ PREPARADA NESTE PACOTE
+adaptadores/gabinete-estado.route.ts reaproveita as funções:
+resumo(), listarProcessos(), listarPrazos(), listarIntimacoes(), listarPecas(), saudeColeta().
+Os registros mantêm seus IDs e abrem /p/:id, /pz/:id e /i/:id do próprio painel.
+O adaptador expõe apenas um resumo autenticado; o inteiro teor continua na tela/ferramenta própria.
+Não fazer um segundo banco de carteira nem reimplementar a coleta dentro do front-end.
+limites: processos/intimações/peças já são limitados a 100 nas consultas existentes;
+listarPrazos() ainda lê todos no backend e o adaptador corta a resposta em 100.
+Para carteiras grandes, evoluir essa consulta para paginação sem mudar a ordenação de negócio.
+Falha de banco gera indisponibilidade, não demonstração nem carteira vazia fictícia.
+
+O QUE AINDA NÃO ESTAVA PRONTO
+API remota autenticada para o coordenador, despacho automático de tarefas, fila durável,
+conexão Telegram com o Gabinete, ZapConversa, ZapSign, reserva de agenda e runtime do escritório.
+O MCP existente é STDIO LOCAL. Não é uma URL HTTP nem um MCP remoto autenticado.
+docs/futuro/agents são exemplos inativos, não agentes já em operação.
+
+DETALHE CRÍTICO PARA HETZNER / POSTGRES LOCAL
+painel/src/db/index.ts já escolhe postgres-js para localhost/127.0.0.1 e Neon HTTP para outros hosts.
+mcp-server/src/lib/db.ts ainda usa exclusivamente neon()/drizzle-orm/neon-http.
+Portanto, só trocar DATABASE_URL para Postgres local NÃO integra o MCP/coletor.
+O executor deve adicionar postgres-js ao MCP e escolher o driver explicitamente por
+DATABASE_DRIVER=postgres|neon (preferível) ou uma configuração equivalente testada.
+Não usar o hostname Docker “postgres” com a detecção atual do painel: ele cairia no driver Neon.
+Nesta topologia os apps rodam no host e o Postgres pode escutar em 127.0.0.1.
+Os documentos atualmente usam Blob privado; migrar para DocumentStore privado local
+com leitura autenticada e backup se o objetivo for hospedar também os arquivos no Hetzner.
+Não trocar URLs existentes nem apagar o Blob antes de verificar hashes e restaurar uma cópia.
+
+2. GERENCIADOR FINANCEIRO
+https://github.com/drtrafego/gerenciador_financeiro
+Commit lido: ded352c72a820841c13eda65a149d875c3cc8899
+
+Foi lida a API em docs/AGENT_API.md, o wrapper lib/agent/route.ts,
+lib/agent/auth.ts, lib/security/ipAllowlist.ts e o serviço de métricas.
+Há API /api/agent/v1 com clientes, contratos, faturas, transações, cobrança,
+lembretes, dashboard, fluxo de caixa, relatórios e rotas de PF.
+Bearer é a autorização. x-agent-actor é texto de auditoria; não concede permissão.
+
+DECISÃO DESTE PEDIDO MAIS RECENTE
+Usar esse repositório como serviço financeiro próprio do cliente no mesmo servidor.
+Isso altera a diretriz histórica de docs/12_REFERENCIA_FINANCEIRO.md do MVP, que o
+tratava apenas como referência. O executor deverá atualizar esse documento ao integrar.
+Não conectar o escritório à instância, banco, finanças PF ou WhatsApp pessoal de Gastão.
+
+AJUSTES OBRIGATÓRIOS DA INSTALAÇÃO DO CLIENTE
+• Banco POSTGRES_URL e credenciais novos; sem seed de dados pessoais ou clientes de teste.
+• Configurar autenticação humana do cliente, marca, meios de pagamento e modelos de mensagem.
+• A allowlist tem IP antigo embutido. Configurar TRUSTED_IPS explicitamente para o cenário
+  real. No loopback, testar cabeçalhos da origem; não liberar globalmente por conveniência.
+• Em VPS, cabeçalhos x-forwarded-for não são prova de origem se o proxy não os substituir.
+  APIs internas devem ser loopback/private network, e o proxy deve remover headers forjados.
+• A chave atual concede uma superfície ampla, inclusive PF. Para novos agentes usar um
+  gateway de escopos/rotas permitidas e depois chaves próprias por serviço.
+• Assinatura não significa pagamento; “paid” de fatura não cria transação de caixa.
+• periodReceived é recebido; periodToReceive é aberto. Não somar de novo ao periodIncome.
+• chartData já vem em BRL, declarado por chartCurrency. Não converter duas vezes.
+• Datas financeiras não substituem calendário forense.
+• Escolher o financeiro externo como fonte de honorários novos; não somar com cobrancas
+  legadas. Fazer tabela de correspondência, conferência de centavos e corte de migração.
+• Migrar arquivos privados e revisar a dependência de autenticação Stack/Blob se tudo
+  precisar ficar no Hetzner. O repositório não vira totalmente local só por mudar o host.
+
+3. LUANA / BASE DO COORDENADOR
+https://github.com/drtrafego/luana
+Commit lido: 2f3676c36ba1b70a9c870472b796b4574dfe23f4
+
+Contém plugin, templates de identidade e memória, Telegram, setup e orquestração.
+instalar.sh gera usuário/serviço e invoca Claude Code com canal Telegram.
+Não executar o instalador cegamente: ele contém bypass de permissões e log de terminal;
+adequar ao cliente, ferramentas restritas, privacidade dos logs e serviço sem root.
+tmux ou transcript não substituem uma fila de tarefas persistida.
+
+4. CONTRATOS / PROCURAÇÕES
+Nome recuperado do contexto: mvp_gestor_contratos.
+O caminho https://github.com/drtrafego/mvp_gestor_contratos retornou 404 na API;
+clone sem autenticação também não trouxe o conteúdo. Não foi possível auditar esse código.
+Isso pode ser visibilidade/permissão, nome diferente ou outro proprietário; não é prova
+de que o projeto não exista. Confirmar a URL exata antes de qualquer adaptação.
+O histórico menciona Autentique. O pedido atual usa ZapSign: conferir o provedor real,
+preservar contratos anteriores e usar interface de assinatura independente do fornecedor.
+Não presumir que o código atual já gere procurações nem que use ZapSign.
+
+Este inventário é inspeção de código, não teste das aplicações publicadas ou dos bancos.

@@ -1,0 +1,44 @@
+﻿MODELO DE AMBIENTES — SEM CREDENCIAIS
+Não copiar este texto como um .env único. Cada usuário/serviço recebe apenas suas variáveis.
+Os segredos são configurados no servidor, fora do Git e sem colocá-los no HTML.
+
+GABINETE /etc/arao/gabinete.env
+NODE_ENV=production
+PORT=3001
+DATABASE_URL=postgresql://USUARIO_GABINETE:SENHA@127.0.0.1:5432/arao_gabinete
+GABINETE_MCP_MODO_HUMANO=0
+ADMIN_EMAILS=EMAIL_REAL_DO_ADMIN_CLIENTE
+CRON_SECRET=SEGREDO_PROPRIO
+... completar apenas as variáveis reais de painel/.env.example e do adaptador de documentos.
+
+MCP / COLETOR
+DATABASE_URL=mesmo banco jurídico com role de serviço restrita
+DATABASE_DRIVER=postgres  [variável PROPOSTA; implementar suporte no MCP antes de usar]
+GABINETE_MCP_MODO_HUMANO=0
+Fuso/calendário/OAB conforme a configuração existente, revisados com o advogado.
+
+FINANCEIRO /etc/arao/financeiro.env
+NODE_ENV=production
+PORT=3002
+POSTGRES_URL=postgresql://USUARIO_FINANCEIRO:SENHA@127.0.0.1:5432/arao_financeiro
+AGENT_API_KEY=CHAVE_PROPRIA_DESTA_INSTALACAO
+TRUSTED_IPS=127.0.0.1
+... configurar as variáveis reais de auth/Stack, arquivos e WhatsApp desta instalação.
+O IP loopback pressupõe o proxy interno do Caddyfile. Não confiar em headers externos sem sanitização.
+
+GATEWAY/WORKER
+FINANCEIRO_API_BASE=http://127.0.0.1:3102/api/agent/v1
+FINANCEIRO_API_TOKEN=credencial própria, disponível somente ao backend autorizado
+HEAVY_JOB_CONCURRENCY=1  [variável PROPOSTA; implementar no dispatcher]
+LIGHT_JOB_CONCURRENCY=2  [variável PROPOSTA]
+Demais URLs/chaves do Gabinete, contratos, ZapConversa, ZapSign e agenda após seus adaptadores existirem.
+
+HERMES (OPÇÃO DE GATEWAY)
+TELEGRAM_BOT_TOKEN=bot controlado pelo cliente
+TELEGRAM_ALLOWED_USERS=ID_NUMERICO_VERIFICADO_DO_CLIENTE
+Provider selecionado no Hermes, depois de o CLIENTE fazer claude auth login no CLI oficial.
+Não gravar senha/credencial OAuth no prompt, neste modelo ou em variáveis do navegador.
+Não habilitar simultaneamente o canal Telegram do Claude Code com o mesmo token.
+
+CONTRATOS
+Pendente: repo/stack/auth/schema/provedor reais. Não inventar variáveis como se existissem.

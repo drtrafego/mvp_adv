@@ -1,0 +1,1384 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Arao Mendes — contrato de integração",
+    "version": "0.1.0-proposed",
+    "description": "Projeto de contrato. Apenas a rota de leitura por sessão tem implementação preparada; a API de agentes descrita aqui ainda deve ser construída. Não expõe operações de aprovação humana, ciência, assinatura ou protocolo."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Instância do cliente, no mesmo Hetzner."
+    }
+  ],
+  "paths": {
+    "/api/escritorio/estado": {
+      "get": {
+        "summary": "Leitura da vista por sessão humana — adaptador preparado neste pacote",
+        "x-implementation-status": "prepared-not-deployed",
+        "security": [
+          {
+            "cookieSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resumo do mesmo MVP; dados externos não conectados são null.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfficeState"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agent/v1/tasks": {
+      "post": {
+        "summary": "Solicitar tarefa por tipo autorizado",
+        "x-implementation-status": "proposed-not-implemented",
+        "x-required-scope": "jobs:create",
+        "security": [
+          {
+            "serviceBearer": []
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Resultado ou tarefa persistida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 200
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agent/v1/tasks/{taskId}": {
+      "get": {
+        "summary": "Consultar tarefa e pendências",
+        "x-implementation-status": "proposed-not-implemented",
+        "x-required-scope": "jobs:read",
+        "security": [
+          {
+            "serviceBearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado ou tarefa persistida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            }
+          }
+        ]
+      }
+    },
+    "/api/agent/v1/cases/{caseId}/dossier": {
+      "get": {
+        "summary": "Ler dossiê autorizado, paginado e com completude",
+        "x-implementation-status": "proposed-not-implemented",
+        "x-required-scope": "dossiers:read",
+        "security": [
+          {
+            "serviceBearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado ou tarefa persistida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dossier"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "caseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/agent/v1/deadline-proposals": {
+      "post": {
+        "summary": "Propor prazo usando o motor existente",
+        "x-implementation-status": "proposed-not-implemented",
+        "x-required-scope": "deadlines:propose",
+        "security": [
+          {
+            "serviceBearer": []
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Resultado ou tarefa persistida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 200
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeadlineProposal"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agent/v1/message-drafts": {
+      "post": {
+        "summary": "Preparar mensagem sem despachar",
+        "x-implementation-status": "proposed-not-implemented",
+        "x-required-scope": "message-drafts:create",
+        "security": [
+          {
+            "serviceBearer": []
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Resultado ou tarefa persistida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 200
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageDraft"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agent/v1/calendar/holds": {
+      "post": {
+        "summary": "Reservar temporariamente horário disponível",
+        "x-implementation-status": "proposed-not-implemented",
+        "x-required-scope": "calendar:hold",
+        "security": [
+          {
+            "serviceBearer": []
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Resultado ou tarefa persistida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 200
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalendarHold"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agent/v1/calendar/bookings": {
+      "post": {
+        "summary": "Confirmar call após aceite e revalidação",
+        "x-implementation-status": "proposed-not-implemented",
+        "x-required-scope": "calendar:book",
+        "security": [
+          {
+            "serviceBearer": []
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Resultado ou tarefa persistida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 200
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalendarBooking"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agent/v1/contract-drafts": {
+      "post": {
+        "summary": "Preparar contrato/procuração por modelo aprovado",
+        "x-implementation-status": "proposed-not-implemented",
+        "x-required-scope": "contract-drafts:create",
+        "security": [
+          {
+            "serviceBearer": []
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Resultado ou tarefa persistida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 200
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContractDraft"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agent/v1/signatures/{documentId}": {
+      "get": {
+        "summary": "Consultar estado agregado e por signatário",
+        "x-implementation-status": "proposed-not-implemented",
+        "x-required-scope": "signatures:read",
+        "security": [
+          {
+            "serviceBearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado ou tarefa persistida.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignatureStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Erro de autenticação, escopo, validação, conflito ou fonte indisponível.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "documentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            }
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "serviceBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Credencial própria do serviço com escopos resolvidos no backend. x-agent-actor não autoriza."
+      },
+      "cookieSession": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "gab_sessao",
+        "description": "Sessão humana já existente no Gabinete."
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "Task": {
+        "type": "object",
+        "required": [
+          "id",
+          "state",
+          "correlationId"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "correlationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "waiting_human",
+              "waiting_external",
+              "succeeded",
+              "failed",
+              "cancelled"
+            ]
+          },
+          "resultRefs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            }
+          },
+          "error": {
+            "$ref": "#/components/schemas/Error"
+          }
+        }
+      },
+      "TaskCreate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "contextRefs",
+          "inputVersion",
+          "input"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "case.intake",
+              "case.prepare_initial",
+              "process.monitor",
+              "deadline.propose",
+              "hearing.prepare_call",
+              "contract.prepare",
+              "signature.reconcile",
+              "finance.snapshot",
+              "ethics.review"
+            ]
+          },
+          "contextRefs": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "inputVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "input": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "description": "O servidor valida um schema específico por kind, contexto, escopo e vínculo. Input genérico não concede autoridade nem escolhe identidade humana."
+      },
+      "Dossier": {
+        "type": "object",
+        "required": [
+          "caseRef",
+          "sourceRefs",
+          "complete",
+          "missingFields"
+        ],
+        "properties": {
+          "caseRef": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "clientRef": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "sourceRefs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            }
+          },
+          "complete": {
+            "type": "boolean"
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "missingFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "DeadlineProposal": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "noticeId",
+          "ruleRef",
+          "calendarRef",
+          "factsRefs"
+        ],
+        "properties": {
+          "noticeId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "ruleRef": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "calendarRef": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "factsRefs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            }
+          },
+          "pendingQuestions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "O backend calcula pelo motor determinístico do MVP. Não aceita dataFatal livre nem aprovação humana no corpo."
+      },
+      "MessageDraft": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "recipientRef",
+          "recipientVersion",
+          "templateRef",
+          "contextRefs",
+          "policyRef"
+        ],
+        "properties": {
+          "recipientRef": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "recipientVersion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "templateRef": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "contextRefs": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "policyRef": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "description": "Prepara texto; envio real é efeito separado em outbox e política autorizada. Não aceita telefone escolhido pelo modelo."
+      },
+      "CalendarHold": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "lawyerRef",
+          "clientRef",
+          "hearingRef",
+          "calendarRef",
+          "startsAt",
+          "endsAt",
+          "timezone"
+        ],
+        "properties": {
+          "lawyerRef": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "clientRef": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "hearingRef": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "calendarRef": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "timezone": {
+            "type": "string",
+            "description": "Fuso IANA válido no servidor."
+          }
+        },
+        "description": "Validar conflito, expiração, advogado responsável e vínculo no servidor. Hold não é reunião confirmada."
+      },
+      "CalendarBooking": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "holdId",
+          "clientAcceptanceRef"
+        ],
+        "properties": {
+          "holdId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "clientAcceptanceRef": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "description": "Exige aceite verificável, hold vigente e revalidação da agenda. Timeout exige reconciliação."
+      },
+      "ContractDraft": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "caseRef",
+          "clientRef",
+          "lawyerRef",
+          "templateId",
+          "templateVersion",
+          "authorizedPowerIds",
+          "sourceRefs"
+        ],
+        "properties": {
+          "caseRef": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "clientRef": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "lawyerRef": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "templateId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "templateVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "authorizedPowerIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            }
+          },
+          "sourceRefs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            }
+          }
+        },
+        "description": "O adaptador usa o repositório de contratos real após acesso confirmado. Versão do modelo/poderes é validada pelo servidor."
+      },
+      "SignatureStatus": {
+        "type": "object",
+        "required": [
+          "documentRef",
+          "documentStatus",
+          "signers",
+          "complete"
+        ],
+        "properties": {
+          "documentRef": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "documentStatus": {
+            "type": "string"
+          },
+          "signers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "signerRef": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 120
+                },
+                "status": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "complete": {
+            "type": "boolean"
+          },
+          "finalDocumentRef": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "OfficeState": {
+        "type": "object",
+        "required": [
+          "schemaVersion",
+          "mode",
+          "generatedAt",
+          "summary",
+          "metrics",
+          "execution"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "const": 1
+          },
+          "mode": {
+            "const": "live"
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "summary": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "metrics": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "processes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "deadlines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "notices": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "health": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "execution": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "limits": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      }
+    }
+  }
+}

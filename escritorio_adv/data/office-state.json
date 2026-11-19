@@ -1,0 +1,1210 @@
+{
+  "version": 1,
+  "view": "pixel",
+  "agents": [
+    {
+      "id": "sdr",
+      "name": "Lia",
+      "role": "SDR · triagem",
+      "sector": "comercial",
+      "area": "Geral",
+      "x": 110,
+      "y": 195,
+      "color": "#66bda8",
+      "task": "Organizando o relato de um novo contato",
+      "status": "working",
+      "accessory": "headset",
+      "human": false,
+      "personality": "Acolhedor no atendimento, claro ao explicar próximos passos.",
+      "skin": "#cf9873",
+      "hair": "#372b27"
+    },
+    {
+      "id": "closer",
+      "name": "Caio",
+      "role": "Closer · contratação",
+      "sector": "comercial",
+      "area": "Geral",
+      "x": 255,
+      "y": 230,
+      "color": "#479b86",
+      "task": "Preparando proposta para revisão",
+      "status": "working",
+      "accessory": "tie",
+      "human": false,
+      "personality": "Organizado, objetivo e colaborativo.",
+      "skin": "#cf9873",
+      "hair": "#372b27"
+    },
+    {
+      "id": "controladoria",
+      "name": "Clara",
+      "role": "Gestora de prazos",
+      "sector": "administrativo",
+      "area": "Cível",
+      "x": 475,
+      "y": 185,
+      "color": "#dba761",
+      "task": "Conferindo fonte, rito e calendário do prazo",
+      "status": "review",
+      "accessory": "glasses",
+      "human": false,
+      "personality": "Analítico, preciso e atento às fontes e pendências.",
+      "skin": "#cf9873",
+      "hair": "#372b27"
+    },
+    {
+      "id": "agenda",
+      "name": "Nina",
+      "role": "Agenda & relacionamento",
+      "sector": "administrativo",
+      "area": "Geral",
+      "x": 625,
+      "y": 230,
+      "color": "#cb8f49",
+      "task": "Consultando disponibilidade do advogado",
+      "status": "working",
+      "accessory": "headset",
+      "human": false,
+      "personality": "Acolhedor no atendimento, claro ao explicar próximos passos.",
+      "skin": "#cf9873",
+      "hair": "#372b27"
+    },
+    {
+      "id": "movimentacoes",
+      "name": "Breno",
+      "role": "Andamentos & intimações",
+      "sector": "administrativo",
+      "area": "Geral",
+      "x": 510,
+      "y": 290,
+      "color": "#d3a16a",
+      "task": "Acompanhando DataJud e DJEN do MVP",
+      "status": "working",
+      "accessory": "glasses",
+      "human": false,
+      "personality": "Analítico, preciso e atento às fontes e pendências.",
+      "skin": "#cf9873",
+      "hair": "#372b27"
+    },
+    {
+      "id": "contratos",
+      "name": "Davi",
+      "role": "Contratos & procurações",
+      "sector": "contratos",
+      "area": "Geral",
+      "x": 830,
+      "y": 195,
+      "color": "#93a6e0",
+      "task": "Montando procuração a partir de modelo",
+      "status": "review",
+      "accessory": "tie",
+      "human": false,
+      "personality": "Organizado, objetivo e colaborativo.",
+      "skin": "#cf9873",
+      "hair": "#372b27"
+    },
+    {
+      "id": "assinaturas",
+      "name": "Bia",
+      "role": "Assinaturas · ZapSign",
+      "sector": "contratos",
+      "area": "Geral",
+      "x": 995,
+      "y": 230,
+      "color": "#738bc9",
+      "task": "Aguardando os demais signatários",
+      "status": "waiting",
+      "accessory": "glasses",
+      "human": false,
+      "personality": "Analítico, preciso e atento às fontes e pendências.",
+      "skin": "#cf9873",
+      "hair": "#372b27"
+    },
+    {
+      "id": "forense",
+      "name": "Forense",
+      "role": "Coordenador jurídico",
+      "sector": "juridico",
+      "area": "Geral",
+      "x": 90,
+      "y": 530,
+      "color": "#ac91cf",
+      "task": "Distribuindo as etapas da minuta",
+      "status": "working",
+      "accessory": "tie",
+      "human": false,
+      "personality": "Organizado, objetivo e colaborativo.",
+      "skin": "#cf9873",
+      "hair": "#372b27"
+    },
+    {
+      "id": "tese",
+      "name": "Íris",
+      "role": "Construtora de tese",
+      "sector": "juridico",
+      "area": "Consumidor",
+      "x": 205,
+      "y": 530,
+      "color": "#a787c7",
+      "task": "Organizando fatos, prova e pedidos",
+      "status": "working",
+      "accessory": "glasses",
+      "human": false,
+      "personality": "Analítico, preciso e atento às fontes e pendências.",
+      "skin": "#cf9873",
+      "hair": "#372b27"
+    },
+    {
+      "id": "pesquisador",
+      "name": "Theo",
+      "role": "Pesquisa jurídica",
+      "sector": "juridico",
+      "area": "Cível",
+      "x": 320,
+      "y": 530,
+      "color": "#978ac9",
+      "task": "Conferindo fontes oficiais de julgados",
+      "status": "working",
+      "accessory": "glasses",
+      "human": false,
+      "personality": "Analítico, preciso e atento às fontes e pendências.",
+      "skin": "#cf9873",
+      "hair": "#372b27"
+    },
+    {
+      "id": "analista",
+      "name": "Eva",
+      "role": "Análise documental",
+      "sector": "juridico",
+      "area": "Penal",
+      "x": 90,
+      "y": 650,
+      "color": "#baa3dc",
+      "task": "Lendo o dossiê completo",
+      "status": "waiting",
+      "accessory": "tie",
+      "human": false,
+      "personality": "Organizado, objetivo e colaborativo.",
+      "skin": "#cf9873",
+      "hair": "#372b27"
+    },
+    {
+      "id": "estrategista",
+      "name": "Otto",
+      "role": "Estratégia de defesa",
+      "sector": "juridico",
+      "area": "Penal",
+      "x": 205,
+      "y": 650,
+      "color": "#9d8fbb",
+      "task": "Organizando riscos da defesa",
+      "status": "working",
+      "accessory": "tie",
+      "human": false,
+      "personality": "Organizado, objetivo e colaborativo.",
+      "skin": "#cf9873",
+      "hair": "#372b27"
+    },
+    {
+      "id": "redator",
+      "name": "Maya",
+      "role": "Redação forense",
+      "sector": "juridico",
+      "area": "Consumidor",
+      "x": 320,
+      "y": 650,
+      "color": "#c19ed8",
+      "task": "Preparando uma inicial em rascunho",
+      "status": "working",
+      "accessory": "glasses",
+      "human": false,
+      "personality": "Analítico, preciso e atento às fontes e pendências.",
+      "skin": "#cf9873",
+      "hair": "#372b27"
+    },
+    {
+      "id": "revisor",
+      "name": "Noah",
+      "role": "Revisão jurídica",
+      "sector": "juridico",
+      "area": "Cível",
+      "x": 205,
+      "y": 760,
+      "color": "#b19ccb",
+      "task": "Auditoria de citações da minuta",
+      "status": "review",
+      "accessory": "glasses",
+      "human": false,
+      "personality": "Analítico, preciso e atento às fontes e pendências.",
+      "skin": "#cf9873",
+      "hair": "#372b27"
+    },
+    {
+      "id": "coordenador",
+      "name": "Coordenador",
+      "role": "Orquestração · nome a definir",
+      "sector": "diretoria",
+      "area": "Geral",
+      "x": 550,
+      "y": 400,
+      "color": "#d6b673",
+      "task": "Consolidando a operação para o advogado",
+      "status": "working",
+      "accessory": "gold",
+      "human": false,
+      "personality": "Organizado, objetivo e colaborativo.",
+      "skin": "#cf9873",
+      "hair": "#372b27"
+    },
+    {
+      "id": "daniel",
+      "name": "Daniel",
+      "role": "Advogado humano",
+      "sector": "diretoria",
+      "area": "Geral",
+      "x": 480,
+      "y": 560,
+      "color": "#e5d7bc",
+      "task": "Revisão de minutas e decisões",
+      "status": "review",
+      "accessory": "tie",
+      "human": true,
+      "personality": "Decisões claras e revisão responsável.",
+      "skin": "#cf9873",
+      "hair": "#372b27"
+    },
+    {
+      "id": "proprietario",
+      "name": "Proprietário",
+      "role": "Direção humana",
+      "sector": "diretoria",
+      "area": "Geral",
+      "x": 635,
+      "y": 560,
+      "color": "#d7b273",
+      "task": "Acompanhando a operação",
+      "status": "available",
+      "accessory": "gold",
+      "human": true,
+      "personality": "Decisões claras e revisão responsável.",
+      "skin": "#cf9873",
+      "hair": "#372b27"
+    },
+    {
+      "id": "financeiro",
+      "name": "Rui",
+      "role": "Financeiro · honorários",
+      "sector": "financeiro",
+      "area": "Geral",
+      "x": 910,
+      "y": 540,
+      "color": "#7cb795",
+      "task": "Conferindo honorários a receber",
+      "status": "working",
+      "accessory": "glasses",
+      "human": false,
+      "personality": "Analítico, preciso e atento às fontes e pendências.",
+      "skin": "#cf9873",
+      "hair": "#372b27"
+    },
+    {
+      "id": "etica",
+      "name": "Elisa",
+      "role": "Ética e OAB · apoio interno",
+      "sector": "etica",
+      "area": "Ética e OAB",
+      "x": 910,
+      "y": 780,
+      "color": "#c598aa",
+      "task": "Conferindo comunicação e sigilo",
+      "status": "available",
+      "accessory": "glasses",
+      "human": false,
+      "personality": "Analítico, preciso e atento às fontes e pendências.",
+      "skin": "#cf9873",
+      "hair": "#372b27"
+    }
+  ],
+  "period": "week",
+  "sector": "all",
+  "area": "Todas",
+  "paused": false,
+  "zoom": 1,
+  "logs": [],
+  "clients": [
+    {
+      "id": "cli-1",
+      "name": "Maria Carolina Mendes",
+      "cpf": "348.912.408-15",
+      "rg": "42.819.302-4 SSP/SP",
+      "nacionalidade": "Brasileira",
+      "estadoCivil": "Casada",
+      "profissao": "Arquiteta",
+      "endereco": "Rua Oscar Freire, 1420, Apto 82, Pinheiros, São Paulo/SP, CEP 05409-010",
+      "phone": "(11) 99812-4401",
+      "email": "mariacarolina.arq@email.com",
+      "area": "Consumidor",
+      "stage": "Inicial para revisão",
+      "origin": "WhatsApp · ZapConversa (Lia SDR)",
+      "urgency": "Alta",
+      "caseTitle": "Cancelamento de voo internacional LATAM + extravio de bagagem",
+      "summary": "Cliente teve voo LA8084 cancelado sem assistência adequada e bagagem extraviada por 4 dias em viagem profissional a Madrid. Comprovou perda de reunião e despesas emergenciais de R$ 3.840,00.",
+      "facts": [
+        "10/10/2026 · Triagem realizada por Lia (SDR) via WhatsApp com coleta de 4 documentos probatórios.",
+        "11/10/2026 · Proposta comercial fechada por Caio (Closer): R$ 4.500,00 fixos + 20% ad exitum.",
+        "12/10/2026 · Procuração Ad Judicia e Contrato assinados no ZapSign (2/2 signatários concluídos).",
+        "15/10/2026 · Minuta da Petição Inicial concluída por Maya e auditada por Noah. Aguardando aprovação de Dr. Daniel Felix."
+      ],
+      "documents": [
+        {
+          "name": "RG_CPF_Maria_Carolina.pdf",
+          "status": "Verificado por Eva",
+          "size": "1.2 MB"
+        },
+        {
+          "name": "Bilhetes_E_BoardingPass_LATAM_LA8084.pdf",
+          "status": "Verificado por Eva",
+          "size": "840 KB"
+        },
+        {
+          "name": "Protocolo_RIB_Extravio_Bagagem.pdf",
+          "status": "Verificado por Eva",
+          "size": "620 KB"
+        },
+        {
+          "name": "Notas_Fiscais_Despesas_Emergenciais_R$3840.pdf",
+          "status": "Verificado por Eva",
+          "size": "2.1 MB"
+        },
+        {
+          "name": "Procuracao_Ad_Judicia_Assinada_ZapSign.pdf",
+          "status": "Assinado (2/2)",
+          "size": "490 KB"
+        }
+      ],
+      "missingDocs": [],
+      "petitionId": "pec-1",
+      "contractId": "doc-1",
+      "processId": "proc-1",
+      "honorariosTotal": 4500,
+      "honorariosPaid": 2250
+    },
+    {
+      "id": "cli-2",
+      "name": "Carlos Eduardo Albuquerque",
+      "cpf": "192.847.310-04",
+      "rg": "28.401.992-1 SSP/SP",
+      "nacionalidade": "Brasileiro",
+      "estadoCivil": "Solteiro",
+      "profissao": "Engenheiro Civil",
+      "endereco": "Av. Paulista, 1842, Conj. 114, Bela Vista, São Paulo/SP, CEP 01310-200",
+      "phone": "(11) 98421-7730",
+      "email": "cadualbuquerque@eng.com.br",
+      "area": "Cível",
+      "stage": "Procuração em revisão",
+      "origin": "Telegram / Indicação Direta",
+      "urgency": "Média",
+      "caseTitle": "Rescisão de contrato de imóvel na planta por atraso de obra + restituição integral",
+      "summary": "Atraso superior a 210 dias na entrega de unidade autônoma pela incorporadora, ultrapassando o prazo de tolerância de 180 dias. Cliente pleiteia rescisão por culpa exclusiva da vendedora e devolução de 100% dos valores pagos (Súmula 543/STJ).",
+      "facts": [
+        "12/10/2026 · Relato e quadro resumo recebidos pela Lia (SDR).",
+        "14/10/2026 · Davi gerou Procuração Ad Judicia com cláusula de poderes especiais (Art. 105 CPC) para revisão do Dr. Daniel Felix.",
+        "15/10/2026 · Maya elaborou minuta de Petição Inicial c/c Tutela de Urgência para suspensão de cobrança de parcelas."
+      ],
+      "documents": [
+        {
+          "name": "CNH_Carlos_Eduardo.pdf",
+          "status": "Verificado por Eva",
+          "size": "950 KB"
+        },
+        {
+          "name": "Compromisso_Compra_Venda_Incorporadora.pdf",
+          "status": "Verificado por Eva",
+          "size": "4.8 MB"
+        },
+        {
+          "name": "Extrato_Pagamentos_Atualizado_R$142000.pdf",
+          "status": "Verificado por Eva",
+          "size": "1.1 MB"
+        },
+        {
+          "name": "Notificacao_Extrajudicial_Atraso.pdf",
+          "status": "Verificado por Eva",
+          "size": "730 KB"
+        }
+      ],
+      "missingDocs": [
+        "Comprovante de endereço atualizado (últimos 60 dias)"
+      ],
+      "petitionId": "pec-2",
+      "contractId": "doc-2",
+      "processId": "proc-2",
+      "honorariosTotal": 8500,
+      "honorariosPaid": 4250
+    },
+    {
+      "id": "cli-3",
+      "name": "Roberto Almeida Prado",
+      "cpf": "415.720.891-62",
+      "rg": "19.334.812-X SSP/SP",
+      "nacionalidade": "Brasileiro",
+      "estadoCivil": "Divorciado",
+      "profissao": "Consultor de TI",
+      "endereco": "Rua Bandeira Paulista, 720, Itaim Bibi, São Paulo/SP, CEP 04532-001",
+      "phone": "(11) 97102-3398",
+      "email": "roberto.prado@techconsult.com",
+      "area": "Cível",
+      "stage": "Processo ativo · Audiência",
+      "origin": "WhatsApp · ZapConversa",
+      "urgency": "Alta",
+      "caseTitle": "Cobrança e execução de contrato de desenvolvimento de software B2B",
+      "summary": "Ação de cobrança em fase instrutória perante a 14ª Vara Cível de São Paulo. Réplica já aprovada pelo Dr. Daniel Felix. Audiência de conciliação/instrução designada; Nina está agendando call preparatória.",
+      "facts": [
+        "02/09/2026 · Processo distribuído sob nº 1002345-67.2026.8.26.0100.",
+        "10/10/2026 · Intimação para Réplica recebida via DJEN por Breno e prazo calculado por Clara.",
+        "14/10/2026 · Réplica revisada e aprovada por Dr. Daniel Felix.",
+        "16/10/2026 · Nina (Agenda) reservou opções de horário para call de preparação de audiência."
+      ],
+      "documents": [
+        {
+          "name": "Contrato_B2B_Software_Assinado.pdf",
+          "status": "Verificado por Eva",
+          "size": "3.2 MB"
+        },
+        {
+          "name": "Notas_Fiscais_Inadimplidas_NFS-e.pdf",
+          "status": "Verificado por Eva",
+          "size": "1.5 MB"
+        },
+        {
+          "name": "Termo_Homologacao_Entrega_Final.pdf",
+          "status": "Verificado por Eva",
+          "size": "890 KB"
+        }
+      ],
+      "missingDocs": [],
+      "petitionId": "pec-3",
+      "contractId": "doc-3",
+      "processId": "proc-3",
+      "honorariosTotal": 12000,
+      "honorariosPaid": 6100
+    },
+    {
+      "id": "cli-4",
+      "name": "Fernanda Costa Lira",
+      "cpf": "529.104.738-90",
+      "rg": "35.918.204-7 SSP/SP",
+      "nacionalidade": "Brasileira",
+      "estadoCivil": "Casada",
+      "profissao": "Empresária",
+      "endereco": "Alameda Santos, 980, Jardim Paulista, São Paulo/SP, CEP 01418-100",
+      "phone": "(11) 99123-8840",
+      "email": "fernanda@liraempreendimentos.com.br",
+      "area": "Penal",
+      "stage": "Defesa em elaboração",
+      "origin": "Atendimento Direto · Dr. Daniel Felix",
+      "urgency": "Crítica",
+      "caseTitle": "Resposta à Acusação — Extinção de punibilidade / Parcelamento tributário",
+      "summary": "Defesa criminal empresarial na 3ª Vara Federal Criminal (TRF3). Eva (Análise Documental) e Otto (Estratégia de Defesa) estruturaram tese de suspensão da pretensão punitiva e falta de justa causa.",
+      "facts": [
+        "13/10/2026 · Cópia integral do processo 5008912-34.2026.4.03.6100 analisada por Eva.",
+        "15/10/2026 · Otto mapeou matriz de risco e precedentes do STF/STJ sobre parcelamento formalizado.",
+        "16/10/2026 · Minuta de Resposta à Acusação (Art. 396-A CPP) em conclusão para revisão de Dr. Daniel Felix."
+      ],
+      "documents": [
+        {
+          "name": "Certidao_Adesao_Parcelamento_RFB.pdf",
+          "status": "Verificado por Eva",
+          "size": "1.8 MB"
+        },
+        {
+          "name": "Autos_Integrais_TRF3_5008912.pdf",
+          "status": "Verificado por Eva",
+          "size": "18.4 MB"
+        },
+        {
+          "name": "Procuracao_Penal_Poderes_Especiais.pdf",
+          "status": "Assinado (2/2)",
+          "size": "510 KB"
+        }
+      ],
+      "missingDocs": [],
+      "petitionId": "pec-4",
+      "contractId": "doc-4",
+      "processId": "proc-4",
+      "honorariosTotal": 25000,
+      "honorariosPaid": 15000
+    },
+    {
+      "id": "cli-5",
+      "name": "Juliana Martins Souza",
+      "cpf": "618.293.041-22",
+      "rg": "48.201.390-2 SSP/SP",
+      "nacionalidade": "Brasileira",
+      "estadoCivil": "Solteira",
+      "profissao": "Cirurgiã-Dentista",
+      "endereco": "Rua Vergueiro, 2100, Vila Mariana, São Paulo/SP, CEP 04101-100",
+      "phone": "(11) 96304-1129",
+      "email": "dra.julianamartins@odonto.com",
+      "area": "Consumidor",
+      "stage": "Triagem WhatsApp",
+      "origin": "WhatsApp · ZapConversa (Lia SDR)",
+      "urgency": "Média",
+      "caseTitle": "Negativação indevida no Serasa por fraude de terceiros (Súmula 479/STJ)",
+      "summary": "Cliente descobriu apontamento de R$ 9.420,00 no Serasa referente a contrato bancário que jamais celebrou. Lia está concluindo coleta do comprovante de recusa de crédito para envio ao Forense.",
+      "facts": [
+        "16/10/2026 · Contato recebido no WhatsApp; Lia qualificou o relato e solicitou extrato Serasa e B.O."
+      ],
+      "documents": [
+        {
+          "name": "Extrato_Apontamento_Serasa.pdf",
+          "status": "Verificado por Lia",
+          "size": "540 KB"
+        },
+        {
+          "name": "Boletim_Ocorrencia_Delegacia_Eletronica.pdf",
+          "status": "Verificado por Lia",
+          "size": "680 KB"
+        }
+      ],
+      "missingDocs": [
+        "Documento de identidade com foto (RG ou CNH)",
+        "Comprovante de residência atualizado"
+      ],
+      "petitionId": null,
+      "contractId": null,
+      "processId": null,
+      "honorariosTotal": 3500,
+      "honorariosPaid": 0
+    }
+  ],
+  "petitions": [
+    {
+      "id": "pec-1",
+      "code": "PEC-2026-001",
+      "title": "Petição Inicial — Ação de Indenização por Danos Materiais e Morais",
+      "clientId": "cli-1",
+      "clientName": "Maria Carolina Mendes",
+      "processNumber": "Distribuição Inicial · Foro Central Cível de São Paulo/SP",
+      "area": "Consumidor",
+      "type": "Petição Inicial",
+      "version": "v1.2",
+      "hash": "a94f8c2d17e03b6591c4820f7a3e19d4b8c20194e72a6105c38b91e4d20f8a11",
+      "authorAgent": "Maya (redator-forense)",
+      "reviewerAgent": "Noah (revisor-juridico)",
+      "status": "review",
+      "statusLabel": "Aguardando revisão de Dr. Daniel Felix",
+      "approvedBy": null,
+      "approvedAt": null,
+      "updatedAt": "16/10/2026 às 09:40",
+      "squadNotes": {
+        "tese": "Íris (construtor-tese): Responsabilidade objetiva da companhia aérea (Art. 14 do CDC). Cancelamento imotivado + extravio temporário de bagagem por 96h em viagem a trabalho. Dano material documentado (R$ 3.840,00) e dano moral autônomo (distinção do Tema 210/STF).",
+        "provas": "Eva (analista-documento): 4 documentos conferidos sem divergência: bilhete LA8084, RIB da companhia aérea, comprovante de congresso profissional em Madrid e notas fiscais das compras de vestuário/itens básicos.",
+        "revisao": "Noah (revisor-juridico): Auditoria concluída. Todos os números, datas e valores batem com o dossiê. 2 julgados verificados em fontes oficiais do STJ e TJSP."
+      },
+      "citations": [
+        {
+          "court": "STJ · 3ª Turma",
+          "number": "REsp 1.842.066/RS",
+          "relator": "Min. Moura Ribeiro",
+          "date": "15/06/2020",
+          "verified": true,
+          "url": "https://processo.stj.jus.br",
+          "excerpt": "O extravio temporário de bagagem em transporte aéreo internacional e o atraso excessivo na chegada ao destino configuram falha na prestação do serviço (art. 14 do CDC), impondo o dever de indenizar os danos morais e materiais comprovados."
+        },
+        {
+          "court": "TJSP · 12ª Câmara de Direito Privado",
+          "number": "Apelação Cível 1014892-31.2025.8.26.0100",
+          "relator": "Des. Tasso Duarte de Melo",
+          "date": "22/04/2026",
+          "verified": true,
+          "url": "https://esaj.tjsp.jus.br",
+          "excerpt": "Transporte aéreo. Cancelamento de voo e perda de bagagem por 4 dias em viagem de negócios. Dano moral configurado in re ipsa diante da angústia e perda de compromissos profissionais. Quantum fixado em R$ 12.000,00."
+        }
+      ],
+      "content": "EXCELENTÍSSIMO(A) SENHOR(A) DOUTOR(A) JUIZ(A) DE DIREITO DE UMA DAS VARAS CÍVEIS DO FORO CENTRAL DA COMARCA DA CAPITAL DO ESTADO DE SÃO PAULO\n\nMARIA CAROLINA MENDES, brasileira, casada, arquiteta, portadora da Cédula de Identidade RG nº 42.819.302-4 SSP/SP e inscrita no CPF sob o nº 348.912.408-15, residente e domiciliada na Rua Oscar Freire, nº 1420, Apto 82, Pinheiros, São Paulo/SP, CEP 05409-010, endereço eletrônico mariacarolina.arq@email.com, por seu advogado que esta subscreve, DR. DANIEL FELIX (conforme Procuração Ad Judicia anexa), vem, respeitosamente, à presença de Vossa Excelência, propor a presente\n\nAÇÃO DE INDENIZAÇÃO POR DANOS MATERIAIS E MORAIS\n\nem face de TAM LINHAS AÉREAS S/A (LATAM AIRLINES BRASIL), pessoa jurídica de direito privado, inscrita no CNPJ sob o nº 02.012.862/0001-60, com sede na Rua Ática, nº 673, Jardim Brasil, São Paulo/SP, pelos fatos e fundamentos jurídicos a seguir expostos.\n\nI. DOS FATOS E DA CRONOLOGIA DOCUMENTADA\n\n1. A Autora adquiriu junto à Ré passagens aéreas internacionais (localizador LA8084) para o trecho São Paulo (GRU) – Madrid (MAD), com embarque previsto para o dia 02/10/2026, tendo como finalidade sua participação comprovada em encontro internacional de arquitetura corporativa.\n\n2. Contudo, já no aeroporto, o voo foi unilateralmente cancelado pela Ré sem prestação de assistência material adequada, gerando atraso superior a 18 (dezoito) horas na chegada ao destino final e perda do primeiro dia de compromissos profissionais da Autora.\n\n3. Agravando a situação, ao desembarcar em Madrid, a Autora constatou que sua bagagem despachada — contendo seus trajes formais, materiais técnicos de apresentação e itens de uso pessoal — havia sido extraviada pela companhia aérea, conforme Registro de Irregularidade de Bagagem (RIB anexo).\n\n4. A mala permaneceu extraviada por 4 (quatro) dias inteiros, obrigando a Autora a realizar despesas emergenciais com vestuário e itens essenciais no valor documentado de R$ 3.840,00 (três mil, oitocentos e quarenta reais), conforme notas fiscais anexadas ao dossiê.\n\nII. DO DIREITO E DA RESPONSABILIDADE OBJETIVA\n\n5. A relação jurídica estabelecida entre as partes é tipicamente de consumo, aplicando-se a responsabilidade objetiva prevista no art. 14 do Código de Defesa do Consumidor (Lei nº 8.078/90), respondendo o fornecedor independentemente da existência de culpa pela falha na prestação do serviço de transporte.\n\n6. Ressalta-se que a limitação tarifada da Convenção de Montreal (Tema 210 do STF) restringe-se exclusivamente às hipóteses de dano material por extravio definitivo sem declaração prévia, não afastando a reparação integral dos gastos emergenciais comprovados por notas fiscais nem a indenização por danos morais decorrentes do cancelamento do voo e da privação de bens essenciais por quatro dias.\n\n7. Nesse exato sentido é a jurisprudência consolidada do E. Superior Tribunal de Justiça (REsp 1.842.066/RS, Rel. Min. Moura Ribeiro, 3ª Turma) e do E. Tribunal de Justiça de São Paulo (Apelação Cível 1014892-31.2025.8.26.0100, 12ª Câmara de Direito Privado).\n\nIII. DOS PEDIDOS\n\nDiante do exposto, requer a Vossa Excelência:\n\na) A citação da Ré para, querendo, apresentar contestação sob pena de revelia;\nb) A inversão do ônus da prova em favor da consumidora, nos termos do art. 6º, VIII, do CDC;\nc) A total procedência da ação para condenar a Ré:\n   c.1) Ao pagamento de R$ 3.840,00 (três mil, oitocentos e quarenta reais) a título de danos materiais emergenciais, corrigidos monetariamente desde o desembolso e acrescidos de juros legais;\n   c.2) Ao pagamento de R$ 15.000,00 (quinze mil reais) a título de indenização por danos morais;\nd) A condenação da Ré ao pagamento das custas processuais e honorários advocatícios de 20% sobre o valor da condenação (art. 85, § 2º, do CPC).\n\nDá-se à causa o valor de R$ 18.840,00 (dezoito mil, oitocentos e quarenta reais).\n\nTermos em que,\nPede deferimento.\n\nSão Paulo/SP, 16 de outubro de 2026.\n\n__________________________________________________\nDR. DANIEL FELIX\nAdvogado · Escritório Daniel Felix Advocacia"
+    },
+    {
+      "id": "pec-2",
+      "code": "PEC-2026-002",
+      "title": "Petição Inicial — Rescisão Contratual Imobiliária c/c Restituição Integral (Súmula 543/STJ)",
+      "clientId": "cli-2",
+      "clientName": "Carlos Eduardo Albuquerque",
+      "processNumber": "Processo vinculado · 1008812-19.2026.8.26.0100 (TJSP)",
+      "area": "Cível",
+      "type": "Petição Inicial c/ Tutela",
+      "version": "v1.0",
+      "hash": "7c82d10f4e93a115b6092c38471e50a29d184f60c32b7189e04a52d19f83c402",
+      "authorAgent": "Maya (redator-forense)",
+      "reviewerAgent": "Noah (revisor-juridico)",
+      "status": "review",
+      "statusLabel": "Aguardando revisão de Dr. Daniel Felix",
+      "approvedBy": null,
+      "approvedAt": null,
+      "updatedAt": "16/10/2026 às 10:15",
+      "squadNotes": {
+        "tese": "Íris (construtor-tese): Culpa exclusiva da incorporadora pelo atraso superior a 180 dias corridos. Incidência direta da Súmula 543 do STJ: restituição imediata e integral (100%) das parcelas pagas, sem retenção de cláusula penal.",
+        "provas": "Eva (analista-documento): Quadro resumo do contrato (cláusula 8.1 prevê entrega em jan/2026) + extrato financeiro comprovando pagamento de R$ 142.000,00.",
+        "revisao": "Noah (revisor-juridico): Tutela de urgência fundamentada para suspender exigibilidade das parcelas vincendas e impedir negativação do comprador."
+      },
+      "citations": [
+        {
+          "court": "STJ · Segunda Seção (Súmula)",
+          "number": "Súmula 543 do STJ",
+          "relator": "Segunda Seção STJ",
+          "date": "26/08/2015",
+          "verified": true,
+          "url": "https://scon.stj.jus.br",
+          "excerpt": "Na hipótese de resolução de contrato de promessa de compra e venda de imóvel submetido ao Código de Defesa do Consumidor, deve ocorrer a imediata restituição das parcelas pagas pelo promitente comprador - integralmente, em caso de culpa exclusiva do promitente vendedor/construtor."
+        }
+      ],
+      "content": "EXCELENTÍSSIMO(A) SENHOR(A) DOUTOR(A) JUIZ(A) DE DIREITO DA VARA CÍVEL DO FORO CENTRAL DA COMARCA DE SÃO PAULO/SP\n\nCARLOS EDUARDO ALBUQUERQUE, brasileiro, solteiro, engenheiro civil, RG nº 28.401.992-1 SSP/SP, CPF nº 192.847.310-04, residente e domiciliado na Av. Paulista, nº 1842, Conj. 114, Bela Vista, São Paulo/SP, por seu advogado DR. DANIEL FELIX, vem, respeitosamente, propor\n\nAÇÃO DE RESCISÃO DE COMPROMISSO DE COMPRA E VENDA C/C RESTITUIÇÃO INTEGRAL DE QUANTIAS PAGAS E TUTELA DE URGÊNCIA\n\nem face de HORIZONTE INCORPORAÇÕES SPE LTDA., pelos fatos e fundamentos a seguir:\n\nI. DA SÍNTESE FÁTICA\n1. O Autor celebrou Instrumento Particular de Promessa de Compra e Venda referente à unidade 1104 do empreendimento \"Residencial Jardins\", tendo adimplido pontualmente a quantia histórica de R$ 142.000,00 (cento e quarenta e dois mil reais).\n2. A entrega das chaves, mesmo após o cômputo integral do prazo de tolerância de 180 dias, encontra-se em atraso superior a 210 dias sem justificativa legal.\n\nII. DO DIREITO E DA SÚMULA 543 DO STJ\n3. Nos termos da Súmula 543 do E. Superior Tribunal de Justiça, configurada a culpa exclusiva da incorporadora pelo atraso na entrega do empreendimento, impõe-se a resolução contratual com a devolução integral (100%) e em parcela única de todos os valores pagos, corrigidos desde cada desembolso.\n\nIII. DOS PEDIDOS E DA TUTELA DE URGÊNCIA\nRequer-se:\na) A concessão de tutela de urgência (art. 300 do CPC) para suspender a exigibilidade das parcelas vincendas e obstar qualquer inscrição do nome do Autor nos órgãos de proteção ao crédito;\nb) No mérito, a decretação da rescisão contratual por culpa exclusiva da Ré e sua condenação à restituição integral de R$ 142.000,00, acrescidos de correção monetária e juros de mora;\nc) Honorários sucumbenciais de 15% sobre o proveito econômico.\n\nSão Paulo/SP, 16 de outubro de 2026.\n\n__________________________________________________\nDR. DANIEL FELIX\nAdvogado · Escritório Daniel Felix Advocacia"
+    },
+    {
+      "id": "pec-3",
+      "code": "PEC-2026-003",
+      "title": "Réplica à Contestação e Especificação de Provas",
+      "clientId": "cli-3",
+      "clientName": "Roberto Almeida Prado",
+      "processNumber": "1002345-67.2026.8.26.0100 (14ª Vara Cível TJSP)",
+      "area": "Cível",
+      "type": "Réplica / Manifestação",
+      "version": "v2.0",
+      "hash": "4b19e82c30a74d6182f5019c3e847b201a94d62e81c0375b492a610d8f3e2190",
+      "authorAgent": "Maya (redator-forense)",
+      "reviewerAgent": "Dr. Daniel Felix (Revisão Humana)",
+      "status": "approved",
+      "statusLabel": "Aprovada por Dr. Daniel Felix · Pronta p/ Protocolo",
+      "approvedBy": "Dr. Daniel Felix",
+      "approvedAt": "14/10/2026 às 17:20",
+      "updatedAt": "14/10/2026 às 17:20",
+      "squadNotes": {
+        "tese": "Íris: Impugnação específica à tese de exceção do contrato não cumprido diante do Termo de Homologação assinado pela própria Ré.",
+        "provas": "Eva: Termo de Aceite definitivo às fls. 48/52 comprova a entrega integral do software.",
+        "revisao": "Dr. Daniel Felix: Versão v2.0 revisada e aprovada pelo advogado responsável."
+      },
+      "citations": [
+        {
+          "court": "TJSP · 29ª Câmara de Direito Privado",
+          "number": "Apelação Cível 1045120-11.2024.8.26.0100",
+          "relator": "Des. Carlos Henrique Miguel Trevisan",
+          "date": "11/11/2025",
+          "verified": true,
+          "url": "https://esaj.tjsp.jus.br",
+          "excerpt": "Prestação de serviços de tecnologia. Termo de aceite assinado pelo contratante que afasta a alegação genérica de falha técnica invocada apenas após a cobrança judicial."
+        }
+      ],
+      "content": "EXCELENTÍSSIMO(A) SENHOR(A) DOUTOR(A) JUIZ(A) DE DIREITO DA 14ª VARA CÍVEL DO FORO CENTRAL CÍVEL DE SÃO PAULO/SP\n\nProcesso nº 1002345-67.2026.8.26.0100\n\nROBERTO ALMEIDA PRADO, já qualificado nos autos da Ação de Cobrança que move em face de VÉRTICE LOGÍSTICA S/A, por seu advogado DR. DANIEL FELIX, vem, tempestivamente, apresentar\n\nRÉPLICA À CONTESTAÇÃO E ESPECIFICAÇÃO DE PROVAS\n\n1. Em sede de contestação, a Ré tenta esquivar-se do adimplemento das Notas Fiscais nº 412 e 415 alegando suposta pendência técnica no módulo de relatórios.\n2. Tal alegação cai por terra diante do Termo de Homologação e Aceite Definitivo (fls. 48/52), assinado pelo Diretor de Operações da Ré sem qualquer ressalva.\n3. Requer-se o julgamento antecipado da lide (art. 355, I, do CPC) com a total procedência da ação.\n\nSão Paulo/SP, 14 de outubro de 2026.\n\n__________________________________________________\nDR. DANIEL FELIX\nAdvogado · Escritório Daniel Felix Advocacia"
+    },
+    {
+      "id": "pec-4",
+      "code": "PEC-2026-004",
+      "title": "Resposta à Acusação (Art. 396-A do CPP) — Extinção/Suspensão da Punibilidade",
+      "clientId": "cli-4",
+      "clientName": "Fernanda Costa Lira",
+      "processNumber": "5008912-34.2026.4.03.6100 (3ª Vara Federal Criminal TRF3)",
+      "area": "Penal",
+      "type": "Resposta à Acusação",
+      "version": "v0.9",
+      "hash": "9e02c481a73b5610d492f83e1c607b294a18d503e72c914b608a31d5f29e7044",
+      "authorAgent": "Otto (estrategista-defesa) & Maya (redator-forense)",
+      "reviewerAgent": "Noah (revisor-juridico)",
+      "status": "working",
+      "statusLabel": "Em auditoria final de citações (Noah)",
+      "approvedBy": null,
+      "approvedAt": null,
+      "updatedAt": "16/10/2026 às 11:05",
+      "squadNotes": {
+        "tese": "Otto (estrategista-defesa): Adesão formal ao parcelamento tributário federal e pagamento das primeiras parcelas documentado nos autos (Art. 9º da Lei 10.684/2003 e Art. 83 da Lei 9.430/96).",
+        "provas": "Eva (analista-documento): Certidão da Receita Federal e DARFs quitados conferidos.",
+        "revisao": "Noah (revisor-juridico): Conferindo acórdãos da 5ª e 6ª Turmas do STJ antes de liberar para a mesa de Dr. Daniel Felix."
+      },
+      "citations": [
+        {
+          "court": "STF · Plenário / STJ · 6ª Turma",
+          "number": "RHC 142.819/SP",
+          "relator": "Min. Sebastião Reis Júnior",
+          "date": "18/08/2023",
+          "verified": true,
+          "url": "https://processo.stj.jus.br",
+          "excerpt": "O parcelamento do crédito tributário suspende a pretensão punitiva estatal e o curso do prazo prescricional enquanto a pessoa jurídica permanecer cumprindo regularmente o acordo."
+        }
+      ],
+      "content": "EXCELENTÍSSIMO(A) SENHOR(A) DOUTOR(A) JUIZ(A) FEDERAL DA 3ª VARA CRIMINAL DA SUBSEÇÃO JUDICIÁRIA DE SÃO PAULO — TRF DA 3ª REGIÃO\n\nProcesso nº 5008912-34.2026.4.03.6100\n\nFERNANDA COSTA LIRA, já qualificada nos autos, por seu defensor constituído DR. DANIEL FELIX, vem, no prazo legal, apresentar\n\nRESPOSTA À ACUSAÇÃO (ART. 396 E 396-A DO CPP)\n\n1. Conforme certidão oficial da Receita Federal do Brasil juntada aos autos, o débito tributário objeto da denúncia encontra-se devidamente parcelado e com adimplemento regular.\n2. Impõe-se, portanto, a imediata suspensão da pretensão punitiva estatal e do curso da ação penal, nos termos do art. 83, § 2º, da Lei nº 9.430/96.\n\nSão Paulo/SP, 16 de outubro de 2026.\n\n__________________________________________________\nDR. DANIEL FELIX\nAdvogado · Escritório Daniel Felix Advocacia"
+    }
+  ],
+  "processesList": [
+    {
+      "id": "proc-1",
+      "code": "Caso demonstrativo 001",
+      "numeroCnj": "1019482-12.2026.8.26.0100",
+      "clientId": "cli-1",
+      "clientName": "Maria Carolina Mendes",
+      "parteContraria": "TAM Linhas Aéreas S/A (LATAM)",
+      "tribunal": "TJSP",
+      "vara": "8ª Vara Cível · Foro Central SP",
+      "area": "Consumidor",
+      "fase": "Inicial em revisão",
+      "responsible": "Forense",
+      "lastMovement": "16/10/2026 · Minuta de Petição Inicial aguardando aprovação humana de Dr. Daniel Felix.",
+      "movements": [
+        {
+          "date": "16/10/2026 09:40",
+          "source": "Núcleo Jurídico",
+          "text": "Minuta v1.2 auditada por Noah e enviada para revisão de Dr. Daniel Felix."
+        },
+        {
+          "date": "12/10/2026 16:10",
+          "source": "ZapSign",
+          "text": "Procuração Ad Judicia assinada por todos os signatários (2/2)."
+        }
+      ]
+    },
+    {
+      "id": "proc-2",
+      "code": "Caso demonstrativo 002",
+      "numeroCnj": "1008812-19.2026.8.26.0100",
+      "clientId": "cli-2",
+      "clientName": "Carlos Eduardo Albuquerque",
+      "parteContraria": "Horizonte Incorporações SPE Ltda.",
+      "tribunal": "TJSP",
+      "vara": "22ª Vara Cível · Foro Central SP",
+      "area": "Cível",
+      "fase": "Acompanhamento",
+      "responsible": "Breno",
+      "lastMovement": "15/10/2026 · Publicação DJEN: Despacho determinando emenda/juntada de procuração atualizada em 15 dias úteis.",
+      "movements": [
+        {
+          "date": "15/10/2026 07:15",
+          "source": "DJEN / Breno",
+          "text": "Disponibilizada intimação de despacho inicial."
+        },
+        {
+          "date": "15/10/2026 07:18",
+          "source": "Motor de Prazo / Clara",
+          "text": "Sugestão de prazo calculada: 15 dias úteis CPC (vence em 05/11/2026)."
+        }
+      ]
+    },
+    {
+      "id": "proc-3",
+      "code": "Caso demonstrativo 003",
+      "numeroCnj": "1002345-67.2026.8.26.0100",
+      "clientId": "cli-3",
+      "clientName": "Roberto Almeida Prado",
+      "parteContraria": "Vértice Logística S/A",
+      "tribunal": "TJSP",
+      "vara": "14ª Vara Cível · Foro Central SP",
+      "area": "Cível",
+      "fase": "Instrução e Audiência",
+      "responsible": "Clara",
+      "lastMovement": "14/10/2026 · Audiência de conciliação/instrução designada para 28/10/2026 às 14:30.",
+      "movements": [
+        {
+          "date": "14/10/2026 17:20",
+          "source": "Gabinete / Daniel",
+          "text": "Réplica v2.0 aprovada por Dr. Daniel Felix."
+        },
+        {
+          "date": "13/10/2026 06:00",
+          "source": "DataJud / Breno",
+          "text": "Andamento capturado: Designada audiência para 28/10/2026."
+        }
+      ]
+    },
+    {
+      "id": "proc-4",
+      "code": "Caso demonstrativo 004",
+      "numeroCnj": "5008912-34.2026.4.03.6100",
+      "clientId": "cli-4",
+      "clientName": "Fernanda Costa Lira",
+      "parteContraria": "Justiça Pública Federal",
+      "tribunal": "TRF3",
+      "vara": "3ª Vara Federal Criminal de SP",
+      "area": "Penal",
+      "fase": "Dossiê em análise",
+      "responsible": "Eva",
+      "lastMovement": "16/10/2026 · Prazo penal (10 dias corridos CPP) para Resposta à Acusação em conferência.",
+      "movements": [
+        {
+          "date": "16/10/2026 11:05",
+          "source": "Núcleo Jurídico",
+          "text": "Otto e Maya finalizaram rascunho v0.9 da Resposta à Acusação."
+        },
+        {
+          "date": "13/10/2026 08:30",
+          "source": "DJEN / Breno",
+          "text": "Intimação da defesa para apresentar Resposta à Acusação."
+        }
+      ]
+    }
+  ],
+  "deadlinesList": [
+    {
+      "id": "pz-1",
+      "processId": "proc-4",
+      "numeroCnj": "5008912-34.2026.4.03.6100",
+      "clientName": "Fernanda Costa Lira",
+      "ato": "Manifestação · Resposta à Acusação (Art. 396-A CPP)",
+      "rito": "Penal · 10 dias corridos (Art. 798 CPP)",
+      "marcoInicial": "13/10/2026",
+      "dataFatal": "23/10/2026",
+      "status": "Sugestão",
+      "responsible": "Clara",
+      "confirmedBy": null
+    },
+    {
+      "id": "pz-2",
+      "processId": "proc-2",
+      "numeroCnj": "1008812-19.2026.8.26.0100",
+      "clientName": "Carlos Eduardo Albuquerque",
+      "ato": "Juntada de Procuração e Comprovante de Endereço",
+      "rito": "Cível · 15 dias úteis (Art. 219 CPC)",
+      "marcoInicial": "15/10/2026",
+      "dataFatal": "05/11/2026",
+      "status": "Sugestão",
+      "responsible": "Clara",
+      "confirmedBy": null
+    },
+    {
+      "id": "pz-3",
+      "processId": "proc-3",
+      "numeroCnj": "1002345-67.2026.8.26.0100",
+      "clientName": "Roberto Almeida Prado",
+      "ato": "Preparação de audiência e rol de testemunhas",
+      "rito": "Cível · Agenda prévia (Nina)",
+      "marcoInicial": "14/10/2026",
+      "dataFatal": "24/10/2026",
+      "status": "Agenda pendente",
+      "responsible": "Nina",
+      "confirmedBy": null
+    },
+    {
+      "id": "pz-4",
+      "processId": "proc-3",
+      "numeroCnj": "1002345-67.2026.8.26.0100",
+      "clientName": "Roberto Almeida Prado",
+      "ato": "Protocolo de Réplica à Contestação",
+      "rito": "Cível · 15 dias úteis (Art. 350 CPC)",
+      "marcoInicial": "01/10/2026",
+      "dataFatal": "22/10/2026",
+      "status": "Confirmado por Dr. Daniel Felix",
+      "responsible": "Clara",
+      "confirmedBy": "Dr. Daniel Felix"
+    }
+  ],
+  "noticesList": [
+    {
+      "id": "nt-1",
+      "processId": "proc-2",
+      "numeroCnj": "1008812-19.2026.8.26.0100",
+      "clientName": "Carlos Eduardo Albuquerque",
+      "area": "Cível",
+      "dataPublicacao": "15/10/2026",
+      "orgao": "TJSP · Diário da Justiça Eletrônico Nacional (DJEN)",
+      "status": "Aguardando análise",
+      "responsible": "Breno → Clara",
+      "inteiroTeor": "PROCESSO: 1008812-19.2026.8.26.0100 - CLASSE: PROCEDIMENTO COMUM CÍVEL. AUTOR: CARLOS EDUARDO ALBUQUERQUE. RÉU: HORIZONTE INCORPORAÇÕES SPE LTDA. Vistos. Recebo a petição. Antes de apreciar o pedido liminar, regularize o autor o instrumento de mandato com poderes específicos e comprovante de endereço atualizado, no prazo de 15 (quinze) dias úteis, sob pena de indeferimento. Intime-se. Advogado: Dr. Daniel Felix."
+    },
+    {
+      "id": "nt-2",
+      "processId": "proc-4",
+      "numeroCnj": "5008912-34.2026.4.03.6100",
+      "clientName": "Fernanda Costa Lira",
+      "area": "Penal",
+      "dataPublicacao": "13/10/2026",
+      "orgao": "TRF3 · Diário Eletrônico da Justiça Federal da 3ª Região",
+      "status": "Texto a conferir",
+      "responsible": "Breno → Forense",
+      "inteiroTeor": "PROCESSO Nº 5008912-34.2026.4.03.6100 - 3ª VARA FEDERAL CRIMINAL DE SÃO PAULO. Intime-se a defesa constituída de FERNANDA COSTA LIRA (Advogado: Dr. Daniel Felix) para apresentar RESPOSTA À ACUSAÇÃO, no prazo legal de 10 (dez) dias, nos termos dos artigos 396 e 396-A do Código de Processo Penal, podendo arguir preliminares e especificar provas."
+    }
+  ],
+  "contractsList": [
+    {
+      "id": "doc-1",
+      "code": "PROC-2026-001",
+      "type": "Procuração Ad Judicia + Contrato de Honorários",
+      "clientId": "cli-1",
+      "clientName": "Maria Carolina Mendes",
+      "cpf": "348.912.408-15",
+      "objeto": "Ação de Indenização por Danos Materiais e Morais em face de TAM Linhas Aéreas S/A (LATAM).",
+      "specialPowers": [
+        "Receber citação",
+        "Transigir",
+        "Receber e dar quitação"
+      ],
+      "hash": "e31a904f8b21c672d5081e493a7b20c184f609d2e71a3058c49b21e6d03f8a55",
+      "status": "completed",
+      "statusLabel": "Concluído no ZapSign (2/2 assinaturas)",
+      "signers": [
+        {
+          "name": "Maria Carolina Mendes (Outorgante)",
+          "status": "Assinado em 12/10/2026 15:42"
+        },
+        {
+          "name": "Dr. Daniel Felix (Advogado)",
+          "status": "Assinado em 12/10/2026 16:10"
+        }
+      ],
+      "createdAt": "12/10/2026"
+    },
+    {
+      "id": "doc-2",
+      "code": "PROC-2026-002",
+      "type": "Procuração Ad Judicia et Extra",
+      "clientId": "cli-2",
+      "clientName": "Carlos Eduardo Albuquerque",
+      "cpf": "192.847.310-04",
+      "objeto": "Ação de Rescisão Contratual c/c Restituição Integral de Quantias Pagas em face de Horizonte Incorporações SPE Ltda.",
+      "specialPowers": [
+        "Receber citação",
+        "Transigir",
+        "Desistir",
+        "Receber e dar quitação",
+        "Firmar compromisso"
+      ],
+      "hash": "5f82c190a43d716e209b48c31e75a902d48f16c30b729e41a58d20f3c691b824",
+      "status": "review",
+      "statusLabel": "Aguardando revisão de poderes por Dr. Daniel Felix",
+      "signers": [
+        {
+          "name": "Carlos Eduardo Albuquerque (Outorgante)",
+          "status": "Aguardando envio ZapSign"
+        },
+        {
+          "name": "Dr. Daniel Felix (Advogado)",
+          "status": "Revisão humana pendente"
+        }
+      ],
+      "createdAt": "14/10/2026"
+    },
+    {
+      "id": "doc-3",
+      "code": "PROC-2026-003",
+      "type": "Contrato de Honorários Advocatícios + Procuração",
+      "clientId": "cli-3",
+      "clientName": "Roberto Almeida Prado",
+      "cpf": "415.720.891-62",
+      "objeto": "Ação de Cobrança e Execução de Contrato de Prestação de Serviços de TI (Processo 1002345-67.2026.8.26.0100).",
+      "specialPowers": [
+        "Transigir",
+        "Receber e dar quitação"
+      ],
+      "hash": "8a14d602e93b517c402f819d3e65a701b29c48f60d31e729a504b81c2f39d610",
+      "status": "partial",
+      "statusLabel": "Assinado parcialmente no ZapSign (1/2) · Não concluído",
+      "signers": [
+        {
+          "name": "Roberto Almeida Prado (Cliente)",
+          "status": "Assinado em 15/10/2026 18:05"
+        },
+        {
+          "name": "Testemunha / Co-signatário",
+          "status": "Pendente no ZapSign (Bia acompanhando)"
+        }
+      ],
+      "createdAt": "15/10/2026"
+    },
+    {
+      "id": "doc-4",
+      "code": "PROC-2026-004",
+      "type": "Procuração Penal c/ Poderes Especiais + Honorários",
+      "clientId": "cli-4",
+      "clientName": "Fernanda Costa Lira",
+      "cpf": "529.104.738-90",
+      "objeto": "Defesa técnica nos autos da Ação Penal nº 5008912-34.2026.4.03.6100 perante a 3ª Vara Federal Criminal de São Paulo/TRF3.",
+      "specialPowers": [
+        "Receber citação",
+        "Firmar compromisso"
+      ],
+      "hash": "2c91f408e73a615b802d491c7e35a609b18d42f70c39e518a602b47d1f83e905",
+      "status": "completed",
+      "statusLabel": "Concluído no ZapSign (2/2 assinaturas)",
+      "signers": [
+        {
+          "name": "Fernanda Costa Lira (Outorgante)",
+          "status": "Assinado em 13/10/2026 11:20"
+        },
+        {
+          "name": "Dr. Daniel Felix (Defensor)",
+          "status": "Assinado em 13/10/2026 11:35"
+        }
+      ],
+      "createdAt": "13/10/2026"
+    }
+  ],
+  "financeiro": {
+    "items": [
+      {
+        "id": "fin-1",
+        "clientId": "cli-1",
+        "clientName": "Maria Carolina Mendes",
+        "description": "Honorários Iniciais (Entrada 1/2) · Caso LATAM",
+        "dueDate": "12/10/2026",
+        "paidAt": "12/10/2026",
+        "method": "PIX",
+        "amount": 2250,
+        "status": "paid"
+      },
+      {
+        "id": "fin-2",
+        "clientId": "cli-1",
+        "clientName": "Maria Carolina Mendes",
+        "description": "Honorários Iniciais (Parcela 2/2) · Caso LATAM",
+        "dueDate": "12/11/2026",
+        "paidAt": null,
+        "method": "PIX / Boleto",
+        "amount": 2250,
+        "status": "open"
+      },
+      {
+        "id": "fin-3",
+        "clientId": "cli-2",
+        "clientName": "Carlos Eduardo Albuquerque",
+        "description": "Honorários Contratuais (Entrada) · Rescisão Imobiliária",
+        "dueDate": "14/10/2026",
+        "paidAt": "14/10/2026",
+        "method": "Transferência TED",
+        "amount": 4250,
+        "status": "paid"
+      },
+      {
+        "id": "fin-4",
+        "clientId": "cli-2",
+        "clientName": "Carlos Eduardo Albuquerque",
+        "description": "Honorários Contratuais (Parcela 2/2) · Rescisão Imobiliária",
+        "dueDate": "14/11/2026",
+        "paidAt": null,
+        "method": "Boleto",
+        "amount": 4250,
+        "status": "open"
+      },
+      {
+        "id": "fin-5",
+        "clientId": "cli-3",
+        "clientName": "Roberto Almeida Prado",
+        "description": "Honorários Fase Instrutória (Parcela 1/2) · Cobrança TI",
+        "dueDate": "05/10/2026",
+        "paidAt": "05/10/2026",
+        "method": "PIX",
+        "amount": 6100,
+        "status": "paid"
+      },
+      {
+        "id": "fin-6",
+        "clientId": "cli-3",
+        "clientName": "Roberto Almeida Prado",
+        "description": "Honorários Fase Instrutória (Parcela 2/2) · Cobrança TI",
+        "dueDate": "14/10/2026",
+        "paidAt": null,
+        "method": "Boleto Bancário",
+        "amount": 5900,
+        "status": "overdue"
+      },
+      {
+        "id": "fin-7",
+        "clientId": "cli-4",
+        "clientName": "Fernanda Costa Lira",
+        "description": "Honorários Defesa Penal Federal (Parcela 2/2) · TRF3",
+        "dueDate": "25/10/2026",
+        "paidAt": null,
+        "method": "PIX / TED",
+        "amount": 16000,
+        "status": "open"
+      }
+    ],
+    "outbox": [
+      {
+        "id": "out-1",
+        "clientName": "Roberto Almeida Prado",
+        "phone": "(11) 97102-3398",
+        "finId": "fin-6",
+        "amount": 5900,
+        "status": "pending",
+        "idempotencyKey": "outbox-fin-6-2026-10-16",
+        "message": "Olá, Roberto! Tudo bem? Aqui é do setor financeiro do Escritório Daniel Felix Advocacia. Identificamos em aberto a parcela 2/2 referente ao processo 1002345-67.2026.8.26.0100 (vencimento 14/10/2026, R$ 5.900,00). Segue a chave PIX/Boleto atualizado para conciliação."
+      },
+      {
+        "id": "out-2",
+        "clientName": "Fernanda Costa Lira",
+        "phone": "(11) 99123-8840",
+        "finId": "fin-7",
+        "amount": 16000,
+        "status": "pending",
+        "idempotencyKey": "outbox-fin-7-2026-10-25",
+        "message": "Prezada Fernanda, lembrete programado referente à 2ª parcela dos honorários contratuais com vencimento em 25/10/2026 (R$ 16.000,00). Permanecemos à disposição."
+      }
+    ]
+  },
+  "telegramMessages": [
+    {
+      "id": "tg-1",
+      "sender": "coordenador",
+      "senderName": "Luana · Coordenadora (@DanielFelixAdvBot)",
+      "time": "09:15",
+      "text": "Bom dia, Dr. Daniel Felix! 🏛️ Operação iniciada. Coletas DJEN e DataJud verificadas por Breno. Temos 2 petições iniciais na sua mesa para revisão, 2 sugestões de prazo da Clara e 1 procuração preparada por Davi.",
+      "actions": [
+        {
+          "label": "⚖️ Ver Petições (2)",
+          "action": "petitions"
+        },
+        {
+          "label": "📅 Conferir Prazos (2)",
+          "action": "deadlines"
+        },
+        {
+          "label": "✍️ Ver Procurações",
+          "action": "contracts"
+        }
+      ]
+    },
+    {
+      "id": "tg-2",
+      "sender": "daniel",
+      "senderName": "Dr. Daniel Felix (Telegram)",
+      "time": "09:38",
+      "text": "/peticoes — Luana, como ficou a inicial da cliente Maria Carolina contra a LATAM?"
+    },
+    {
+      "id": "tg-3",
+      "sender": "coordenador",
+      "senderName": "Luana · Coordenadora (@DanielFelixAdvBot)",
+      "time": "09:40",
+      "text": "Dr. Daniel, a Maya (Redação) concluiu a v1.2 da Petição Inicial da Maria Carolina Mendes (R$ 3.840,00 danos materiais + R$ 15.000,00 danos morais) e o Noah (Revisão) já auditou as 2 jurisprudências do STJ e TJSP. Está pronta para sua revisão ou aprovação imediata:",
+      "actions": [
+        {
+          "label": "📄 Ler e Editar Petição PEC-001",
+          "openPetition": "pec-1"
+        },
+        {
+          "label": "✅ Aprovar PEC-001 Agora",
+          "approvePetition": "pec-1"
+        },
+        {
+          "label": "👤 Pasta de Maria Carolina",
+          "openClient": "cli-1"
+        }
+      ]
+    },
+    {
+      "id": "tg-4",
+      "sender": "coordenador",
+      "senderName": "Rui · Financeiro (via Telegram)",
+      "time": "10:05",
+      "text": "💰 Alerta Financeiro: Temos R$ 12.600,00 recebidos na semana e R$ 28.400,00 a receber. A parcela de Roberto Almeida Prado (R$ 5.900,00) venceu em 14/10 e preparei a mensagem de cobrança na fila (Outbox) aguardando sua autorização.",
+      "actions": [
+        {
+          "label": "💰 Abrir Painel Financeiro",
+          "action": "financeiro"
+        },
+        {
+          "label": "📲 Autorizar Cobrança no Outbox",
+          "sendOutbox": "out-1"
+        }
+      ]
+    }
+  ],
+  "telegramBotHandle": "@DanielFelixAdvBot",
+  "coordinatorName": "Luana"
+}

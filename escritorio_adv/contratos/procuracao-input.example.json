@@ -1,0 +1,13 @@
+{
+  "exampleOnly": true,
+  "idempotencyKey": "procuracao:CASE_FIXTURE:v1",
+  "caseRef": "CASE_FIXTURE",
+  "clientRef": "CLIENT_FIXTURE",
+  "lawyerRef": "LAWYER_FIXTURE",
+  "templateId": "PROCURACAO_MODELO_APROVADO_A_CONFIGURAR",
+  "templateVersion": null,
+  "fields": {"nome":"","documento":"","endereco":"","qualificacao":"","advogado":"","oab":""},
+  "authorizedPowerIds": [],
+  "sourceRefs": [],
+  "review": {"state":"waiting_human","approvedVersionHash":null}
+}

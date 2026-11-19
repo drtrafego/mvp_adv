@@ -1,0 +1,68 @@
+﻿ARAO MENDES — ESCRITÓRIO VIRTUAL
+Pacote de planejamento e base visual • 14/10/2026 • versão 1.1
+
+O QUE JÁ ESTÁ ENTREGUE
+1. prototipo/index.html: escritório em pixel art, com vista isométrica alternativa. Abra no navegador.
+   Bonecos, mesas, cadeiras, marca na parede, telão clicável, gráficos ampliados,
+   equipe por especialidade, cadastro de personagens, movimento e fluxos de exemplo.
+2. adaptadores/: código para instalar a vista dentro do mvp_adv e ler o acompanhamento
+   processual EXISTENTE, autenticado pela mesma sessão e sem copiar a carteira.
+3. planejamento/: decisões de arquitetura, reaproveitamento dos repositórios,
+   fluxos, integrações, infraestrutura e critérios de aceite para o executor.
+4. agentes/: registro de personagens e atribuições dos agentes operacionais novos.
+   Os sete agentes jurídicos do MVP continuam sendo reaproveitados.
+5. contratos/: contrato proposto da API, eventos e migração de apoio à execução.
+6. infra/: modelos e roteiro para um único Hetzner de 4 vCPU.
+7. PROMPT-PARA-O-AGENTE-EXECUTOR.txt: instrução pronta para entregar ao outro agente.
+
+ESTADO REAL
+O HTML offline é uma demonstração funcional. Seus números e casos são fictícios.
+O adaptador do MVP é código preparado para o executor instalar e validar no checkout.
+Não foi implantado no servidor, não se conectou ao banco do escritório e não envia mensagens.
+As integrações de execução, API de agentes, agenda, ZapSign e ZapConversa ainda exigem implementação.
+O repositório de contratos foi identificado pelo histórico como mvp_gestor_contratos,
+mas o caminho consultado retornou 404. Confirmar o endereço antes de desenvolver o adaptador real.
+
+PARA ABRIR A MAQUETE
+Abra prototipo/index.html por duplo clique. Não precisa instalar Node, abrir terminal,
+conectar conta ou fornecer chaves. Em “Fluxos”, teste o deslocamento dos personagens.
+Clique no telão para ampliar os gráficos e nos agentes Breno/Clara para o processual.
+
+PARA RECONSTRUIR O HTML
+Node 24+: node prototipo/build.mjs
+As fontes estão em prototipo/src/. O build empacota tudo em um único HTML.
+
+PARA O EXECUTOR INTEGRAR A VISTA
+Leia primeiro o prompt e o inventário dos repositórios.
+Exemplo, em um checkout local de trabalho:
+node adaptadores/instalar-visual.mjs /caminho/absoluto/mvp_adv
+O instalador cria três arquivos, recusa sobrescrever arquivos diferentes e não publica.
+A rota /escritorio usa ?mode=gabinete e lê /api/escritorio/estado com a sessão atual.
+Essa rota de leitura NÃO é a API remota de agentes que ainda deverá ser construída.
+
+REQUISITOS QUE NÃO PODEM SE PERDER
+• Tudo que executa a operação ficará no mesmo servidor Hetzner de 4 núcleos.
+• Acompanhamento processual e agentes jurídicos já existentes integram o escritório.
+• A tela não pode ser apenas uma imagem: objetos, agentes e tarefas são independentes.
+• O financeiro virá de uma instância própria do gerenciador_financeiro do cliente.
+• Contratos/procurações entram no fluxo com o repositório já existente, após acesso confirmado.
+• Telegram, bot, Claude Code e contas de integração são do cliente.
+• Gastão terá acesso de configuração separado do usuário operacional.
+• Daniel e Proprietário são os dois personagens humanos da mesa central.
+• O coordenador tem nome configurável; Luana é uma base reutilizável, não um nome imposto.
+• Revisão humana de peça e prazo é preservada no backend, com versão e autoria reais.
+
+ARQUIVOS DE TEXTO
+Os TXT estão em UTF-8 com BOM para facilitar a abertura no Bloco de Notas do Windows.
+Os arquivos de código seguem UTF-8. Não remova os acentos ao transferir o pacote.
+
+REFERÊNCIA DO REEL
+A versão 1.1 usa pixel art com salas, portas, corredores e balões de tarefa,
+conforme a referência enviada. Leia planejamento/06-REFERENCIA-DO-REEL.txt.
+O botão de vista permite alternar para o modelo isométrico.
+
+ATUALIZAÇÃO SOBRE A VERSÃO 1.0
+Se o visual anterior já foi instalado no checkout, confira o diff e atualize o HTML
+public/escritorio-visual/index.html. O instalador protege arquivos existentes diferentes;
+se ele recusar, preserve customizações do projeto e faça a atualização pelo diff.
+A rota de leitura e a página autenticada não precisam de alteração nesta revisão visual.

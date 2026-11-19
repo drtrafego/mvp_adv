@@ -1,0 +1,69 @@
+﻿CONTRATO DO RUNTIME — ESPECIFICAÇÃO PARA IMPLEMENTAR
+
+API de sessão já preparada: GET /api/escritorio/estado.
+API remota de agentes ainda proposta: /api/agent/v1, conforme office-api.openapi.json.
+Não transformar a rota de sessão em um endpoint público nem reutilizar cookie humano no agente.
+
+AUTENTICAÇÃO / AUTORIZAÇÃO
+Bearer de serviço resolve office_id, service_id e scopes no servidor.
+O corpo não pode escolher seu próprio escritório, aprovar a si mesmo nem conceder scopes.
+x-agent-actor é somente contexto de auditoria; Telegram user ID precisa vir do gateway validado.
+Atos humanos permanecem na sessão/autorização humana do Gabinete, com autoria verificável.
+No futuro multi-tenant, adicionar isolamento em todas as tabelas/consultas; o MVP é single-office.
+
+JOB
+input_version, job_type, context_refs, correlation_id, idempotency_key e serviço solicitante.
+Criar job e evento de fila na mesma transação. Chave igual + mesmo conteúdo = mesmo job;
+chave igual + conteúdo diferente = 409 IDEMPOTENCY_CONFLICT, sem alterar o job anterior.
+Worker reivindica com FOR UPDATE SKIP LOCKED, lease_owner e lease_until.
+Heartbeat renova lease; expiração devolve somente tarefas recuperáveis para queued.
+Resultado e evento final são gravados atomicamente. O mapa lê a sequência de eventos.
+Para efeitos externos, outbox e chave natural de negócio protegem a execução.
+Limite inicial global: 1 job pesado; jobs leves com limite pequeno e rate limit por provedor.
+Não chamar vários subagentes de pesquisa/redação em paralelo se a ordem exige o resultado anterior.
+
+ESTADOS E CONCLUSÃO
+queued: aguardando execução.
+running: lease vigente e worker responsável.
+waiting_human: depende de revisão/decisão real do advogado.
+waiting_external: assinatura, resposta do cliente, agenda ou provedor pendente.
+succeeded: resultado persistido e condições de conclusão atendidas.
+failed: erro classificado e visível; pode originar nova tentativa controlada.
+cancelled: invalidado por ação humana ou mudança de contexto.
+
+RETRY
+429/transiente: backoff com jitter e Retry-After quando disponível.
+Validação/403/modelo ausente: não repetir como falha transitória.
+Envio de mensagem/criação de agenda com timeout: estado uncertain e reconciliação
+pelo ID externo/idempotência do provedor. Se o provedor não permite reconciliação,
+levar para conferência; não prometer exactly-once de um serviço externo.
+Cancelamento/pagamento/alteração de audiência invalidam itens pendentes da outbox.
+
+WEBHOOK
+Validar secret/header e o contrato específico antes de aceitar.
+Persistir inbox durável e hash do payload, depois ACK rápido ao provedor.
+ACK falha → provedor pode repetir; mesma chave não cria novo efeito.
+Não usar doc_signed como evento final do documento; consultar estado agregado.
+Evitar despejar arquivos/tokens/dados pessoais nos logs de request.
+
+FERRAMENTAS DO COORDENADOR
+office.snapshot, jobs.create, jobs.get, dossiers.read, notices.read,
+deadline.propose, contract.prepare, signatures.status, calendar.propose,
+calendar.hold, calendar.confirm, message.prepare e finance.metrics são nomes lógicos.
+O executor implementa/registrará os nomes reais do MCP/API; não existem todos no MVP atual.
+Os agentes nativos do Forense deverão receber as ferramentas reais equivalentes,
+preservando leitura integral, vínculos, auditoria de citações e modo máquina.
+
+CALENDÁRIO
+Lock por lawyer_ref/calendar_ref na transação, checagem de overlap e expiração.
+Confirmar somente após aceite do cliente e reconsulta ao provedor.
+Timestamp UTC + timezone IANA. Dia civil de prazo permanece date, não meia-noite UTC reinterpretada.
+
+SEGURANÇA FUNCIONAL
+Texto de cliente/documento/site não é instrução para o agente. Recuperação é dado não confiável.
+Não habilitar shell irrestrito, sudo, leitura de outros clientes ou o modo humano do MCP
+para “fazer a automação funcionar”. O código do backend define a autoridade real.
+
+SQL
+001-office-runtime.sql é proposta adicional e não aplicada. Revisar migração, índices,
+retenção e permissões com o esquema real antes de usar. Ele não implementa o worker.

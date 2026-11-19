@@ -1,0 +1,138 @@
+﻿ARQUITETURA OPERACIONAL — TUDO NO MESMO HETZNER DE 4 vCPU
+
+VISÃO
+O escritório é a camada visual do Gabinete existente. A posição do boneco ajuda
+a entender o trabalho, mas a execução vem de uma tarefa persistida e verificável.
+O sistema continua utilizável pelo advogado mesmo quando o coordenador estiver parado.
+
+SERVIÇOS NO MESMO SERVIDOR
+1. Caddy: HTTPS e roteamento; somente 80/443 públicos, SSH administrativo restrito.
+2. Gabinete/Next: interface humana, escritório, carteira, processos, intimações, prazos,
+   peças, dossiês e futura API autenticada de tarefas. Porta interna 3001.
+3. Financeiro/Next: instalação própria do repositório financeiro. Porta interna 3002.
+4. Contratos: repositório existente após identificação; gerador de contrato/procuração.
+   Porta interna reservada 3003, sem inventar comando de inicialização antes da auditoria.
+5. Um worker de operação: fila, outbox, agenda, documentos e conectores. Sem cron duplicado.
+6. Um gateway coordenador: Claude Code/Telegram OU Hermes/Telegram, com conta do cliente.
+7. Postgres local: bancos e usuários separados para jurídico/financeiro/contratos, sem
+   dar acesso direto ao coordenador. A fila operacional pode ficar no banco do Gabinete.
+8. Arquivos privados locais: /var/lib/arao/documentos, com IDs, hashes e rotas autenticadas,
+   após implementar e validar o adaptador que substitui Blob.
+
+O mesmo servidor não significa mesmo usuário Linux, mesmo banco ou mesma credencial.
+Modelos de IA são remotos, pela conta/API do cliente. Não carregar um LLM local nessa máquina.
+Integrações externas continuam sendo serviços externos: tribunais, WhatsApp, ZapSign e modelo.
+
+FONTES DE VERDADE
+• Gabinete: cliente jurídico, processo, publicação, prazo, audiência, dossiê e versão da peça.
+• Financeiro: contrato financeiro, parcela, vencimento, recebimento e caixa.
+• Gerador de contratos: modelo aprovado, preenchimento, versão e saída documental.
+• Provedor de assinatura: estado de signatários/documento; guardar cópia final autorizada no dossiê.
+• Agenda escolhida pelo cliente: compromissos, disponibilidade e confirmação.
+• Fila do Gabinete: execução, eventos, tentativas, pendências e notificações.
+• Memória do coordenador: preferências e referências mínimas, não um banco paralelo de casos.
+
+CAMADAS DE COORDENAÇÃO
+Advogado chefe / proprietário humano
+→ Coordenador do escritório (nome configurável, canal Telegram do cliente)
+→ Operações: comercial; processual; contratos/assinaturas; financeiro; agenda; ética
+→ Forense coordena SOMENTE os especialistas jurídicos existentes.
+O coordenador não deve escrever uma inicial sozinho nem o Forense executar cobranças.
+
+IDENTIDADE E CONTA
+• Cliente cria/controla o bot e autentica sua própria conta no Claude Code oficial.
+• Seu ID numérico Telegram entra na allowlist. Os dois humanos do mapa não ganham
+  automaticamente acesso ao bot; Daniel/proprietário precisam de identidades verificadas.
+• Gastão: SSH de configuração, separado, revogável. Não usar sua assinatura/tokens na operação.
+• Usuário operacional sem sudo. Sudo serve para instalação/manutenção administrativas.
+• Conta humana no painel confirma atos humanos; credencial de máquina só propõe/prepara.
+• Nome/avatar/header de ator jamais concedem poderes de advogado.
+
+FLUXO 1 — CONTATO ATÉ INICIAL PARA REVISÃO
+1. ZapConversa entrega evento de nova mensagem. Validar a origem e deduplicar pelo ID real.
+2. SDR lê histórico autorizado e anexos, confirma vínculo do cliente e identifica área,
+   resumo, cronologia, fatos alegados, provas, urgência e informações que faltam.
+3. Closer prepara escopo/contratação segundo condições aprovadas pelo escritório;
+   dúvidas jurídicas, elegibilidade e promessa de resultado ficam com o advogado.
+4. Agente documental gera contrato e procuração usando o repo de contratos e modelos
+   aprovados. Poderes especiais exigem seleção explícita e conferência humana.
+5. Advogado revisa a versão documental; assinatura é solicitada pelo conector autorizado.
+6. Agente de assinatura consulta signatários e documento; somente o status final válido
+   permite marcar “assinado”. Guardar documento e evidência, sem depender de URL temporária.
+7. Dossiê reúne relato, documentos, vínculos confirmados, pendências, contrato e procuração.
+   A análise pode começar antes da contratação conforme política do advogado; isso não
+   autoriza envio/protocolo de uma peça nem elimina as pendências de representação.
+8. Forense aciona construtor-tese → pesquisador-juridico → redator-forense → revisor-juridico.
+9. Pesquisa só usa fontes recuperadas e verificadas. Número/relator/trecho e URL oficial
+   acompanham cada julgado. Fonte ausente impede citação afirmativa.
+10. Salvar minuta no registro da peça já existente, com vínculos, versão e hash.
+11. Daniel/advogado recebe a minuta editável/DOCX e lista de lacunas para revisar.
+12. Assinatura e protocolo judicial continuam humanos até existir outro projeto de
+    adaptador, aprovação exata e recibo verificável. Não automatizar protocolo neste escopo.
+
+FLUXO 2 — ACOMPANHAMENTO PROCESSUAL EXISTENTE
+1. O agendamento já existente chama os coletores do MVP; não criar um segundo coletor.
+2. Breno / andamentos-intimacoes acompanha carteira, DataJud, DJEN, saúde e reconciliação.
+3. Coleta grava fonte, horário, resultado completo/parcial e IDs de origem deduplicados.
+4. Movimentação é andamento; intimação/publicação é outra entidade. Não contar prazo
+   a partir de qualquer movimentação e não presumir acesso ao inteiro teor pelo DataJud.
+5. Inteiro teor da comunicação é lido por completo antes da análise. Lista truncada não basta.
+6. Clara / gestor-prazos identifica ato, rito, marco e calendário, chama o motor existente
+   e registra sugestão. Pendência/divergência deve aparecer no mapa e na fila.
+7. Advogado confirma/edita no próprio Gabinete. A origem humana e a versão não são sobrescritas.
+8. Lembretes usam o prazo validado e as políticas do escritório. Proximidade de uma
+   sugestão não confirmada gera alerta INTERNO de conferência, não data fatal afirmativa ao cliente.
+9. Nina trata comunicação ao cliente e call, consultando agenda/dossiê/advogado.
+10. Ao clicar Breno ou Clara, o escritório abre a carteira, publicações, saúde e prazos
+    que já existem. Cada item abre o registro original para revisão.
+
+FLUXO 3 — AUDIÊNCIA E CALL DE ALINHAMENTO
+Evento de audiência confirmado → processo/cliente/advogado responsável → dossiê pronto
+→ janela de preparação configurada → disponibilidade real na agenda → oferecer 2–3 horários
+→ aceite do cliente → reserva temporária com expiração → revalidar agenda e advogado
+→ confirmar evento e convite → registrar entrega do WhatsApp e do convite.
+
+Distinguir “proposta de horário”, “reserva”, “compromisso confirmado” e “mensagem entregue”.
+Usar UTC em timestamps e fuso IANA do escritório para exibição; não fixar UTC−3.
+O MVP atualmente usa America/Cuiaba; confirmar a praça/tribunal antes de alterar o fuso.
+Concorrência: lock por advogado/agenda, nova consulta antes da escrita e chave idempotente.
+Se provider não oferece reserva nativa, hold local reduz corrida, mas nova consulta e
+reconciliação continuam necessárias. Após timeout ao criar evento, consultar pelo ID externo
+antes de tentar novamente. Alteração/cancelamento da audiência invalida lembretes futuros.
+
+FLUXO 4 — CONTRATOS / PROCURAÇÃO / ASSINATURA
+Dados confirmados + modelo/versionamento + poderes autorizados + advogado/OAB
+→ documento em rascunho com hash → revisão humana → solicitação de assinatura
+→ eventos por signatário → consulta reconciliadora do documento → cópia final no dossiê.
+Telefone/CPF/nome isolado não basta para decidir vínculo entre pessoa e processo.
+Gerador deve devolver IDs e campos ausentes; nunca completar estado civil, profissão,
+endereço, CPF, OAB ou poderes com suposições.
+
+FLUXO 5 — FINANCEIRO
+Contratação gera proposta financeira vinculada ao cliente jurídico por external_id.
+Conferir correspondência antes de criar novo cliente/contrato no financeiro.
+Contas a receber, saldo e pagamentos vêm de um único livro, por período e moeda.
+Assinatura, fatura “paid”, confirmação de parcela e transação de caixa são conceitos
+diferentes no repositório; preservar as semânticas documentadas, sem duplicar receita.
+Preparar texto de cobrança → verificar título aberto e destinatário → outbox → envio
+→ resultado real. Falha/timeout não é “enviado”. Pagamento/cancelamento invalida fila pendente.
+
+FLUXO 6 — ÉTICA E OAB
+Personagem “Ética e OAB — apoio interno”, com área/seccional configuráveis.
+Pode apoiar checagem de publicidade, sigilo, conflitos e documentos, com fontes reais.
+Não é o TED oficial e não emite decisão disciplinar. O estado/seccional ainda não foi informado.
+
+EXECUÇÃO E MOVIMENTO
+Estado gráfico futuro deriva de job: queued=na estação; running=em atividade;
+waiting_human=mesa de revisão; waiting_external=aguardando; failed=pendência visível.
+completed só depois de o resultado persistir. Animação por si só não cria sucesso.
+O front-end observa eventos por SSE ou polling incremental; reconexão busca snapshot.
+Não transmitir conteúdo sensível inteiro ao front-end para movimentar um personagem.
+Na maquete, os estados são explicitamente simulados e salvos somente no navegador.
+
+POLÍTICA DE AUTONOMIA DO PRODUTO
+Rotinas de leitura e rascunho podem rodar automaticamente com credencial restrita.
+Mensagens operacionais e reservas seguem políticas aprovadas do escritório, destinatário
+verificado e idempotência. O advogado confirma prazos e versões de peças.
+TED, mérito, aceite de ciência no Domicílio, assinatura e protocolo são atos distintos;
+não dar esses poderes ao coordenador por acesso genérico ao terminal.

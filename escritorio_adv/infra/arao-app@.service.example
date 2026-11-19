@@ -1,0 +1,30 @@
+# MODELO para gabinete/financeiro em PERFIL 8 GB. Ajustar paths, usuários e memória medidos.
+# Copiar como arao-app@.service apenas depois de preparar cada aplicação.
+[Unit]
+Description=Arao Mendes app %i
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=arao-%i
+Group=arao-%i
+WorkingDirectory=/srv/arao/%i
+Environment=NODE_ENV=production
+EnvironmentFile=/etc/arao/%i.env
+ExecStart=/usr/local/bin/node /srv/arao/%i/node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port ${PORT}
+Restart=on-failure
+RestartSec=8
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/arao/%i/.next/cache
+MemoryHigh=750M
+MemoryMax=1100M
+CPUWeight=80
+TasksMax=160
+
+[Install]
+WantedBy=multi-user.target

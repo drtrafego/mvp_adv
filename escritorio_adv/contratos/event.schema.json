@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:arao-mendes:event:v1",
+  "title": "Evento normalizado proposto — não é payload nativo de provedor",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "type",
+    "source",
+    "sourceEventId",
+    "correlationId",
+    "receivedAt",
+    "refs",
+    "payload"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "type": {
+      "enum": [
+        "conversation.message_received",
+        "case.dossier_prepared",
+        "process.movement_collected",
+        "notice.collected",
+        "deadline.proposed",
+        "deadline.confirmed_by_human",
+        "hearing.confirmed",
+        "calendar.hold_created",
+        "calendar.booking_confirmed",
+        "signature.signer_signed",
+        "signature.document_completed",
+        "document.draft_prepared",
+        "petition.awaiting_human_review",
+        "finance.snapshot_updated",
+        "job.state_changed",
+        "message.delivery_updated"
+      ]
+    },
+    "source": {
+      "enum": [
+        "gabinete",
+        "zapconversa",
+        "zapsign",
+        "calendar",
+        "financeiro",
+        "contratos",
+        "runtime"
+      ]
+    },
+    "sourceEventId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "correlationId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "receivedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "refs": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "description": "Autenticar origem e validar payload específico por type antes da normalização. Nunca aceitar deadline.confirmed_by_human de credencial de máquina. Um evento de assinatura individual não implica documento completo."
+}

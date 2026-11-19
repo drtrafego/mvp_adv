@@ -1,0 +1,83 @@
+﻿ESCRITÓRIO ARAO MENDES — CONTRATO DO VISUAL
+
+DIREÇÃO VISUAL
+Escritório original em pixel art, visto de cima, com personagens vistos de frente,
+salas independentes e corredores, seguindo a referência do Reel enviada pelo usuário.
+Pisos claros, madeira, cadeiras, monitores e balões de tarefa integram a experiência.
+A vista isométrica em blocos continua disponível como alternativa no botão de vista.
+A marca tipográfica provisória ARAO MENDES pode ser substituída pelo arquivo oficial.
+Todos os elementos são vetores e código; nenhum sprite ou textura do vídeo foi copiado.
+
+PLANTA
+• Fundo esquerdo: comercial/recepção — SDR e closer, headsets e mesas de atendimento.
+• Fundo central: processual — andamentos/intimações, prazos e agenda/relacionamento.
+• Fundo direito: contratos/procurações e acompanhamento ZapSign.
+• Lado esquerdo: núcleo jurídico com os sete especialistas existentes do MVP.
+• Centro: mesa dos humanos Daniel (advogado) e Proprietário, e coordenador próximo.
+• Lado direito: gestão financeira ligada à instância própria do gerenciador_financeiro.
+• Frente direita: Ética e OAB — apoio interno, sem brasão ou representação oficial.
+• Parede de fundo: telão grande com métricas/gráfico; clique abre painel ampliado.
+• Corredores, cadeiras, monitores, plantas, biblioteca e entrada compõem o ambiente.
+
+INTERAÇÕES JÁ CODIFICADAS
+• Clique/teclado no boneco: identifica agente, função, especialidade e tarefa.
+• Detalhes do agente: atribuições concretas; Breno/Clara abrem acompanhamento processual.
+• Telão: janela ampliada de indicadores e gráficos com seletor de período e dados tabelados.
+• Filtros de setor destacam as pessoas correspondentes, preservando a planta.
+• Equipe: busca por nome/atribuição e filtro Geral/Consumidor/Cível/Penal/Ética e OAB.
+• Adicionar personagem: nome, função, setor, área, roupa, pele, cabelo, acessório, personalidade e rotina.
+• Perfis personalizados ficam no navegador; podem ser removidos na demonstração.
+• Zoom, centralização, arraste com mouse, alternância pixel/isométrico e tela cheia.
+• Pausa e respeito a prefers-reduced-motion; fluxos simulados com caminhada e histórico.
+• Três fluxos: contato até minuta, audiência/call e procuração/assinatura.
+• Modo Gabinete lê dados reais se o adaptador estiver instalado; falha não vira demo.
+
+LIMITES CONSCIENTES DA MAQUETE
+• Não possui execução real de agentes, envio de mensagens ou assinatura de documentos.
+• Os estados iniciais de trabalho e as métricas são exemplos, sempre identificados.
+• No modo real, os perfis permanecem “execução não conectada” enquanto não houver worker.
+• A planta demonstrativa tem capacidade finita. Produção deve abrir/expandir salas por setor
+  quando não houver estação livre. Não sobrepor personagens para aceitar mais cadastros.
+• Em produção, aparência, configuração de agentes e posições vão para o banco e são
+  controladas pela administração autenticada; localStorage não é armazenamento do escritório.
+• O acesso humano real e a conta Telegram não são definidos pelo boneco ou seu nome.
+
+IMPLEMENTAÇÃO
+prototipo/src/model.mjs: perfis, setores, métricas, fluxos e persistência de demonstração.
+prototipo/src/scene.mjs: seleção do renderer e vista isométrica.
+prototipo/src/pixel-scene.mjs: salas, sprites, móveis, telão e rotas da vista pixel.
+prototipo/src/app.mjs: interações, modais, fila visual, simulação e leitura do MVP.
+prototipo/src/style.css: interface responsiva e movimento.
+prototipo/src/shell.html: estrutura sem dependências externas.
+prototipo/build.mjs: gera HTML autocontido, sem necessidade de bundler.
+
+INTEGRAÇÃO INICIAL NO NEXT
+O adaptador usa iframe de mesma origem apenas como etapa de migração do visual.
+O HTML público contém somente código e dados de demo; dados reais chegam pela rota
+autenticada, sem token no URL ou no navegador. A rota de leitura verifica a sessão.
+O layout atual do Gabinete é preservado. Adicionar /escritorio à sidebar sem remover
+os atalhos processuais. Mais adiante, portar a casca para componentes React e manter
+o renderer isolado; não é necessário mudar a estética aprovada para fazer isso.
+
+ESTAÇÕES E PERSONAGENS EM PRODUÇÃO
+Usar IDs separados para agent, desk, room e job. Um agente troca de tarefa sem criar
+cópia do boneco; um humano continua único mesmo em várias telas. Mudança de setor
+deve liberar a estação anterior e reservar a nova. Coordenadas visuais nunca concedem escopos.
+O cadastro inclui especialidades múltiplas e características visuais; as permissões
+operacionais são concedidas pelo administrador em uma configuração independente.
+
+MÉTRICAS PARA O TELÃO FINAL
+Operação: processos acompanhados, intimações sem análise, sugestões de prazo pendentes,
+coletas falhas/parciais, prazos em 7 dias, minutas aguardando revisão e tempo na fila.
+Comercial: contatos recebidos, triados, propostas e contratos, por período/origem.
+Assinatura: documentos enviados, pendentes, concluídos e vencidos, por documento/signatário.
+Agenda: audiências próximas, calls pendentes e confirmadas, conflito/indisponibilidade.
+Financeiro: recebido real, a receber, vencido e caixa, com período e moeda explícitos.
+Equipe: tarefa atual, execução recente, erro, dependência externa e revisão humana.
+Nunca apresentar “taxa de êxito” ou valor de causa como receita/resultado garantido.
+
+VALIDAÇÃO VISUAL
+A cena vetorial foi renderizada e inspecionada no preparo do pacote.
+A lógica de interação foi exercitada em DOM simulado; isso não substitui teste de
+layout, foco, tela cheia, toque, animação e contraste em navegador real.
+O executor deve conferir 1440×900, 1920×1080 e celular de 390 px, além de movimento reduzido.

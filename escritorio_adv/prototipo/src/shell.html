@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101a22"><meta name="description" content="Escritório Virtual de Advocacia Daniel Felix — Operado via Telegram. Clientes, Petições, Processos, Prazos, Procurações e Financeiro.">
+<title>Daniel Felix · Escritório Virtual de Advocacia</title>
+<style>/*__CSS__*/</style>
+</head>
+<body>
+<div class="app">
+  <nav class="rail" aria-label="Navegação principal">
+    <a class="monogram" href="#" data-action="home" aria-label="Daniel Felix, início">DF<span>ADV</span></a>
+    <button class="nav-button active" data-action="home" title="Escritório"><span data-icon="office"></span><span>Escritório</span></button>
+    <button class="nav-button" data-action="telegram" title="Operação no Telegram"><span data-icon="telegram"></span><span>Telegram</span></button>
+    <button class="nav-button" data-action="clients" title="Controle de Clientes e Dossiês"><span data-icon="people"></span><span>Clientes</span></button>
+    <button class="nav-button" data-action="petitions" title="Petições e Minutas Jurídicas"><span data-icon="file"></span><span>Petições</span></button>
+    <button class="nav-button" data-action="processes" title="Processos, Intimações e Prazos"><span data-icon="scale"></span><span>Processos</span></button>
+    <button class="nav-button" data-action="contracts" title="Contratos, Procurações e ZapSign"><span data-icon="check"></span><span>Contratos</span></button>
+    <button class="nav-button" data-action="financeiro" title="Gestão Financeira e Honorários"><span data-icon="wallet"></span><span>Financeiro</span></button>
+    <button class="nav-button" data-action="team" title="Equipe e Agentes"><span data-icon="flow"></span><span>Equipe</span></button>
+    <button class="nav-button" data-action="metrics" title="Métricas e Telão"><span data-icon="chart"></span><span>Métricas</span></button>
+    <div class="rail-spacer"></div>
+    <button class="nav-button" data-action="integrations" title="Conexões e Bot"><span data-icon="plug"></span><span>Conexões</span></button>
+    <button class="nav-button" data-action="help" title="Como usar"><span data-icon="help"></span><span>Ajuda</span></button>
+    <div class="rail-avatar" title="Dr. Daniel Felix · Direção">DF</div>
+  </nav>
+  <div class="workspace">
+    <header class="topbar">
+      <div class="breadcrumb">DANIEL FELIX ADVOCACIA <span>/</span> ESCRITÓRIO VIRTUAL OPERADO NO TELEGRAM</div>
+      <div class="topbar-right">
+        <button class="outline-button" id="btn-toggle-privacy" data-action="toggle-privacy" style="padding:5px 10px;font-size:12px;border-radius:20px;display:flex;align-items:center;gap:6px"><span data-icon="eye"></span><span id="privacy-label">Modo LGPD</span></button>
+        <button class="tg-status-pill" data-action="telegram"><span class="tg-dot"></span><span>@DanielFelixAdvBot · ONLINE</span></button>
+        <span class="demo-badge"><i></i>OPERAÇÃO INTERATIVA</span>
+        <span class="date" id="date-label"></span>
+        <button class="icon-button" data-action="settings" aria-label="Configurações da maquete"><span data-icon="settings"></span></button>
+      </div>
+    </header>
+    <main>
+      <div class="page-heading">
+        <div>
+          <div class="eyebrow">ESCRITÓRIO VIRTUAL DE ADVOCACIA · OPERADO NO TELEGRAM</div>
+          <h1>Dr. Daniel Felix. <span>Toda a banca no seu comando.</span></h1>
+          <p>Comande seus agentes pelo Telegram, revise petições iniciais, controle clientes, prazos processuais, procurações ZapSign e honorários em um único lugar.</p>
+        </div>
+        <div class="heading-actions">
+          <button class="outline-button" data-action="telegram"><span data-icon="telegram"></span>Comando Telegram</button>
+          <button class="outline-button" data-action="petitions"><span data-icon="file"></span>Ver Petições</button>
+          <button class="outline-button" data-action="clients"><span data-icon="people"></span>Ver Clientes</button>
+          <button class="outline-button" data-action="financeiro"><span data-icon="wallet"></span>Financeiro</button>
+          <button class="primary-button" data-action="new-agent"><span data-icon="plus"></span>Adicionar agente</button>
+        </div>
+      </div>
+      <div class="kpi-grid" id="kpis"></div>
+      <div class="office-layout">
+        <section class="office-card" aria-label="Mapa interativo do escritório">
+          <div class="office-toolbar"><div class="office-title"><span class="live-dot"></span><strong>Planta do Escritório Daniel Felix</strong><span class="muted" id="agent-count"></span></div><div class="view-controls"><button class="small-button view-toggle" id="view-toggle" data-action="toggle-view">Vista isométrica</button><button class="small-button" id="pause-button" data-action="pause"><span data-icon="pause"></span><span>Pausar</span></button><button class="icon-button" data-action="fullscreen" aria-label="Tela cheia"><span data-icon="expand"></span></button></div></div>
+          <div class="sector-tabs" id="sector-tabs" role="group" aria-label="Filtrar setor"></div>
+          <div class="stage" id="stage"><div class="stage-hint"><span data-icon="pointer"></span>Clique nos bonecos, nas salas ou no telão para operar cada setor</div><div id="scene-container"></div><div class="scene-caption"><span class="gold-dot"></span><span id="scene-view-label">PIXEL ART · SALAS POR SETOR</span></div><div class="zoom-controls"><button data-action="zoom-out" aria-label="Diminuir zoom">−</button><button data-action="zoom-reset" id="zoom-label" aria-label="Centralizar vista">100%</button><button data-action="zoom-in" aria-label="Aumentar zoom">+</button></div></div>
+          <div class="office-footer"><div class="legend"><span><i class="green"></i>Em atividade</span><span><i class="gold"></i>Revisão humana (Dr. Daniel)</span><span><i class="blue"></i>Aguardando</span></div><div class="office-footer-links"><button class="text-button" data-action="workflows">Simular fluxo completo <span>↗</span></button></div></div>
+        </section>
+        <aside class="right-column" aria-label="Detalhes da operação">
+          <section class="card tg-dock" id="telegram-dock"></section>
+          <section class="inspector card" id="inspector"></section>
+          <section class="card tasks-card">
+            <div class="section-heading"><div><div class="eyebrow">DECISÕES HUMANAS</div><h2>Na mesa do Dr. Daniel Felix</h2></div><span class="count-badge">4</span></div>
+            <div id="review-queue"></div>
+            <button class="text-button queue-action" data-action="reviews">Abrir central de revisões <span>↗</span></button>
+          </section>
+        </aside>
+      </div>
+      <section class="activity card"><div class="section-heading"><div class="inline"><span class="live-dot"></span><h2>Linha do tempo operacional (Telegram & Agentes)</h2><span class="muted">Atividades recentes</span></div><button class="text-button" data-action="logs">Ver histórico completo ↗</button></div><div class="activity-grid" id="activity-feed"></div></section>
+      <footer class="page-footer"><span>DANIEL FELIX ADVOCACIA · ESCRITÓRIO VIRTUAL OPERADO NO TELEGRAM</span><span>Clientes • Petições • Processos • Contratos ZapSign • Financeiro</span></footer>
+    </main>
+  </div>
+</div>
+<dialog id="modal" aria-labelledby="modal-title"><div id="modal-body"></div></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script type="module">/*__SCRIPT__*/</script>
+</body></html>

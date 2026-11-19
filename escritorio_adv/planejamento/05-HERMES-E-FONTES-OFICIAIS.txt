@@ -1,0 +1,101 @@
+﻿PESQUISA TÉCNICA — FONTES PRIMÁRIAS CONSULTADAS EM 14/10/2026
+
+HERMES + TELEGRAM + CLAUDE CODE
+É tecnicamente possível. O gateway Telegram usa bot token e allowlist de usuários.
+O cliente controla o bot e autentica o Claude Code oficial na própria instância.
+Não é preciso usar a conta pessoal de Gastão para acessar o Telegram do cliente.
+
+O catálogo Hermes contém claude-subscription-directsdk, plugin oficial EXPERIMENTAL,
+v0.3.3 na consulta, com Hermes mínimo 0.21.4. Ele usa o executável oficial não modificado,
+herdando a conta em que esse CLI está autenticado; não recebe uma chave própria de Claude.
+O loop, ferramentas, memória e permissões permanecem no Hermes. As fontes de settings,
+skills e ferramentas nativas do Claude Code são desabilitadas nesse caminho de provider.
+Portanto, NÃO basta instalar o plugin para executar .claude/agents do MVP.
+É necessário um dispatcher/worker jurídico explícito ou usar diretamente o runtime nativo.
+
+A documentação Anthropic atual informa que o plano de mudança anunciado em junho foi
+pausado e que SDK/claude -p/apps terceiros ainda usam os limites da assinatura.
+Não prometer crédito específico, ausência de limite ou cobrança extra impossível.
+A documentação de compliance distingue o usuário final usando o binário oficial de
+um desenvolvedor intermediando login/assinatura. O cliente deve fazer o login oficial;
+para backend comercial próprio, API key/provedor faturado ao cliente simplifica a integração.
+
+CAMINHO RECOMENDADO DE ENTREGA
+Primeiro preservar o fluxo Claude Code+Telegram já presente na base Luana e o squad do MVP,
+com ferramentas restritas e fila. Avaliar Hermes como gateway substituto em piloto separado.
+O contrato da aplicação não depende de qual gateway foi escolhido.
+Se o cliente preferir Hermes desde o início, usar o mesmo contrato e provar o dispatcher;
+não ativar dois pollers com o mesmo token nem rotular o provider experimental como produção validada.
+
+COMANDOS DOCUMENTADOS, PARA A INSTÂNCIA DO CLIENTE
+claude auth login
+hermes plugins install claude-subscription-directsdk
+hermes model
+hermes gateway setup
+hermes gateway install
+Usar as versões compatíveis verificadas pelo executor e seguir a saída do CLI.
+O login é feito pelo cliente no fluxo oficial. Não copiar credenciais da conta de Gastão.
+O serviço do usuário pode continuar no boot com configuração administrativa de lingering.
+Não deixar o agente como root ou com sudo amplo para compensar problemas de instalação.
+
+FONTES HERMES / ANTHROPIC
+https://hermes-agent.nousresearch.com/docs/plugins/claude-subscription-directsdk
+https://hermes-agent.nousresearch.com/docs/user-guide/messaging/telegram
+https://hermes-agent.nousresearch.com/docs/user-guide/messaging
+https://code.claude.com/docs/en/channels
+https://code.claude.com/docs/en/legal-and-compliance
+https://support.claude.com/en/articles/15036540-use-the-claude-agent-sdk-with-your-claude-plan
+
+CNJ / ACOMPANHAMENTO
+DataJud é consulta de metadados processuais públicos; não é webhook nacional, inteiro
+teor universal, canal de peticionamento ou garantia de atualidade para contar prazo.
+Preservar a atribuição CNJ/DataJud quando seus dados forem usados no painel.
+DJEN e Domicílio têm finalidades diferentes. Consulta de uma comunicação e ato de ciência
+não devem se misturar. Domicílio só entra com credenciais e contrato atuais autorizados.
+O plano usa os coletores já existentes no MVP e exige observar falha/parcialidade.
+Não congelar regras nacionais de prazo ou de remessa com base em tutorial antigo.
+
+https://www.cnj.jus.br/sistemas/datajud/api-publica/
+https://datajud-wiki.cnj.jus.br/api-publica/
+https://datajud-wiki.cnj.jus.br/api-publica/acesso/
+https://www.cnj.jus.br/programas-e-acoes/processo-judicial-eletronico-pje/comunicacoes-processuais/
+https://comunicaapi.pje.jus.br/
+https://docs.pdpj.jus.br/servicos-negociais/domicilio-judicial-eletronico/
+
+Algumas páginas CNJ/Swagger retornaram bloqueio 403 na leitura integral desta pesquisa.
+Foi possível conferir referências oficiais e o código dos coletores, mas não validar
+parâmetros, quota ou SLA do provedor em produção. O executor confirma essas condições.
+
+ZAPSIGN
+Webhook é POST JSON com retorno 200 e retentativas. A documentação permite headers
+de autenticação. Não presumir assinatura HMAC nativa sem contrato documentado.
+doc_signed representa assinatura de um signatário; conferir status final do documento.
+Ingestão durável antes do ACK, deduplicação, processamento em fila e consulta reconciliadora.
+URLs de arquivo podem expirar; a cópia final autorizada deve ir ao dossiê privado.
+Acesso a webhooks não comprova que todos os endpoints estejam liberados no plano do cliente.
+
+https://docs.zapsign.com.br/webhooks/como-funciona
+https://docs.zapsign.com.br/webhooks/criar-webhook
+https://docs.zapsign.com.br/webhooks/eventos
+https://docs.zapsign.com.br/webhooks/eventos/document/documento-assinado
+
+ZAPCONVERSA
+O nome não identifica de forma inequívoca a instalação. Foram encontrados serviços
+com nomes semelhantes; não adotar automaticamente BotConversa, Evolution ou Cloud API.
+Precisamos da URL da instalação e documentação real para histórico, anexos, eventos,
+envio, autenticação e confirmação de entrega. O contrato normalizado pode ser implementado antes.
+
+JURISPRUDÊNCIA E OAB
+O pesquisador deve recuperar a fonte oficial do julgado, conferir o conteúdo e registrar
+proveniência. Um portal público não comprova API irrestrita para automação.
+O módulo Ética e OAB é apoio interno; o TED oficial tem atribuições próprias e não é um bot da banca.
+
+https://www.stj.jus.br/sites/portalp/paginas/Sob-medida/Advogado/Jurisprudencia/Pesquisa-de-Jurisprudencia.aspx
+https://portal.stf.jus.br/jurisprudencia
+https://www.oab.org.br/jurisprudencia/ementarios
+https://www.oab.org.br/noticia/62704/oab-aprova-recomendacoes-para-uso-de-ia-na-pratica-juridica
+
+NEXT / ROTA DE LEITURA
+Documentação oficial de route handlers foi consultada para o adaptador de sessão:
+https://nextjs.org/docs/app/api-reference/file-conventions/route
+O código do pacote não adiciona autenticação remota de agentes por esse endpoint.
