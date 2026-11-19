@@ -71,6 +71,17 @@ async function loadOrInitState() {
             parsed.financeiro.outbox = fresh.financeiro.outbox;
           }
         }
+        if (Array.isArray(parsed.agents)) {
+          for (const fa of fresh.agents) {
+            const pa = parsed.agents.find(x => x.id === fa.id);
+            if (pa && !pa.custom) {
+              pa.name = fa.name;
+              pa.role = fa.role;
+              pa.color = fa.color;
+              pa.accessory = fa.accessory;
+            }
+          }
+        }
         return parsed;
       }
     } catch (e) {

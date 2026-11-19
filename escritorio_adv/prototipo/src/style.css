@@ -323,6 +323,8 @@ h1 span{color:#b8c6cc}
 .office-title .muted{border-left:1px solid #41505a;padding-left:10px}
 .live-dot,.gold-dot{height:8px;width:8px;border-radius:50%;display:inline-block;background:#7fb29a;box-shadow:0 0 10px #7fb29a50;flex-shrink:0}
 .gold-dot{background:var(--gold)}
+[hidden]{display:none!important}
+.view-controls [hidden]{display:none!important}
 .view-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .view-toggle{color:#ecd39f}
 
@@ -583,6 +585,17 @@ h1 span{color:#b8c6cc}
 .task-now p{font-size:14px;line-height:1.55;color:#dce4e3;margin-top:6px}
 .inspector-actions{display:flex;gap:8px}
 .inspector-actions .outline-button{flex:1}
+
+.hab-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;letter-spacing:.5px;text-transform:uppercase}
+.hab-badge.main{background:#234739;color:#a8eec7;border:1px solid #4ca37d55}
+.hab-badge.sub{background:#283548;color:#9ec5e8;border:1px solid #486a8a55}
+.hab-badge.human{background:#4a3821;color:#f3d79b;border:1px solid #a87e4155}
+.agent-room-tag{font-size:11.5px;color:#d5b478;margin-top:4px;display:flex;align-items:center;gap:4px;font-weight:500}
+.hab-act-icon{display:inline-block;margin-right:4px;font-size:14px}
+.inspector-hab-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#0e1921;border:1px solid #243542;border-radius:7px;padding:10px 12px;margin-top:12px}
+.hab-stat-item{display:flex;flex-direction:column}
+.hab-stat-item small{font-size:10px;color:#8fa2af;text-transform:uppercase;letter-spacing:.5px}
+.hab-stat-item strong{font-size:12.5px;color:#e2ecf0;margin-top:2px}
 
 /* Na Mesa do Advogado (Fila de Revisão) */
 .tasks-card{padding:20px}

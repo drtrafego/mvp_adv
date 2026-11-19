@@ -329,6 +329,8 @@ h1 span{color:#b8c6cc}
 .office-title .muted{border-left:1px solid #41505a;padding-left:10px}
 .live-dot,.gold-dot{height:8px;width:8px;border-radius:50%;display:inline-block;background:#7fb29a;box-shadow:0 0 10px #7fb29a50;flex-shrink:0}
 .gold-dot{background:var(--gold)}
+[hidden]{display:none!important}
+.view-controls [hidden]{display:none!important}
 .view-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .view-toggle{color:#ecd39f}
 
@@ -589,6 +591,17 @@ h1 span{color:#b8c6cc}
 .task-now p{font-size:14px;line-height:1.55;color:#dce4e3;margin-top:6px}
 .inspector-actions{display:flex;gap:8px}
 .inspector-actions .outline-button{flex:1}
+
+.hab-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;letter-spacing:.5px;text-transform:uppercase}
+.hab-badge.main{background:#234739;color:#a8eec7;border:1px solid #4ca37d55}
+.hab-badge.sub{background:#283548;color:#9ec5e8;border:1px solid #486a8a55}
+.hab-badge.human{background:#4a3821;color:#f3d79b;border:1px solid #a87e4155}
+.agent-room-tag{font-size:11.5px;color:#d5b478;margin-top:4px;display:flex;align-items:center;gap:4px;font-weight:500}
+.hab-act-icon{display:inline-block;margin-right:4px;font-size:14px}
+.inspector-hab-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#0e1921;border:1px solid #243542;border-radius:7px;padding:10px 12px;margin-top:12px}
+.hab-stat-item{display:flex;flex-direction:column}
+.hab-stat-item small{font-size:10px;color:#8fa2af;text-transform:uppercase;letter-spacing:.5px}
+.hab-stat-item strong{font-size:12.5px;color:#e2ecf0;margin-top:2px}
 
 /* Na Mesa do Advogado (Fila de Revisão) */
 .tasks-card{padding:20px}
@@ -1139,7 +1152,7 @@ dialog::backdrop{background:#07111ad9;backdrop-filter:blur(6px)}
       <div class="kpi-grid" id="kpis"></div>
       <div class="office-layout">
         <section class="office-card" aria-label="Mapa interativo do escritório">
-          <div class="office-toolbar"><div class="office-title"><span class="live-dot"></span><strong>Planta do Escritório Daniel Felix</strong><span class="muted" id="agent-count"></span></div><div class="view-controls"><button class="small-button" id="btn-habblaud-view" data-action="set-habblaud" hidden>🎮 Habblaud 3D</button><button class="small-button view-toggle" id="view-toggle" data-action="toggle-view">Vista isométrica</button><button class="small-button" id="btn-habblaud-daylight" data-action="toggle-daylight" hidden title="Alternar iluminação Dia / Noite">☀️ Dia</button><button class="small-button" id="pause-button" data-action="pause"><span data-icon="pause"></span><span>Pausar</span></button><button class="icon-button" data-action="fullscreen" aria-label="Tela cheia"><span data-icon="expand"></span></button></div></div>
+          <div class="office-toolbar"><div class="office-title"><span class="live-dot"></span><strong>Planta do Escritório Daniel Felix</strong><span class="muted" id="agent-count"></span></div><div class="view-controls"><button class="small-button" id="btn-habblaud-view" data-action="set-habblaud" hidden>🎮 Habblaud 3D</button><button class="small-button view-toggle" id="view-toggle" data-action="toggle-view" hidden>Vista isométrica</button><button class="small-button" id="btn-habblaud-daylight" data-action="toggle-daylight" hidden title="Alternar iluminação Dia / Noite">☀️ Dia</button><button class="small-button" id="pause-button" data-action="pause"><span data-icon="pause"></span><span>Pausar</span></button><button class="icon-button" data-action="fullscreen" aria-label="Tela cheia"><span data-icon="expand"></span></button></div></div>
           <div class="sector-tabs" id="sector-tabs" role="group" aria-label="Filtrar setor"></div>
           <div class="stage" id="stage"><div class="stage-hint"><span data-icon="pointer"></span>Clique nos bonecos, nas salas ou no telão para operar cada setor</div><div id="scene-container"></div><div class="scene-caption"><span class="gold-dot"></span><span id="scene-view-label">PIXEL ART · SALAS POR SETOR</span></div><div class="zoom-controls"><button data-action="zoom-out" aria-label="Diminuir zoom">−</button><button data-action="zoom-reset" id="zoom-label" aria-label="Centralizar vista">100%</button><button data-action="zoom-in" aria-label="Aumentar zoom">+</button></div></div>
           <div class="office-footer"><div class="legend"><span><i class="green"></i>Em atividade</span><span><i class="gold"></i>Revisão humana (Dr. Daniel)</span><span><i class="blue"></i>Aguardando</span></div><div class="office-footer-links"><button class="text-button" data-action="workflows">Simular fluxo completo <span>↗</span></button></div></div>
@@ -2066,16 +2079,16 @@ const DEFAULT_AGENTS = [
   agent('movimentacoes','Breno','Andamentos & intimações','administrativo','Geral',510,290,'#d3a16a','Acompanhando DataJud e DJEN do MVP','working','glasses'),
   agent('contratos','Davi','Contratos & procurações','contratos','Geral',830,195,'#93a6e0','Montando procuração a partir de modelo','review','tie'),
   agent('assinaturas','Bia','Assinaturas · ZapSign','contratos','Geral',995,230,'#738bc9','Aguardando os demais signatários','waiting','glasses'),
-  agent('forense','Forense','Coordenador jurídico','juridico','Geral',90,530,'#ac91cf','Distribuindo as etapas da minuta','working','tie'),
+  agent('forense','Dr. Forense','Coordenador Jurídico','juridico','Geral',90,530,'#ac91cf','Distribuindo as etapas da minuta','working','tie'),
   agent('tese','Íris','Construtora de tese','juridico','Consumidor',205,530,'#a787c7','Organizando fatos, prova e pedidos','working','glasses'),
   agent('pesquisador','Theo','Pesquisa jurídica','juridico','Cível',320,530,'#978ac9','Conferindo fontes oficiais de julgados','working','glasses'),
   agent('analista','Eva','Análise documental','juridico','Penal',90,650,'#baa3dc','Lendo o dossiê completo','waiting','tie'),
   agent('estrategista','Otto','Estratégia de defesa','juridico','Penal',205,650,'#9d8fbb','Organizando riscos da defesa','working','tie'),
   agent('redator','Maya','Redação forense','juridico','Consumidor',320,650,'#c19ed8','Preparando uma inicial em rascunho','working','glasses'),
   agent('revisor','Noah','Revisão jurídica','juridico','Cível',205,760,'#b19ccb','Auditoria de citações da minuta','review','glasses'),
-  agent('coordenador','Coordenador','Orquestração · nome a definir','diretoria','Geral',550,400,'#d6b673','Consolidando a operação para o advogado','working','gold'),
-  agent('daniel','Daniel','Advogado humano','diretoria','Geral',480,560,'#e5d7bc','Revisão de minutas e decisões','review','tie',true),
-  agent('proprietario','Proprietário','Direção humana','diretoria','Geral',635,560,'#d7b273','Acompanhando a operação','available','gold',true),
+  agent('coordenador','Luana','Coordenadora Geral · IA','diretoria','Geral',550,400,'#22495a','Consolidando a operação para o advogado','working','headset'),
+  agent('daniel','Dr. Daniel Felix','Advogado Titular','diretoria','Geral',480,560,'#e5d7bc','Revisão de minutas e decisões','review','tie',true),
+  agent('proprietario','Sócio Diretor','Direção Executiva','diretoria','Geral',635,560,'#d7b273','Acompanhando a operação','available','gold',true),
   agent('financeiro','Rui','Financeiro · honorários','financeiro','Geral',910,540,'#7cb795','Conferindo honorários a receber','working','glasses'),
   agent('etica','Elisa','Ética e OAB · apoio interno','etica','Ética e OAB',910,780,'#c598aa','Conferindo comunicação e sigilo','available','glasses'),
 ];
@@ -2511,7 +2524,7 @@ const PixelScene=(()=>{
  const point=(x,y,z=0)=>[85+x*1.15,130+y*.95-z];
  const r=(x,y,w,h,c,extra='')=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}" ${extra}/>`;
  const text=(x,y,t,size=10,c='#d8d7ca',extra='')=>`<text x="${x}" y="${y}" fill="${c}" font-size="${size}" font-family="monospace" ${extra}>${e(t)}</text>`;
- const longHair=new Set(['sdr','agenda','tese','analista','redator','assinaturas','etica']);
+ const longHair=new Set(['sdr','agenda','tese','analista','redator','assinaturas','etica','coordenador']);
  function sprite(a){
   const shirt=a.color||'#a58db9',skin=a.skin||'#cf9873',hair=a.hair||'#372b27';
   let s=`<ellipse cx="0" cy="4" rx="17" ry="5" fill="#263129" opacity=".22"/><g class="body-bob" shape-rendering="crispEdges">`;
@@ -2989,11 +3002,15 @@ class OfficeApp{
     stage.classList.toggle('pixel-view',!isHab&&this.state.view!=='iso');
     const fr=$('#habblaud-frame');if(fr)fr.hidden=!isHab;
     const habBtn=$('#btn-habblaud-view');
-    if(habBtn){habBtn.hidden=!this.canUseHabblaud;habBtn.classList.toggle('active-engine',isHab);}
+    if(habBtn)habBtn.hidden=true;
+    const viewToggle=$('#view-toggle');
+    if(viewToggle){
+      viewToggle.hidden=this.canUseHabblaud;
+      viewToggle.textContent=isHab?'Planta 2D':(this.state.view==='iso'?'Vista pixel':'Vista isométrica');
+    }
     const dayBtn=$('#btn-habblaud-daylight');
     if(dayBtn){dayBtn.hidden=!isHab;dayBtn.textContent=this.habblaudDaylight==='night'?'🌙 Noite':'☀️ Dia';}
     $('#scene-view-label').textContent=isHab?'HABBLAUD 3D · 6 SALAS & 19 AGENTES':(this.state.view==='iso'?'VISTA ISOMÉTRICA':'PIXEL ART · SALAS POR SETOR');
-    $('#view-toggle').textContent=isHab?'Planta 2D':(this.state.view==='iso'?'Vista pixel':'Vista isométrica');
     if(this.canUseHabblaud)this.syncHabblaud();
   }
   renderTelegramDock(){
@@ -3044,6 +3061,27 @@ class OfficeApp{
   }
   renderInspector(){
     const a=this.state.agents.find(x=>x.id===this.selected)||this.state.agents[0],c=STATUS_COLORS[a.status];
+    const preset=AGENT_PRESETS[a.id];
+    const displayName=preset?.displayName||a.name;
+    const kind=a.human?'human':(preset?.kind||(a.custom?'sub':'main'));
+    const kindLabel=a.human?'Responsável Humano':(kind==='main'?'Orquestrador (Main)':'Subagente');
+    const actIcon=preset?.icon||(a.human?'⚖️':'🤖');
+    const roomNames={
+      diretoria:'Diretoria · Dr. Daniel',
+      juridico:'Núcleo Jurídico',
+      comercial:'Comercial & Clientes',
+      administrativo:'Processual & Prazos',
+      contratos:'Contratos & ZapSign',
+      financeiro:'Financeiro & Caixa',
+      etica:'Ética e OAB'
+    };
+    const roomName=roomNames[a.sector]||'Gabinete Geral';
+    const idx=Math.max(0,this.state.agents.findIndex(x=>x.id===a.id));
+    const toolCalls=24+idx*7;
+    const tokensIn=(18+idx*2.5).toFixed(1);
+    const tokensOut=(4.2+idx*0.7).toFixed(1);
+    const squadRole=kind==='human'?'Direção da Banca':(kind==='main'?(a.id==='coordenador'?'Toda a Banca (19 agentes)':a.id==='forense'?'6 subagentes jurídicos':'Líder do Setor'):'Subagente Especialista');
+
     const moduleBtn={
       sdr:['clients','Abrir Clientes & Triagem ↗'],
       closer:['clients','Abrir Clientes & Propostas ↗'],
@@ -3060,11 +3098,48 @@ class OfficeApp{
       movimentacoes:['processual','Abrir Processos & DJEN ↗'],
       controladoria:['deadlines','Abrir Controle de Prazos ↗'],
       agenda:['processual','Abrir Agenda & Audiências ↗'],
-      coordenador:['telegram','Abrir Comando Telegram ↗'],
+      coordenador:['telegram','Abrir Comando no Telegram ↗'],
       daniel:['petitions','Revisar Petições na Mesa ↗'],
       proprietario:['financeiro','Ver Resultados & Caixa ↗']
     }[a.id];
-    $('#inspector').innerHTML=`<div class="inspector-label"><span>${icon(a.human?'people':'flow')} ${a.human?'RESPONSÁVEL HUMANO':'AGENTE SELECIONADO'}</span><span style="color:${a.color}">●</span></div><div class="agent-profile"><div class="avatar-tile">${portrait(a)}</div><div><h2>${esc(a.name)}</h2><div class="agent-role">${esc(a.role)}</div></div></div><span class="status-pill" style="color:${c};border-color:${c}45"><i></i>${esc(STATES[a.status])}</span><div class="inspector-info"><div><div class="mini-label">SETOR</div><div class="info-value">${esc(SECTORS[a.sector].short)}</div></div><div><div class="mini-label">ESPECIALIDADE</div><div class="info-value">${esc(a.area)}</div></div></div><div class="task-now"><div class="mini-label">${this.live?'ESTADO DA INTEGRAÇÃO':'TAREFA ATUAL'}</div><p>${esc(a.task)}</p></div><div class="inspector-actions"><button class="outline-button" data-open-agent="${esc(a.id)}">Ver atribuições ${icon('arrow')}</button><button class="icon-button" data-action="team" aria-label="Ver equipe">${icon('people')}</button></div>${moduleBtn?`<button class="text-button" data-action="${moduleBtn[0]}" style="margin-top:14px">${moduleBtn[1]}</button>`:''}`;
+
+    $('#inspector').innerHTML=`
+      <div class="inspector-label">
+        <span>${icon(a.human?'people':'flow')} ${a.human?'RESPONSÁVEL HUMANO':'AGENTE SELECIONADO'}</span>
+        <span class="hab-badge ${kind}">${kindLabel}</span>
+      </div>
+      <div class="agent-profile">
+        <div class="avatar-tile">${portrait(a)}</div>
+        <div>
+          <h2>${esc(displayName)}</h2>
+          <div class="agent-role">${esc(a.role)}</div>
+          <div class="agent-room-tag">📍 ${esc(roomName)}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px">
+        <span class="status-pill" style="color:${c};border-color:${c}45;margin-top:0"><i></i>${esc(STATES[a.status])}</span>
+        <span class="muted" style="font-size:11px">Código: <code>${esc(a.id)}</code></span>
+      </div>
+      <div class="inspector-info">
+        <div><div class="mini-label">SETOR</div><div class="info-value">${esc(SECTORS[a.sector].short)}</div></div>
+        <div><div class="mini-label">ESPECIALIDADE</div><div class="info-value">${esc(a.area)}</div></div>
+      </div>
+      <div class="task-now">
+        <div class="mini-label">${this.live?'ESTADO DA INTEGRAÇÃO':'ATIVIDADE EM TEMPO REAL'}</div>
+        <p><span class="hab-act-icon">${actIcon}</span> ${esc(a.task)}</p>
+      </div>
+      <div class="inspector-hab-stats">
+        <div class="hab-stat-item"><small>Ferramentas</small><strong>${toolCalls} tool calls</strong></div>
+        <div class="hab-stat-item"><small>Tokens (IA)</small><strong>${tokensIn}k in / ${tokensOut}k out</strong></div>
+        <div class="hab-stat-item"><small>Estrutura</small><strong>${squadRole}</strong></div>
+        <div class="hab-stat-item"><small>Motor 3D</small><strong style="color:#86d1b1">Ativo no Habblaud</strong></div>
+      </div>
+      <div class="inspector-actions" style="margin-top:14px">
+        <button class="outline-button" data-open-agent="${esc(a.id)}">Ver atribuições ${icon('arrow')}</button>
+        <button class="icon-button" data-action="team" aria-label="Ver equipe">${icon('people')}</button>
+      </div>
+      ${moduleBtn?`<button class="text-button" data-action="${moduleBtn[0]}" style="margin-top:12px;font-weight:600">${moduleBtn[1]}</button>`:''}
+    `;
   }
   renderQueue(){
     if(this.live){const r=this.snapshot?.summary;$('.count-badge').textContent=r?String(r.sugeridos+r.intimacoesSemAnalise):'—';$('#review-queue').innerHTML=[['Sugestões de prazo',r?.sugeridos,'deadlines'],['Intimações sem análise',r?.intimacoesSemAnalise,'notices'],['Vínculos de clientes a conferir',r?.clientesSugeridos,'clients']].map(t=>`<button class="review-item" data-action="${t[2]}"><span class="review-icon">${icon('file')}</span><span><h3>${t[0]}</h3><p>${textOrDash(t[1])} registros · fonte: Gabinete</p></span></button>`).join('');return;}
@@ -3131,19 +3206,10 @@ class OfficeApp{
     document.querySelectorAll('.rail .nav-button').forEach(b=>b.classList.toggle('active',b.dataset.action===key));
   }
   action(a){
-    if(a==='set-habblaud'){
-      if(this.running){this.toast('Aguarde o fim do fluxo para trocar a vista.');return;}
-      if(!this.canUseHabblaud)return;
-      this.stageEngine='habblaud';
-      this.postToHabblaud({type:'df:pause',paused:this.state.paused});
-      this.renderScene();
-      return;
-    }
+    if(a==='set-habblaud')return;
     if(a==='toggle-view'){
       if(this.running){this.toast('Aguarde o fim do fluxo para trocar a vista.');return;}
-      if(this.canUseHabblaud&&this.stageEngine==='habblaud'){
-        this.stageEngine='svg';this.state.zoom=1;this.pan={x:0,y:0};this.renderScene();return;
-      }
+      if(this.canUseHabblaud)return;
       this.state.view=this.state.view==='iso'?'pixel':'iso';this.state.zoom=1;this.pan={x:0,y:0};this.persist();this.renderScene();return;
     }
     if(a==='toggle-daylight'){

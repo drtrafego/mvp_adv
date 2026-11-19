@@ -5,7 +5,7 @@ export const PixelScene=(()=>{
  const point=(x,y,z=0)=>[85+x*1.15,130+y*.95-z];
  const r=(x,y,w,h,c,extra='')=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}" ${extra}/>`;
  const text=(x,y,t,size=10,c='#d8d7ca',extra='')=>`<text x="${x}" y="${y}" fill="${c}" font-size="${size}" font-family="monospace" ${extra}>${e(t)}</text>`;
- const longHair=new Set(['sdr','agenda','tese','analista','redator','assinaturas','etica']);
+ const longHair=new Set(['sdr','agenda','tese','analista','redator','assinaturas','etica','coordenador']);
  function sprite(a){
   const shirt=a.color||'#a58db9',skin=a.skin||'#cf9873',hair=a.hair||'#372b27';
   let s=`<ellipse cx="0" cy="4" rx="17" ry="5" fill="#263129" opacity=".22"/><g class="body-bob" shape-rendering="crispEdges">`;

@@ -45,7 +45,7 @@
       "x": 475,
       "y": 185,
       "color": "#dba761",
-      "task": "Atendendo Telegram: /prazos",
+      "task": "Conferindo fonte, rito e calendário do prazo",
       "status": "review",
       "accessory": "glasses",
       "human": false,
@@ -123,8 +123,8 @@
     },
     {
       "id": "forense",
-      "name": "Forense",
-      "role": "Coordenador jurídico",
+      "name": "Dr. Forense",
+      "role": "Coordenador Jurídico",
       "sector": "juridico",
       "area": "Geral",
       "x": 90,
@@ -242,25 +242,25 @@
     },
     {
       "id": "coordenador",
-      "name": "Coordenador",
-      "role": "Orquestração · nome a definir",
+      "name": "Luana",
+      "role": "Coordenadora Geral · IA",
       "sector": "diretoria",
       "area": "Geral",
       "x": 550,
       "y": 400,
-      "color": "#d6b673",
+      "color": "#22495a",
       "task": "Consolidando a operação para o advogado",
       "status": "working",
-      "accessory": "gold",
+      "accessory": "headset",
       "human": false,
-      "personality": "Organizado, objetivo e colaborativo.",
+      "personality": "Acolhedor no atendimento, claro ao explicar próximos passos.",
       "skin": "#cf9873",
       "hair": "#372b27"
     },
     {
       "id": "daniel",
-      "name": "Daniel",
-      "role": "Advogado humano",
+      "name": "Dr. Daniel Felix",
+      "role": "Advogado Titular",
       "sector": "diretoria",
       "area": "Geral",
       "x": 480,
@@ -276,8 +276,8 @@
     },
     {
       "id": "proprietario",
-      "name": "Proprietário",
-      "role": "Direção humana",
+      "name": "Sócio Diretor",
+      "role": "Direção Executiva",
       "sector": "diretoria",
       "area": "Geral",
       "x": 635,
@@ -327,20 +327,11 @@
     }
   ],
   "period": "week",
-  "sector": "contratos",
+  "sector": "all",
   "area": "Todas",
   "paused": false,
   "zoom": 1,
-  "logs": [
-    {
-      "time": "TELEGRAM · ONLINE",
-      "text": "Coordenadora Luana conectada ao canal @DanielFelixAdvBot. Petições, clientes, prazos e financeiro prontos."
-    },
-    {
-      "time": "11:57:16 · OPERAÇÃO",
-      "text": "Telegram (@DanielFelixAdvBot): \"/prazos\" → despachado para controladoria."
-    }
-  ],
+  "logs": [],
   "clients": [
     {
       "id": "cli-1",
@@ -1280,37 +1271,8 @@
           "sendOutbox": "out-1"
         }
       ]
-    },
-    {
-      "id": "tg-u-1795100236991",
-      "sender": "daniel",
-      "senderName": "Dr. Daniel Felix (Telegram)",
-      "time": "11:57",
-      "text": "/prazos"
-    },
-    {
-      "id": "tg-b-1795100236991",
-      "sender": "coordenador",
-      "senderName": "Luana · Coordenadora (@DanielFelixAdvBot)",
-      "time": "11:57",
-      "text": "📅 A Clara (Gestora de Prazos) apurou 2 sugestões de prazo aguardando sua confirmação humana: Fernanda Costa Lira: Manifestação · Resposta à Acusação (Art. 396-A CPP) (Fatal: 23/10/2026) · Carlos Eduardo Albuquerque: Juntada de Procuração e Comprovante de Endereço (Fatal: 05/11/2026)",
-      "actions": [
-        {
-          "label": "✓ Confirmar Prazo Fernanda (23/10/2026)",
-          "confirmDeadline": "pz-1"
-        },
-        {
-          "label": "✓ Confirmar Prazo Carlos (05/11/2026)",
-          "confirmDeadline": "pz-2"
-        },
-        {
-          "label": "📂 Abrir Prazos e Processos",
-          "action": "deadlines"
-        }
-      ]
     }
   ],
   "telegramBotHandle": "@DanielFelixAdvBot",
-  "coordinatorName": "Luana",
-  "live": false
+  "coordinatorName": "Luana"
 }

@@ -1,6 +1,6 @@
 {
-  "rev": 1795100664632,
-  "serverTime": 1795100664631,
+  "rev": 1795102974349,
+  "serverTime": 1795102974347,
   "rooms": [
     {
       "id": "room-diretoria",
@@ -8,7 +8,7 @@
       "path": "/escritorio/diretoria",
       "slot": 0,
       "seed": 101,
-      "createdAt": 1795097064631
+      "createdAt": 1795099374347
     },
     {
       "id": "room-juridico",
@@ -16,7 +16,7 @@
       "path": "/escritorio/juridico",
       "slot": 1,
       "seed": 202,
-      "createdAt": 1795097064631
+      "createdAt": 1795099374347
     },
     {
       "id": "room-comercial",
@@ -24,7 +24,7 @@
       "path": "/escritorio/comercial",
       "slot": 2,
       "seed": 303,
-      "createdAt": 1795097064631
+      "createdAt": 1795099374347
     },
     {
       "id": "room-administrativo",
@@ -32,7 +32,7 @@
       "path": "/escritorio/processual",
       "slot": 3,
       "seed": 404,
-      "createdAt": 1795097064631
+      "createdAt": 1795099374347
     },
     {
       "id": "room-contratos",
@@ -40,7 +40,7 @@
       "path": "/escritorio/contratos",
       "slot": 4,
       "seed": 505,
-      "createdAt": 1795097064631
+      "createdAt": 1795099374347
     },
     {
       "id": "room-financeiro",
@@ -48,7 +48,7 @@
       "path": "/escritorio/financeiro",
       "slot": 5,
       "seed": 606,
-      "createdAt": 1795097064631
+      "createdAt": 1795099374347
     }
   ],
   "agents": [
@@ -64,12 +64,12 @@
       "account": "daniel-felix",
       "status": "working",
       "activity": {
-        "id": "act-sdr-1795100664631",
+        "id": "act-sdr-1795102974347",
         "kind": "ask",
         "icon": "📱",
         "text": "Organizando o relato de um novo contato",
         "detail": "SDR · triagem · Geral",
-        "at": 1795100649631
+        "at": 1795102959347
       },
       "recent": [],
       "tasks": [
@@ -79,9 +79,9 @@
           "status": "in_progress"
         }
       ],
-      "startedAt": 1795028664631,
-      "lastEventAt": 1795100664631,
-      "statusSince": 1795100544631,
+      "startedAt": 1795030974347,
+      "lastEventAt": 1795102974347,
+      "statusSince": 1795102854347,
       "stats": {
         "toolCalls": 24,
         "tokensIn": 18000,
@@ -112,12 +112,12 @@
       "account": "daniel-felix",
       "status": "working",
       "activity": {
-        "id": "act-closer-1795100664631",
+        "id": "act-closer-1795102974347",
         "kind": "communicate",
         "icon": "🤝",
         "text": "Preparando proposta para revisão",
         "detail": "Closer · contratação · Geral",
-        "at": 1795100634631
+        "at": 1795102944347
       },
       "recent": [],
       "tasks": [
@@ -127,9 +127,9 @@
           "status": "in_progress"
         }
       ],
-      "startedAt": 1795028664631,
-      "lastEventAt": 1795100664631,
-      "statusSince": 1795100544631,
+      "startedAt": 1795030974347,
+      "lastEventAt": 1795102974347,
+      "statusSince": 1795102854347,
       "stats": {
         "toolCalls": 31,
         "tokensIn": 20500,
@@ -161,12 +161,12 @@
       "status": "waiting",
       "waitingFor": "confirmar 23/10/2026",
       "activity": {
-        "id": "act-controladoria-1795100664631",
+        "id": "act-controladoria-1795102974347",
         "kind": "plan",
         "icon": "📅",
         "text": "Conferindo fonte, rito e calendário do prazo",
         "detail": "Gestora de prazos · Cível",
-        "at": 1795100619631
+        "at": 1795102929347
       },
       "recent": [],
       "tasks": [
@@ -186,9 +186,9 @@
           "status": "completed"
         }
       ],
-      "startedAt": 1795028664631,
-      "lastEventAt": 1795100664631,
-      "statusSince": 1795100544631,
+      "startedAt": 1795030974347,
+      "lastEventAt": 1795102974347,
+      "statusSince": 1795102854347,
       "stats": {
         "toolCalls": 38,
         "tokensIn": 23000,
@@ -219,12 +219,12 @@
       "account": "daniel-felix",
       "status": "working",
       "activity": {
-        "id": "act-agenda-1795100664631",
+        "id": "act-agenda-1795102974347",
         "kind": "communicate",
         "icon": "💬",
         "text": "Consultando disponibilidade do advogado",
         "detail": "Agenda & relacionamento · Geral",
-        "at": 1795100604631
+        "at": 1795102914347
       },
       "recent": [],
       "tasks": [
@@ -234,9 +234,9 @@
           "status": "in_progress"
         }
       ],
-      "startedAt": 1795028664631,
-      "lastEventAt": 1795100664631,
-      "statusSince": 1795100544631,
+      "startedAt": 1795030974347,
+      "lastEventAt": 1795102974347,
+      "statusSince": 1795102854347,
       "stats": {
         "toolCalls": 45,
         "tokensIn": 25500,
@@ -266,12 +266,12 @@
       "account": "daniel-felix",
       "status": "working",
       "activity": {
-        "id": "act-movimentacoes-1795100664631",
+        "id": "act-movimentacoes-1795102974347",
         "kind": "read",
         "icon": "📰",
         "text": "Acompanhando DataJud e DJEN do MVP",
         "detail": "Andamentos & intimações · Geral",
-        "at": 1795100589631
+        "at": 1795102899347
       },
       "recent": [],
       "tasks": [
@@ -281,9 +281,9 @@
           "status": "in_progress"
         }
       ],
-      "startedAt": 1795028664631,
-      "lastEventAt": 1795100664631,
-      "statusSince": 1795100544631,
+      "startedAt": 1795030974347,
+      "lastEventAt": 1795102974347,
+      "statusSince": 1795102854347,
       "stats": {
         "toolCalls": 52,
         "tokensIn": 28000,
@@ -314,12 +314,12 @@
       "status": "waiting",
       "waitingFor": "aprovar PROC-2026-002",
       "activity": {
-        "id": "act-contratos-1795100664631",
+        "id": "act-contratos-1795102974347",
         "kind": "write",
         "icon": "📜",
         "text": "Montando procuração a partir de modelo",
         "detail": "Contratos & procurações · Geral",
-        "at": 1795100574631
+        "at": 1795102884347
       },
       "recent": [],
       "tasks": [
@@ -339,9 +339,9 @@
           "status": "in_progress"
         }
       ],
-      "startedAt": 1795028664631,
-      "lastEventAt": 1795100664631,
-      "statusSince": 1795100544631,
+      "startedAt": 1795030974347,
+      "lastEventAt": 1795102974347,
+      "statusSince": 1795102854347,
       "stats": {
         "toolCalls": 59,
         "tokensIn": 30500,
@@ -374,12 +374,12 @@
       "status": "waiting",
       "waitingFor": "Aguardando os demais signatários",
       "activity": {
-        "id": "act-assinaturas-1795100664631",
+        "id": "act-assinaturas-1795102974347",
         "kind": "communicate",
         "icon": "✍️",
         "text": "Aguardando os demais signatários",
         "detail": "Assinaturas · ZapSign · Geral",
-        "at": 1795100559631
+        "at": 1795102869347
       },
       "recent": [],
       "tasks": [
@@ -399,9 +399,9 @@
           "status": "in_progress"
         }
       ],
-      "startedAt": 1795028664631,
-      "lastEventAt": 1795100664631,
-      "statusSince": 1795100544631,
+      "startedAt": 1795030974347,
+      "lastEventAt": 1795102974347,
+      "statusSince": 1795102854347,
       "stats": {
         "toolCalls": 66,
         "tokensIn": 33000,
@@ -425,18 +425,18 @@
       "roomId": "room-juridico",
       "name": "Forense",
       "look": "m",
-      "role": "Coordenador jurídico",
-      "title": "Coordenador jurídico",
+      "role": "Coordenador Jurídico",
+      "title": "Coordenador Jurídico",
       "sessionId": "ses-forense",
       "account": "daniel-felix",
       "status": "working",
       "activity": {
-        "id": "act-forense-1795100664631",
+        "id": "act-forense-1795102974347",
         "kind": "delegate",
         "icon": "🏛️",
         "text": "Distribuindo as etapas da minuta",
-        "detail": "Coordenador jurídico · Geral",
-        "at": 1795100544631
+        "detail": "Coordenador Jurídico · Geral",
+        "at": 1795102854347
       },
       "recent": [],
       "tasks": [
@@ -456,9 +456,9 @@
           "status": "completed"
         }
       ],
-      "startedAt": 1795028664631,
-      "lastEventAt": 1795100664631,
-      "statusSince": 1795100544631,
+      "startedAt": 1795030974347,
+      "lastEventAt": 1795102974347,
+      "statusSince": 1795102854347,
       "stats": {
         "toolCalls": 73,
         "tokensIn": 35500,
@@ -490,12 +490,12 @@
       "account": "daniel-felix",
       "status": "working",
       "activity": {
-        "id": "act-tese-1795100664631",
+        "id": "act-tese-1795102974347",
         "kind": "think",
         "icon": "💡",
         "text": "Organizando fatos, prova e pedidos",
         "detail": "Construtora de tese · Consumidor",
-        "at": 1795100529631
+        "at": 1795102839347
       },
       "recent": [],
       "tasks": [
@@ -505,9 +505,9 @@
           "status": "in_progress"
         }
       ],
-      "startedAt": 1795028664631,
-      "lastEventAt": 1795100664631,
-      "statusSince": 1795100544631,
+      "startedAt": 1795030974347,
+      "lastEventAt": 1795102974347,
+      "statusSince": 1795102854347,
       "stats": {
         "toolCalls": 80,
         "tokensIn": 38000,
@@ -538,12 +538,12 @@
       "account": "daniel-felix",
       "status": "working",
       "activity": {
-        "id": "act-pesquisador-1795100664631",
+        "id": "act-pesquisador-1795102974347",
         "kind": "search",
         "icon": "📚",
         "text": "Conferindo fontes oficiais de julgados",
         "detail": "Pesquisa jurídica · Cível",
-        "at": 1795100514631
+        "at": 1795102824347
       },
       "recent": [],
       "tasks": [
@@ -553,9 +553,9 @@
           "status": "in_progress"
         }
       ],
-      "startedAt": 1795028664631,
-      "lastEventAt": 1795100664631,
-      "statusSince": 1795100544631,
+      "startedAt": 1795030974347,
+      "lastEventAt": 1795102974347,
+      "statusSince": 1795102854347,
       "stats": {
         "toolCalls": 87,
         "tokensIn": 40500,
@@ -587,12 +587,12 @@
       "status": "waiting",
       "waitingFor": "Lendo o dossiê completo",
       "activity": {
-        "id": "act-analista-1795100664631",
+        "id": "act-analista-1795102974347",
         "kind": "read",
         "icon": "📂",
         "text": "Lendo o dossiê completo",
         "detail": "Análise documental · Penal",
-        "at": 1795100499631
+        "at": 1795102809347
       },
       "recent": [],
       "tasks": [
@@ -602,9 +602,9 @@
           "status": "in_progress"
         }
       ],
-      "startedAt": 1795028664631,
-      "lastEventAt": 1795100664631,
-      "statusSince": 1795100544631,
+      "startedAt": 1795030974347,
+      "lastEventAt": 1795102974347,
+      "statusSince": 1795102854347,
       "stats": {
         "toolCalls": 94,
         "tokensIn": 43000,
@@ -635,12 +635,12 @@
       "account": "daniel-felix",
       "status": "working",
       "activity": {
-        "id": "act-estrategista-1795100664631",
+        "id": "act-estrategista-1795102974347",
         "kind": "plan",
         "icon": "🧭",
         "text": "Organizando riscos da defesa",
         "detail": "Estratégia de defesa · Penal",
-        "at": 1795100484631
+        "at": 1795102794347
       },
       "recent": [],
       "tasks": [
@@ -650,9 +650,9 @@
           "status": "in_progress"
         }
       ],
-      "startedAt": 1795028664631,
-      "lastEventAt": 1795100664631,
-      "statusSince": 1795100544631,
+      "startedAt": 1795030974347,
+      "lastEventAt": 1795102974347,
+      "statusSince": 1795102854347,
       "stats": {
         "toolCalls": 101,
         "tokensIn": 45500,
@@ -684,12 +684,12 @@
       "account": "daniel-felix",
       "status": "working",
       "activity": {
-        "id": "act-redator-1795100664631",
+        "id": "act-redator-1795102974347",
         "kind": "write",
         "icon": "✍️",
         "text": "Preparando uma inicial em rascunho",
         "detail": "Redação forense · Consumidor",
-        "at": 1795100469631
+        "at": 1795102779347
       },
       "recent": [],
       "tasks": [
@@ -709,9 +709,9 @@
           "status": "completed"
         }
       ],
-      "startedAt": 1795028664631,
-      "lastEventAt": 1795100664631,
-      "statusSince": 1795100544631,
+      "startedAt": 1795030974347,
+      "lastEventAt": 1795102974347,
+      "statusSince": 1795102854347,
       "stats": {
         "toolCalls": 108,
         "tokensIn": 48000,
@@ -743,12 +743,12 @@
       "status": "waiting",
       "waitingFor": "aprovação de Dr. Daniel Felix",
       "activity": {
-        "id": "act-revisor-1795100664631",
+        "id": "act-revisor-1795102974347",
         "kind": "read",
         "icon": "🔍",
         "text": "Auditoria de citações da minuta",
         "detail": "Revisão jurídica · Cível",
-        "at": 1795100454631
+        "at": 1795102764347
       },
       "recent": [],
       "tasks": [
@@ -768,9 +768,9 @@
           "status": "completed"
         }
       ],
-      "startedAt": 1795028664631,
-      "lastEventAt": 1795100664631,
-      "statusSince": 1795100544631,
+      "startedAt": 1795030974347,
+      "lastEventAt": 1795102974347,
+      "statusSince": 1795102854347,
       "stats": {
         "toolCalls": 115,
         "tokensIn": 50500,
@@ -795,18 +795,18 @@
       "roomId": "room-diretoria",
       "name": "Luana · Coord.",
       "look": "f",
-      "role": "Orquestração · nome a definir",
-      "title": "Orquestração · nome a definir",
+      "role": "Coordenadora Geral · IA",
+      "title": "Coordenadora Geral · IA",
       "sessionId": "ses-coordenador",
       "account": "daniel-felix",
       "status": "working",
       "activity": {
-        "id": "act-coordenador-1795100664631",
+        "id": "act-coordenador-1795102974347",
         "kind": "communicate",
         "icon": "🎙️",
         "text": "Consolidando a operação para o advogado",
-        "detail": "Orquestração · nome a definir · Geral",
-        "at": 1795100439631
+        "detail": "Coordenadora Geral · IA · Geral",
+        "at": 1795102749347
       },
       "recent": [],
       "tasks": [
@@ -816,9 +816,9 @@
           "status": "in_progress"
         }
       ],
-      "startedAt": 1795028664631,
-      "lastEventAt": 1795100664631,
-      "statusSince": 1795100544631,
+      "startedAt": 1795030974347,
+      "lastEventAt": 1795102974347,
+      "statusSince": 1795102854347,
       "stats": {
         "toolCalls": 122,
         "tokensIn": 53000,
@@ -843,19 +843,19 @@
       "roomId": "room-diretoria",
       "name": "Dr. Daniel Felix",
       "look": "m",
-      "role": "Advogado humano",
-      "title": "Advogado humano",
+      "role": "Advogado Titular",
+      "title": "Advogado Titular",
       "sessionId": "ses-daniel",
       "account": "daniel-felix",
       "status": "waiting",
       "waitingFor": "revisar PEC-2026-001",
       "activity": {
-        "id": "act-daniel-1795100664631",
+        "id": "act-daniel-1795102974347",
         "kind": "edit",
         "icon": "⚖️",
         "text": "Revisão de minutas e decisões",
-        "detail": "Advogado humano · Geral",
-        "at": 1795100424631
+        "detail": "Advogado Titular · Geral",
+        "at": 1795102734347
       },
       "recent": [],
       "tasks": [
@@ -875,9 +875,9 @@
           "status": "in_progress"
         }
       ],
-      "startedAt": 1795028664631,
-      "lastEventAt": 1795100664631,
-      "statusSince": 1795100544631,
+      "startedAt": 1795030974347,
+      "lastEventAt": 1795102974347,
+      "statusSince": 1795102854347,
       "stats": {
         "toolCalls": 129,
         "tokensIn": 55500,
@@ -902,18 +902,18 @@
       "roomId": "room-diretoria",
       "name": "Proprietário",
       "look": "m",
-      "role": "Direção humana",
-      "title": "Direção humana",
+      "role": "Direção Executiva",
+      "title": "Direção Executiva",
       "sessionId": "ses-proprietario",
       "account": "daniel-felix",
       "status": "idle",
       "activity": {
-        "id": "act-proprietario-1795100664631",
+        "id": "act-proprietario-1795102974347",
         "kind": "plan",
         "icon": "📊",
         "text": "Acompanhando a operação",
-        "detail": "Direção humana · Geral",
-        "at": 1795100409631
+        "detail": "Direção Executiva · Geral",
+        "at": 1795102719347
       },
       "recent": [],
       "tasks": [
@@ -923,9 +923,9 @@
           "status": "completed"
         }
       ],
-      "startedAt": 1795028664631,
-      "lastEventAt": 1795100664631,
-      "statusSince": 1795100544631,
+      "startedAt": 1795030974347,
+      "lastEventAt": 1795102974347,
+      "statusSince": 1795102854347,
       "stats": {
         "toolCalls": 136,
         "tokensIn": 58000,
@@ -956,12 +956,12 @@
       "account": "daniel-felix",
       "status": "working",
       "activity": {
-        "id": "act-financeiro-1795100664631",
+        "id": "act-financeiro-1795102974347",
         "kind": "plan",
         "icon": "💰",
         "text": "Conferindo honorários a receber",
         "detail": "Financeiro · honorários · Geral",
-        "at": 1795100394631
+        "at": 1795102704347
       },
       "recent": [],
       "tasks": [
@@ -981,9 +981,9 @@
           "status": "in_progress"
         }
       ],
-      "startedAt": 1795028664631,
-      "lastEventAt": 1795100664631,
-      "statusSince": 1795100544631,
+      "startedAt": 1795030974347,
+      "lastEventAt": 1795102974347,
+      "statusSince": 1795102854347,
       "stats": {
         "toolCalls": 143,
         "tokensIn": 60500,
@@ -1014,12 +1014,12 @@
       "account": "daniel-felix",
       "status": "idle",
       "activity": {
-        "id": "act-etica-1795100664631",
+        "id": "act-etica-1795102974347",
         "kind": "read",
         "icon": "🛡️",
         "text": "Conferindo comunicação e sigilo",
         "detail": "Ética e OAB · apoio interno · Ética e OAB",
-        "at": 1795100379631
+        "at": 1795102689347
       },
       "recent": [],
       "tasks": [
@@ -1029,9 +1029,9 @@
           "status": "completed"
         }
       ],
-      "startedAt": 1795028664631,
-      "lastEventAt": 1795100664631,
-      "statusSince": 1795100544631,
+      "startedAt": 1795030974347,
+      "lastEventAt": 1795102974347,
+      "statusSince": 1795102854347,
       "stats": {
         "toolCalls": 150,
         "tokensIn": 63000,
@@ -1067,7 +1067,7 @@
           "utilization": 56
         },
         "source": "statusline",
-        "fetchedAt": 1795100664631
+        "fetchedAt": 1795102974347
       },
       "usageStatus": "ok"
     }
@@ -1082,7 +1082,7 @@
         "ok": true
       }
     ],
-    "startedAt": 1795014264631,
+    "startedAt": 1795016574347,
     "version": "2.0.0 Habblaud Unificado"
   }
 }

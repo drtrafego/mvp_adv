@@ -1,5 +1,5 @@
 import {AREAS,SECTORS,STATES,STATUS_COLORS,METRICS,TASKS,WORKFLOWS,escapeHtml as esc,money,initialState,restoreState,visibleAgents,addAgent} from './model.mjs';
-import {HABBLAUD_ROOM_BY_SECTOR,SECTOR_BY_HABBLAUD_ROOM,buildHabblaudSnapshotFromState,buildHabblaudFeedFromState} from './habblaud-bridge.mjs';
+import {HABBLAUD_ROOM_BY_SECTOR,SECTOR_BY_HABBLAUD_ROOM,AGENT_PRESETS,buildHabblaudSnapshotFromState,buildHabblaudFeedFromState} from './habblaud-bridge.mjs';
 import {sceneMarkup,scenePoint,sceneAvatar,sceneRoute} from './scene.mjs';
 import {PixelScene} from './pixel-scene.mjs';
 
@@ -249,11 +249,15 @@ export class OfficeApp{
     stage.classList.toggle('pixel-view',!isHab&&this.state.view!=='iso');
     const fr=$('#habblaud-frame');if(fr)fr.hidden=!isHab;
     const habBtn=$('#btn-habblaud-view');
-    if(habBtn){habBtn.hidden=!this.canUseHabblaud;habBtn.classList.toggle('active-engine',isHab);}
+    if(habBtn)habBtn.hidden=true;
+    const viewToggle=$('#view-toggle');
+    if(viewToggle){
+      viewToggle.hidden=this.canUseHabblaud;
+      viewToggle.textContent=isHab?'Planta 2D':(this.state.view==='iso'?'Vista pixel':'Vista isométrica');
+    }
     const dayBtn=$('#btn-habblaud-daylight');
     if(dayBtn){dayBtn.hidden=!isHab;dayBtn.textContent=this.habblaudDaylight==='night'?'🌙 Noite':'☀️ Dia';}
     $('#scene-view-label').textContent=isHab?'HABBLAUD 3D · 6 SALAS & 19 AGENTES':(this.state.view==='iso'?'VISTA ISOMÉTRICA':'PIXEL ART · SALAS POR SETOR');
-    $('#view-toggle').textContent=isHab?'Planta 2D':(this.state.view==='iso'?'Vista pixel':'Vista isométrica');
     if(this.canUseHabblaud)this.syncHabblaud();
   }
   renderTelegramDock(){
@@ -304,6 +308,27 @@ export class OfficeApp{
   }
   renderInspector(){
     const a=this.state.agents.find(x=>x.id===this.selected)||this.state.agents[0],c=STATUS_COLORS[a.status];
+    const preset=AGENT_PRESETS[a.id];
+    const displayName=preset?.displayName||a.name;
+    const kind=a.human?'human':(preset?.kind||(a.custom?'sub':'main'));
+    const kindLabel=a.human?'Responsável Humano':(kind==='main'?'Orquestrador (Main)':'Subagente');
+    const actIcon=preset?.icon||(a.human?'⚖️':'🤖');
+    const roomNames={
+      diretoria:'Diretoria · Dr. Daniel',
+      juridico:'Núcleo Jurídico',
+      comercial:'Comercial & Clientes',
+      administrativo:'Processual & Prazos',
+      contratos:'Contratos & ZapSign',
+      financeiro:'Financeiro & Caixa',
+      etica:'Ética e OAB'
+    };
+    const roomName=roomNames[a.sector]||'Gabinete Geral';
+    const idx=Math.max(0,this.state.agents.findIndex(x=>x.id===a.id));
+    const toolCalls=24+idx*7;
+    const tokensIn=(18+idx*2.5).toFixed(1);
+    const tokensOut=(4.2+idx*0.7).toFixed(1);
+    const squadRole=kind==='human'?'Direção da Banca':(kind==='main'?(a.id==='coordenador'?'Toda a Banca (19 agentes)':a.id==='forense'?'6 subagentes jurídicos':'Líder do Setor'):'Subagente Especialista');
+
     const moduleBtn={
       sdr:['clients','Abrir Clientes & Triagem ↗'],
       closer:['clients','Abrir Clientes & Propostas ↗'],
@@ -320,11 +345,48 @@ export class OfficeApp{
       movimentacoes:['processual','Abrir Processos & DJEN ↗'],
       controladoria:['deadlines','Abrir Controle de Prazos ↗'],
       agenda:['processual','Abrir Agenda & Audiências ↗'],
-      coordenador:['telegram','Abrir Comando Telegram ↗'],
+      coordenador:['telegram','Abrir Comando no Telegram ↗'],
       daniel:['petitions','Revisar Petições na Mesa ↗'],
       proprietario:['financeiro','Ver Resultados & Caixa ↗']
     }[a.id];
-    $('#inspector').innerHTML=`<div class="inspector-label"><span>${icon(a.human?'people':'flow')} ${a.human?'RESPONSÁVEL HUMANO':'AGENTE SELECIONADO'}</span><span style="color:${a.color}">●</span></div><div class="agent-profile"><div class="avatar-tile">${portrait(a)}</div><div><h2>${esc(a.name)}</h2><div class="agent-role">${esc(a.role)}</div></div></div><span class="status-pill" style="color:${c};border-color:${c}45"><i></i>${esc(STATES[a.status])}</span><div class="inspector-info"><div><div class="mini-label">SETOR</div><div class="info-value">${esc(SECTORS[a.sector].short)}</div></div><div><div class="mini-label">ESPECIALIDADE</div><div class="info-value">${esc(a.area)}</div></div></div><div class="task-now"><div class="mini-label">${this.live?'ESTADO DA INTEGRAÇÃO':'TAREFA ATUAL'}</div><p>${esc(a.task)}</p></div><div class="inspector-actions"><button class="outline-button" data-open-agent="${esc(a.id)}">Ver atribuições ${icon('arrow')}</button><button class="icon-button" data-action="team" aria-label="Ver equipe">${icon('people')}</button></div>${moduleBtn?`<button class="text-button" data-action="${moduleBtn[0]}" style="margin-top:14px">${moduleBtn[1]}</button>`:''}`;
+
+    $('#inspector').innerHTML=`
+      <div class="inspector-label">
+        <span>${icon(a.human?'people':'flow')} ${a.human?'RESPONSÁVEL HUMANO':'AGENTE SELECIONADO'}</span>
+        <span class="hab-badge ${kind}">${kindLabel}</span>
+      </div>
+      <div class="agent-profile">
+        <div class="avatar-tile">${portrait(a)}</div>
+        <div>
+          <h2>${esc(displayName)}</h2>
+          <div class="agent-role">${esc(a.role)}</div>
+          <div class="agent-room-tag">📍 ${esc(roomName)}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px">
+        <span class="status-pill" style="color:${c};border-color:${c}45;margin-top:0"><i></i>${esc(STATES[a.status])}</span>
+        <span class="muted" style="font-size:11px">Código: <code>${esc(a.id)}</code></span>
+      </div>
+      <div class="inspector-info">
+        <div><div class="mini-label">SETOR</div><div class="info-value">${esc(SECTORS[a.sector].short)}</div></div>
+        <div><div class="mini-label">ESPECIALIDADE</div><div class="info-value">${esc(a.area)}</div></div>
+      </div>
+      <div class="task-now">
+        <div class="mini-label">${this.live?'ESTADO DA INTEGRAÇÃO':'ATIVIDADE EM TEMPO REAL'}</div>
+        <p><span class="hab-act-icon">${actIcon}</span> ${esc(a.task)}</p>
+      </div>
+      <div class="inspector-hab-stats">
+        <div class="hab-stat-item"><small>Ferramentas</small><strong>${toolCalls} tool calls</strong></div>
+        <div class="hab-stat-item"><small>Tokens (IA)</small><strong>${tokensIn}k in / ${tokensOut}k out</strong></div>
+        <div class="hab-stat-item"><small>Estrutura</small><strong>${squadRole}</strong></div>
+        <div class="hab-stat-item"><small>Motor 3D</small><strong style="color:#86d1b1">Ativo no Habblaud</strong></div>
+      </div>
+      <div class="inspector-actions" style="margin-top:14px">
+        <button class="outline-button" data-open-agent="${esc(a.id)}">Ver atribuições ${icon('arrow')}</button>
+        <button class="icon-button" data-action="team" aria-label="Ver equipe">${icon('people')}</button>
+      </div>
+      ${moduleBtn?`<button class="text-button" data-action="${moduleBtn[0]}" style="margin-top:12px;font-weight:600">${moduleBtn[1]}</button>`:''}
+    `;
   }
   renderQueue(){
     if(this.live){const r=this.snapshot?.summary;$('.count-badge').textContent=r?String(r.sugeridos+r.intimacoesSemAnalise):'—';$('#review-queue').innerHTML=[['Sugestões de prazo',r?.sugeridos,'deadlines'],['Intimações sem análise',r?.intimacoesSemAnalise,'notices'],['Vínculos de clientes a conferir',r?.clientesSugeridos,'clients']].map(t=>`<button class="review-item" data-action="${t[2]}"><span class="review-icon">${icon('file')}</span><span><h3>${t[0]}</h3><p>${textOrDash(t[1])} registros · fonte: Gabinete</p></span></button>`).join('');return;}
@@ -391,19 +453,10 @@ export class OfficeApp{
     document.querySelectorAll('.rail .nav-button').forEach(b=>b.classList.toggle('active',b.dataset.action===key));
   }
   action(a){
-    if(a==='set-habblaud'){
-      if(this.running){this.toast('Aguarde o fim do fluxo para trocar a vista.');return;}
-      if(!this.canUseHabblaud)return;
-      this.stageEngine='habblaud';
-      this.postToHabblaud({type:'df:pause',paused:this.state.paused});
-      this.renderScene();
-      return;
-    }
+    if(a==='set-habblaud')return;
     if(a==='toggle-view'){
       if(this.running){this.toast('Aguarde o fim do fluxo para trocar a vista.');return;}
-      if(this.canUseHabblaud&&this.stageEngine==='habblaud'){
-        this.stageEngine='svg';this.state.zoom=1;this.pan={x:0,y:0};this.renderScene();return;
-      }
+      if(this.canUseHabblaud)return;
       this.state.view=this.state.view==='iso'?'pixel':'iso';this.state.zoom=1;this.pan={x:0,y:0};this.persist();this.renderScene();return;
     }
     if(a==='toggle-daylight'){

@@ -29,7 +29,7 @@ const HABBLAUD_ROOMS_DEF = [
   { id: 'room-financeiro', name: 'Financeiro & Ética', path: '/escritorio/financeiro', slot: 5, seed: 606 },
 ];
 
-const AGENT_PRESETS = {
+export const AGENT_PRESETS = {
   daniel: {
     displayName: 'Dr. Daniel Felix', kind: 'main', look: 'm', icon: '⚖️', actKind: 'edit', seed: 42,
     parts: { hairStyle: 'short', hair: '#2c221e', topStyle: 'shirt_tie', top: '#1c2833', topAccent: '#d4af37', bottomStyle: 'pants', bottom: '#17202a', accessory: 'glasses' },
