@@ -130,7 +130,7 @@
       "x": 90,
       "y": 530,
       "color": "#ac91cf",
-      "task": "Distribuindo as etapas da minuta",
+      "task": "Atendendo Telegram: /peticoes",
       "status": "working",
       "accessory": "tie",
       "human": false,
@@ -249,7 +249,7 @@
       "x": 550,
       "y": 400,
       "color": "#22495a",
-      "task": "Consolidando a operação para o advogado",
+      "task": "Atendendo Telegram: /resumo",
       "status": "working",
       "accessory": "headset",
       "human": false,
@@ -266,8 +266,8 @@
       "x": 480,
       "y": 560,
       "color": "#e5d7bc",
-      "task": "Revisão de minutas e decisões",
-      "status": "review",
+      "task": "Aprovou PEC-2026-001 (Maria Carolina Mendes)",
+      "status": "working",
       "accessory": "tie",
       "human": true,
       "personality": "Decisões claras e revisão responsável.",
@@ -331,7 +331,20 @@
   "area": "Todas",
   "paused": false,
   "zoom": 1,
-  "logs": [],
+  "logs": [
+    {
+      "time": "13:59:35 · OPERAÇÃO",
+      "text": "Telegram (@DanielFelixAdvBot): \"/resumo\" → despachado para coordenador."
+    },
+    {
+      "time": "13:59:39 · OPERAÇÃO",
+      "text": "Telegram (@DanielFelixAdvBot): \"/peticoes\" → despachado para forense."
+    },
+    {
+      "time": "14:00:28 · OPERAÇÃO",
+      "text": "Revisão humana concluída: Dr. Daniel Felix aprovou PEC-2026-001 (Maria Carolina Mendes · v1.2)."
+    }
+  ],
   "clients": [
     {
       "id": "cli-1",
@@ -590,13 +603,13 @@
       "area": "Consumidor",
       "type": "Petição Inicial",
       "version": "v1.2",
-      "hash": "a94f8c2d17e03b6591c4820f7a3e19d4b8c20194e72a6105c38b91e4d20f8a11",
+      "hash": "4b97572aa94f8c2d17e03b6591c4820f7a3e19d4b8c20194e72a6105c38b91e4",
       "authorAgent": "Maya (redator-forense)",
-      "reviewerAgent": "Noah (revisor-juridico)",
-      "status": "review",
-      "statusLabel": "Aguardando revisão de Dr. Daniel Felix",
-      "approvedBy": null,
-      "approvedAt": null,
+      "reviewerAgent": "Dr. Daniel Felix (Revisão Humana)",
+      "status": "approved",
+      "statusLabel": "Aprovada por Dr. Daniel Felix · Pronta p/ Protocolo",
+      "approvedBy": "Dr. Daniel Felix",
+      "approvedAt": "19/11/2026, 14:00",
       "updatedAt": "16/10/2026 às 09:40",
       "squadNotes": {
         "tese": "Íris (construtor-tese): Responsabilidade objetiva da companhia aérea (Art. 14 do CDC). Cancelamento imotivado + extravio temporário de bagagem por 96h em viagem a trabalho. Dano material documentado (R$ 3.840,00) e dano moral autônomo (distinção do Tema 210/STF).",
@@ -825,7 +838,7 @@
       "area": "Penal",
       "fase": "Dossiê em análise",
       "responsible": "Eva",
-      "lastMovement": "16/10/2026 · Prazo penal (10 dias corridos CPP) para Resposta à Acusação em conferência.",
+      "lastMovement": "16/10/2026 �� Prazo penal (10 dias corridos CPP) para Resposta à Acusação em conferência.",
       "movements": [
         {
           "date": "16/10/2026 11:05",
@@ -1271,6 +1284,77 @@
           "sendOutbox": "out-1"
         }
       ]
+    },
+    {
+      "id": "tg-u-1795107575437",
+      "sender": "daniel",
+      "senderName": "Dr. Daniel Felix (Telegram)",
+      "time": "13:59",
+      "text": "/resumo"
+    },
+    {
+      "id": "tg-b-1795107575438",
+      "sender": "coordenador",
+      "senderName": "Luana · Coordenadora (@DanielFelixAdvBot)",
+      "time": "13:59",
+      "text": "🏛️ Resumo Operacional para Dr. Daniel Felix: • 5 clientes ativos • 2 petições aguardando sua revisão • 2 sugestões de prazo da Clara • Caixa recebido: R$ 27.600 (R$ 22.400 a receber). Como deseja prosseguir?",
+      "actions": [
+        {
+          "label": "⚖️ Petições (2 p/ revisar)",
+          "action": "petitions"
+        },
+        {
+          "label": "👥 Clientes (5)",
+          "action": "clients"
+        },
+        {
+          "label": "📅 Prazos (2)",
+          "action": "deadlines"
+        },
+        {
+          "label": "💰 Financeiro",
+          "action": "financeiro"
+        }
+      ]
+    },
+    {
+      "id": "tg-u-1795107579326",
+      "sender": "daniel",
+      "senderName": "Dr. Daniel Felix (Telegram)",
+      "time": "13:59",
+      "text": "/peticoes"
+    },
+    {
+      "id": "tg-b-1795107579326",
+      "sender": "coordenador",
+      "senderName": "Luana · Coordenadora (@DanielFelixAdvBot)",
+      "time": "13:59",
+      "text": "⚖️ Dr. Daniel, temos 4 peças registradas no Núcleo Jurídico (2 aguardando sua revisão humana): [PEC-2026-001] Maria Carolina Mendes (Aguardando revisão de Dr. Daniel Felix) · [PEC-2026-002] Carlos Eduardo Albuquerque (Aguardando revisão de Dr. Daniel Felix) · [PEC-2026-003] Roberto Almeida Prado (Aprovada por Dr. Daniel Felix · Pronta p/ Protocolo) · [PEC-2026-004] Fernanda Costa Lira (Em auditoria final de citações (Noah)). Qual deseja abrir ou aprovar?",
+      "actions": [
+        {
+          "label": "📄 Revisar PEC-2026-001 (Maria)",
+          "openPetition": "pec-1"
+        },
+        {
+          "label": "📄 Revisar PEC-2026-002 (Carlos)",
+          "openPetition": "pec-2"
+        },
+        {
+          "label": "✅ Aprovar PEC-2026-001",
+          "approvePetition": "pec-1"
+        },
+        {
+          "label": "⚖️ Central de Petições",
+          "action": "petitions"
+        }
+      ]
+    },
+    {
+      "id": "tg-app-1795107628708",
+      "sender": "coordenador",
+      "senderName": "Luana · Coordenadora (@DanielFelixAdvBot)",
+      "time": "14:00",
+      "text": "✅ Revisão Humana Registrada: Dr. Daniel Felix aprovou a versão v1.2 da peça PEC-2026-001 (Maria Carolina Mendes) com hash 4b97572aa94f8c... Pronta para protocolo judicial."
     }
   ],
   "telegramBotHandle": "@DanielFelixAdvBot",

@@ -1,25 +1,114 @@
 import {SECTORS,STATUS_COLORS,escapeHtml} from './model.mjs';
+import {AGENT_PRESETS} from './habblaud-bridge.mjs';
 // Arte vetorial original em pixel art; nenhuma textura ou sprite do Reel é copiado.
 export const PixelScene=(()=>{
  const e=escapeHtml;
  const point=(x,y,z=0)=>[85+x*1.15,130+y*.95-z];
  const r=(x,y,w,h,c,extra='')=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}" ${extra}/>`;
  const text=(x,y,t,size=10,c='#d8d7ca',extra='')=>`<text x="${x}" y="${y}" fill="${c}" font-size="${size}" font-family="monospace" ${extra}>${e(t)}</text>`;
- const longHair=new Set(['sdr','agenda','tese','analista','redator','assinaturas','etica','coordenador']);
+
  function sprite(a){
-  const shirt=a.color||'#a58db9',skin=a.skin||'#cf9873',hair=a.hair||'#372b27';
-  let s=`<ellipse cx="0" cy="4" rx="17" ry="5" fill="#263129" opacity=".22"/><g class="body-bob" shape-rendering="crispEdges">`;
-  if(longHair.has(a.id)||a.accessory==='headset')s+=r(-13,-61,26,36,hair);
-  s+=r(-9,-20,7,20,'#35424e')+r(3,-20,7,20,'#35424e')+r(-11,-2,9,5,'#202b36')+r(3,-2,10,5,'#202b36');
-  s+=r(-12,-45,25,27,shirt)+r(-16,-41,5,19,shirt)+r(13,-41,5,19,shirt)+r(-16,-25,5,6,skin)+r(13,-25,5,6,skin);
-  s+=r(-4,-46,8,7,'#f3e5c6')+r(-2,-40,4,15,a.human?'#705036':'#e6dcc3');
-  s+=r(-11,-68,23,23,skin)+r(-14,-61,4,9,skin)+r(12,-61,4,9,skin)+r(-10,-71,22,8,hair)+r(-13,-67,5,11,hair)+r(9,-67,5,8,hair);
-  s+=r(-8,-58,4,4,'#f5edda')+r(4,-58,4,4,'#f5edda')+r(-6,-58,2,4,'#2d3333')+r(5,-58,2,4,'#2d3333')+r(-3,-49,7,2,'#98644e');
-  s+=r(-10,-52,3,2,'#c47d64')+r(9,-52,3,2,'#c47d64');
-  if(a.accessory==='glasses')s+=`<path d="M-10-60h9v7h-9zm12 0h9v7H2m-3-4h3" stroke="#2f3c42" stroke-width="2" fill="#afc8ca" fill-opacity=".3"/>`;
-  if(a.accessory==='headset')s+=`<path d="M-15-58v-10h5v-5h19v5h6v13" stroke="#263d49" stroke-width="4" fill="none"/>${r(-17,-61,5,11,'#71929b')}${r(13,-61,5,11,'#71929b')}<path d="M15-50h-8" stroke="#405560" stroke-width="2"/>`;
-  if(a.accessory==='gold')s+=r(6,-36,4,4,'#e6bb53');
-  return s+'</g>';
+  const pId = a.id || a.agentId || '';
+  const preset = (typeof AGENT_PRESETS !== 'undefined' ? (AGENT_PRESETS[pId] || AGENT_PRESETS[pId.toLowerCase()]) : null) || null;
+  const femaleSet = new Set(['controladoria','clara','coordenador','luana','sdr','lia','tese','iris','analista','eva','redator','maya','agenda','nina','assinaturas','bia','etica','elisa']);
+  const isFemale = (preset?.look === 'f') || femaleSet.has(pId.toLowerCase()) || (a.gender === 'f');
+
+  const shirt = (preset?.parts?.top) || a.color || '#a58db9';
+  const skin = a.skin || '#cf9873';
+  const hair = (preset?.parts?.hair) || a.hair || '#372b27';
+
+  const hairStyle = preset?.parts?.hairStyle || (isFemale ? (['controladoria','analista','clara','eva'].includes(pId)?'bun':['sdr','tese','lia','iris'].includes(pId)?'bob':['redator','assinaturas','maya','bia'].includes(pId)?'ponytail':'long') : 'short');
+  const topStyle = preset?.parts?.topStyle || (isFemale ? 'blouse' : (a.accessory === 'tie' ? 'shirt_tie' : 'polo'));
+  const hasGlasses = a.accessory === 'glasses' || preset?.parts?.accessory === 'glasses';
+  const hasHeadset = a.accessory === 'headset' || preset?.parts?.accessory === 'headphones' || preset?.parts?.accessory === 'headset';
+  const hasGold = a.accessory === 'gold' || preset?.parts?.accessory === 'gold' || a.id === 'proprietario';
+
+  let s = `<ellipse cx="0" cy="4" rx="17" ry="5" fill="#263129" opacity=".22"/><g class="body-bob" shape-rendering="crispEdges">`;
+
+  // --- 1. CABELO POR TRÁS DA CABEÇA / PENTEADO ---
+  if(hairStyle === 'bun'){
+    // Coque alto bem evidente no topo (Clara, Eva)
+    s += r(-13,-63,26,18,hair);
+    s += r(-5,-80,10,10,hair) + r(-3,-83,6,4,hair) + r(-1,-84,3,2,'#1b1512');
+  } else if(hairStyle === 'bob'){
+    // Chanel / Bob clássico (Lia SDR, Íris Tese)
+    s += r(-14,-63,28,26,hair);
+  } else if(hairStyle === 'ponytail'){
+    // Rabo de cavalo elegante com elástico (Maya, Bia)
+    s += r(-13,-65,26,20,hair) + r(9,-74,6,18,hair) + r(13,-68,4,14,hair) + r(8,-70,3,3,'#d4af37');
+  } else if(hairStyle === 'long' || hairStyle === 'wavy' || hasHeadset || isFemale){
+    // Cabelo comprido solto (Luana, Nina, Elisa)
+    s += r(-14,-63,28,38,hair);
+  }
+
+  // --- 2. PERNAS E INFERIOR (Calça ou Saia) ---
+  const isSkirt = preset?.parts?.bottomStyle === 'skirt' || (isFemale && ['tese','agenda','assinaturas'].includes(pId));
+  if(isSkirt){
+    s += r(-10,-20,21,14,'#232836') + r(-7,-6,5,10,skin) + r(2,-6,5,10,skin) + r(-9,3,7,4,'#1a1f26') + r(2,3,7,4,'#1a1f26');
+  } else {
+    s += r(-9,-20,7,20,'#2b3540') + r(3,-20,7,20,'#2b3540') + r(-11,-2,9,5,'#1a222b') + r(3,-2,10,5,'#1a222b');
+  }
+
+  // --- 3. TRONCO E BRAÇOS ---
+  if(isFemale){
+    // Silhueta feminina (blusa ou blazer feminino)
+    s += r(-11,-45,23,26,shirt) + r(-15,-41,4,18,shirt) + r(12,-41,4,18,shirt) + r(-15,-25,4,6,skin) + r(12,-25,4,6,skin);
+    // Decote feminino delicado mostrando a pele do pescoço (SEM GRAVATA!)
+    s += r(-4,-46,8,5,skin) + r(-2,-43,4,3,skin);
+    if(topStyle === 'jacket'){
+      const lapel = preset?.parts?.topAccent || '#e2c282';
+      s += r(-7,-45,3,15,lapel) + r(4,-45,3,15,lapel);
+    }
+  } else {
+    // Silhueta masculina
+    s += r(-12,-45,25,27,shirt) + r(-16,-41,5,19,shirt) + r(13,-41,5,19,shirt) + r(-16,-25,5,6,skin) + r(13,-25,5,6,skin);
+    if(topStyle === 'shirt_tie'){
+      // Colarinho de camisa + Gravata masculina com cor de destaque do personagem
+      const tieColor = preset?.parts?.topAccent || (a.human ? '#d4af37' : '#705036');
+      s += r(-4,-46,8,7,'#f3e5c6') + r(-2,-40,4,15,tieColor);
+    } else if(topStyle === 'jacket'){
+      const lapel = preset?.parts?.topAccent || '#d5b478';
+      s += r(-4,-46,8,5,skin) + r(-6,-45,3,14,lapel) + r(3,-45,3,14,lapel);
+    } else {
+      // Polo ou camisa aberta
+      s += r(-4,-46,8,5,skin);
+    }
+  }
+
+  // --- 4. ROSTO E CABEÇA ---
+  s += r(-11,-68,23,23,skin) + r(-14,-61,4,9,skin) + r(12,-61,4,9,skin);
+
+  // --- 5. CABELO FRONTAL / MECHAS ---
+  if(hairStyle === 'bun'){
+    // Mechas frontais elegantes de coque + franja
+    s += r(-10,-71,22,8,hair) + r(-13,-67,4,16,hair) + r(9,-67,4,16,hair) + r(-8,-63,4,4,hair);
+  } else if(hairStyle === 'bob'){
+    s += r(-10,-71,22,8,hair) + r(-14,-50,4,13,hair) + r(10,-50,4,13,hair);
+  } else if(hairStyle === 'long' || hairStyle === 'wavy'){
+    s += r(-10,-71,22,8,hair) + r(-14,-50,4,22,hair) + r(10,-50,4,22,hair);
+  } else if(hairStyle === 'side_part'){
+    s += r(-10,-72,22,9,hair) + r(-13,-68,5,11,hair) + r(7,-68,7,8,hair) + r(-5,-63,3,3,hair);
+  } else {
+    // Curto clássico
+    s += r(-10,-71,22,8,hair) + r(-13,-67,5,11,hair) + r(9,-67,5,8,hair);
+  }
+
+  // Olhos, bochechas e boca
+  s += r(-8,-58,4,4,'#f5edda') + r(4,-58,4,4,'#f5edda') + r(-6,-58,2,4,'#2d3333') + r(5,-58,2,4,'#2d3333') + r(-3,-49,7,2,'#98644e');
+  s += r(-10,-52,3,2,'#c47d64') + r(9,-52,3,2,'#c47d64');
+
+  // --- 6. ACESSÓRIOS ---
+  if(hasGlasses){
+    s += `<path d="M-10-60h9v7h-9zm12 0h9v7H2m-3-4h3" stroke="#2f3c42" stroke-width="2" fill="#afc8ca" fill-opacity=".3"/>`;
+  }
+  if(hasHeadset){
+    s += `<path d="M-15-58v-10h5v-5h19v5h6v13" stroke="#263d49" stroke-width="4" fill="none"/>${r(-17,-61,5,11,'#71929b')}${r(13,-61,5,11,'#71929b')}<path d="M15-50h-8" stroke="#405560" stroke-width="2"/>`;
+  }
+  if(hasGold){
+    s += r(5,-38,4,4,'#e6bb53');
+  }
+
+  return s + '</g>';
  }
  function chair(x,y,color='#5c7d88'){
   return r(x-15,y-37,30,23,'#3a505b')+r(x-13,y-35,26,17,color)+r(x-16,y-15,32,11,'#3a505b')+r(x-13,y-15,26,7,color)+r(x-2,y-3,4,8,'#70777a')+`<path d="M${x-13} ${y+6}h26" stroke="#596064" stroke-width="3"/>`;

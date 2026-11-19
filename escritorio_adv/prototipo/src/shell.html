@@ -28,6 +28,7 @@
     <header class="topbar">
       <div class="breadcrumb">DANIEL FELIX ADVOCACIA <span>/</span> ESCRITÓRIO VIRTUAL OPERADO NO TELEGRAM</div>
       <div class="topbar-right">
+        <button class="outline-button" id="btn-toggle-theme" data-action="toggle-theme" style="padding:5px 12px;font-size:12px;border-radius:20px;display:flex;align-items:center;gap:6px" title="Alternar Modo Claro / Modo Escuro da interface"><span id="theme-icon">☀️</span> <span id="theme-text">Modo Claro</span></button>
         <button class="outline-button" id="btn-toggle-privacy" data-action="toggle-privacy" style="padding:5px 10px;font-size:12px;border-radius:20px;display:flex;align-items:center;gap:6px"><span data-icon="eye"></span><span id="privacy-label">Modo LGPD</span></button>
         <button class="tg-status-pill" data-action="telegram"><span class="tg-dot"></span><span>@DanielFelixAdvBot · ONLINE</span></button>
         <span class="demo-badge"><i></i>OPERAÇÃO INTERATIVA</span>
@@ -53,15 +54,20 @@
       <div class="kpi-grid" id="kpis"></div>
       <div class="office-layout">
         <section class="office-card" aria-label="Mapa interativo do escritório">
-          <div class="office-toolbar"><div class="office-title"><span class="live-dot"></span><strong>Planta do Escritório Daniel Felix</strong><span class="muted" id="agent-count"></span></div><div class="view-controls"><button class="small-button" id="btn-habblaud-view" data-action="set-habblaud" hidden>🎮 Habblaud 3D</button><button class="small-button view-toggle" id="view-toggle" data-action="toggle-view" hidden>Vista isométrica</button><button class="small-button" id="btn-habblaud-daylight" data-action="toggle-daylight" hidden title="Alternar iluminação Dia / Noite">☀️ Dia</button><button class="small-button" id="pause-button" data-action="pause"><span data-icon="pause"></span><span>Pausar</span></button><button class="icon-button" data-action="fullscreen" aria-label="Tela cheia"><span data-icon="expand"></span></button></div></div>
+          <div class="office-toolbar"><div class="office-title"><span class="live-dot"></span><strong>Planta do Escritório Daniel Felix</strong><span class="muted" id="agent-count"></span></div><div class="view-controls"><button class="small-button" id="btn-habblaud-view" data-action="set-habblaud" hidden>🎮 Habblaud 3D</button><button class="small-button view-toggle" id="view-toggle" data-action="toggle-view" hidden>Vista isométrica</button><button class="small-button" id="btn-habblaud-daylight" data-action="toggle-daylight" title="Alternar iluminação Dia / Noite do escritório">☀️ Dia</button><button class="small-button" id="pause-button" data-action="pause"><span data-icon="pause"></span><span>Pausar</span></button><button class="icon-button" data-action="fullscreen" aria-label="Tela cheia"><span data-icon="expand"></span></button></div></div>
           <div class="sector-tabs" id="sector-tabs" role="group" aria-label="Filtrar setor"></div>
           <div class="stage" id="stage"><div class="stage-hint"><span data-icon="pointer"></span>Clique nos bonecos, nas salas ou no telão para operar cada setor</div><div id="scene-container"></div><div class="scene-caption"><span class="gold-dot"></span><span id="scene-view-label">PIXEL ART · SALAS POR SETOR</span></div><div class="zoom-controls"><button data-action="zoom-out" aria-label="Diminuir zoom">−</button><button data-action="zoom-reset" id="zoom-label" aria-label="Centralizar vista">100%</button><button data-action="zoom-in" aria-label="Aumentar zoom">+</button></div></div>
           <div class="office-footer"><div class="legend"><span><i class="green"></i>Em atividade</span><span><i class="gold"></i>Revisão humana (Dr. Daniel)</span><span><i class="blue"></i>Aguardando</span></div><div class="office-footer-links"><button class="text-button" data-action="workflows">Simular fluxo completo <span>↗</span></button></div></div>
         </section>
         <aside class="right-column" aria-label="Detalhes da operação">
-          <section class="card tg-dock" id="telegram-dock"></section>
-          <section class="inspector card" id="inspector"></section>
-          <section class="card tasks-card">
+          <nav class="right-column-nav" role="tablist" aria-label="Seções do painel lateral">
+            <button class="right-nav-tab active" data-rtab="inspector" role="tab" aria-selected="true"><span class="tab-icon">👤</span> Agente Ativo</button>
+            <button class="right-nav-tab" data-rtab="telegram" role="tab" aria-selected="false"><span class="tab-icon">💬</span> Telegram Bot</button>
+            <button class="right-nav-tab" data-rtab="tasks" role="tab" aria-selected="false"><span class="tab-icon">⚖️</span> Decisões <span class="tab-pill" id="tab-decisions-count">4</span></button>
+          </nav>
+          <section class="inspector card active" id="inspector" data-panel="inspector"></section>
+          <section class="card tg-dock" id="telegram-dock" data-panel="telegram"></section>
+          <section class="card tasks-card" id="tasks-card" data-panel="tasks">
             <div class="section-heading"><div><div class="eyebrow">DECISÕES HUMANAS</div><h2>Na mesa do Dr. Daniel Felix</h2></div><span class="count-badge">4</span></div>
             <div id="review-queue"></div>
             <button class="text-button queue-action" data-action="reviews">Abrir central de revisões <span>↗</span></button>

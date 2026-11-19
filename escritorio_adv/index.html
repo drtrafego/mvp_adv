@@ -1031,6 +1031,624 @@ dialog::backdrop{background:#07111ad9;backdrop-filter:blur(6px)}
 }
 .fin-outbox-msg{background:#0e1921;border:1px solid #273a46;border-radius:6px;padding:11px 12px;font-size:13px;line-height:1.55;color:#cfe0e8}
 
+/* ======================================================================
+ * TEMA CLARO EXECUTIVO (Light Theme)
+ * ====================================================================== */
+:root[data-theme="light"], [data-theme="light"] {
+  color-scheme: light;
+  --bg: #f4f7f9;
+  --panel: #ffffff;
+  --line: #dce4eb;
+  --muted: #556b7c;
+  --text: #0e1b24;
+  --gold: #9e7529;
+  --green: #238b68;
+}
+[data-theme="light"] body {
+  background: var(--bg) !important;
+  color: var(--text) !important;
+}
+
+/* Header & Topbar */
+[data-theme="light"] .topbar {
+  background: #ffffff !important;
+  border-bottom: 1px solid #dce4eb !important;
+}
+[data-theme="light"] .breadcrumb {
+  color: #556977 !important;
+}
+[data-theme="light"] .date {
+  color: #4b6272 !important;
+}
+[data-theme="light"] .tg-status-pill {
+  background: #e8f4fd !important;
+  border-color: #badcf5 !important;
+  color: #0369a1 !important;
+}
+[data-theme="light"] .demo-badge {
+  background: #fdf6e7 !important;
+  border-color: #ecd79c !important;
+  color: #926d1a !important;
+}
+[data-theme="light"] .icon-button {
+  background: #f1f5f9 !important;
+  border-color: #cad5e0 !important;
+  color: #334155 !important;
+}
+[data-theme="light"] .icon-button:hover {
+  background: #e2e8f0 !important;
+}
+
+/* Barra Lateral (Rail) */
+[data-theme="light"] .rail {
+  background: #ffffff !important;
+  border-right: 1px solid #dce4eb !important;
+}
+[data-theme="light"] .nav-button {
+  background: #f8fafc !important;
+  border-color: #dce4eb !important;
+  color: #475a68 !important;
+}
+[data-theme="light"] .nav-button:hover,
+[data-theme="light"] .nav-button.active {
+  background: #edf3f7 !important;
+  color: #0e1b24 !important;
+  border-color: #9e7529 !important;
+}
+[data-theme="light"] .monogram {
+  border-color: #c2a874 !important;
+  color: #9e7529 !important;
+  background: #fdfbf7 !important;
+}
+[data-theme="light"] .rail-avatar {
+  background: #eef3f7 !important;
+  border-color: #cbd5e1 !important;
+  color: #10212e !important;
+}
+
+/* Page Heading & Botões Superiores */
+[data-theme="light"] .eyebrow {
+  color: #9e7529 !important;
+}
+[data-theme="light"] .page-heading h1 {
+  color: #0e1b24 !important;
+}
+[data-theme="light"] .page-heading h1 span {
+  color: #526777 !important;
+}
+[data-theme="light"] .page-heading p {
+  color: #4b6272 !important;
+}
+[data-theme="light"] .outline-button {
+  background: #ffffff !important;
+  border-color: #cad5e0 !important;
+  color: #182b38 !important;
+}
+[data-theme="light"] .outline-button:hover {
+  background: #f1f5f9 !important;
+  border-color: #8da4b7 !important;
+  color: #0e1b24 !important;
+}
+[data-theme="light"] .primary-button {
+  background: #1765a3 !important;
+  color: #ffffff !important;
+}
+[data-theme="light"] .primary-button:hover {
+  background: #125387 !important;
+}
+
+/* Cartões KPI do Topo */
+[data-theme="light"] .kpi,
+[data-theme="light"] .kpi-card {
+  background: #ffffff !important;
+  border-color: #dce4eb !important;
+  box-shadow: 0 2px 8px rgba(16, 33, 46, 0.05) !important;
+}
+[data-theme="light"] .kpi:hover {
+  background: #f8fafc !important;
+  border-color: #bad2e4 !important;
+}
+[data-theme="light"] .kpi-label,
+[data-theme="light"] .kpi-card small {
+  color: #556b7c !important;
+}
+[data-theme="light"] .kpi-value,
+[data-theme="light"] .kpi-card strong {
+  color: #0e1b24 !important;
+}
+[data-theme="light"] .kpi-foot,
+[data-theme="light"] .kpi-card p {
+  color: #238b68 !important;
+}
+[data-theme="light"] .kpi.urgent .kpi-value {
+  color: #9e7529 !important;
+}
+[data-theme="light"] .kpi.urgent .kpi-foot {
+  color: #8a641d !important;
+}
+
+/* Painel da Planta (Office Card & Toolbar) */
+[data-theme="light"] .office-card {
+  background: #ffffff !important;
+  border-color: #dce4eb !important;
+  box-shadow: 0 4px 14px rgba(16, 33, 46, 0.05) !important;
+}
+[data-theme="light"] .office-toolbar {
+  background: #f8fafc !important;
+  border-bottom: 1px solid #dce4eb !important;
+}
+[data-theme="light"] .office-title strong {
+  color: #0e1b24 !important;
+}
+[data-theme="light"] .small-button {
+  background: #ffffff !important;
+  border-color: #cad5e0 !important;
+  color: #1f3240 !important;
+}
+[data-theme="light"] .small-button:hover {
+  background: #f1f6fa !important;
+  border-color: #94a9bc !important;
+}
+[data-theme="light"] .sector-tabs {
+  background: #eef3f7 !important;
+  border-bottom: 1px solid #dce4eb !important;
+}
+[data-theme="light"] .sector-tab {
+  background: #ffffff !important;
+  border-color: #cad5e0 !important;
+  color: #3b5262 !important;
+}
+[data-theme="light"] .sector-tab:hover,
+[data-theme="light"] .sector-tab.active {
+  background: #fdfbf7 !important;
+  border-color: #9e7529 !important;
+  color: #9e7529 !important;
+}
+[data-theme="light"] .office-footer {
+  background: #f8fafc !important;
+  border-top: 1px solid #dce4eb !important;
+}
+[data-theme="light"] .legend span {
+  color: #4b6272 !important;
+}
+[data-theme="light"] .stage {
+  border-color: #cad5e0 !important;
+  background: #eef3f8 !important;
+}
+[data-theme="light"] .stage.habblaud-mode {
+  background: #d8e2eb !important;
+}
+[data-theme="light"] .stage-hint,
+[data-theme="light"] .scene-caption {
+  background: rgba(255, 255, 255, 0.94) !important;
+  color: #182b38 !important;
+  border: 1px solid #cad5e0 !important;
+}
+[data-theme="light"] .zoom-controls {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid #cad5e0 !important;
+  color: #182b38 !important;
+}
+[data-theme="light"] .zoom-controls button {
+  color: #182b38 !important;
+}
+[data-theme="light"] .zoom-controls button:hover {
+  background: #eef3f7 !important;
+}
+
+/* Coluna Direita (Inspector, Telegram, Decisões) */
+[data-theme="light"] .card {
+  background: #ffffff !important;
+  border-color: #dce4eb !important;
+  box-shadow: 0 4px 14px rgba(16, 33, 46, 0.05) !important;
+}
+[data-theme="light"] .inspector {
+  background: #ffffff !important;
+  color: #0e1b24 !important;
+}
+[data-theme="light"] .inspector-label {
+  color: #556b7c !important;
+}
+[data-theme="light"] .agent-profile h2 {
+  color: #0e1b24 !important;
+}
+[data-theme="light"] .agent-role {
+  color: #3b5262 !important;
+  font-weight: 500 !important;
+}
+[data-theme="light"] .mini-label {
+  color: #637a8c !important;
+}
+[data-theme="light"] .info-value {
+  color: #0e1b24 !important;
+}
+[data-theme="light"] .task-now p {
+  color: #182b38 !important;
+}
+[data-theme="light"] .agent-room-tag {
+  color: #9e7529 !important;
+}
+[data-theme="light"] .status-pill {
+  background: #eaf6f0 !important;
+  border-color: #9ed4bc !important;
+  color: #1d7253 !important;
+}
+[data-theme="light"] .avatar-tile {
+  background: #f8fafc !important;
+  border-color: #cad5e0 !important;
+}
+[data-theme="light"] .inspector-kv,
+[data-theme="light"] .inspector-hab-stats,
+[data-theme="light"] .habblaud-stats-grid {
+  background: #f8fafc !important;
+  border-color: #dce4eb !important;
+}
+[data-theme="light"] .hab-stat-num,
+[data-theme="light"] .inspector-hab-stats strong {
+  color: #0e1b24 !important;
+}
+[data-theme="light"] .hab-stat-lbl,
+[data-theme="light"] .inspector-hab-stats small {
+  color: #556b7c !important;
+}
+[data-theme="light"] .tg-dock {
+  background: #ffffff !important;
+  border-color: #cbd7e2 !important;
+}
+[data-theme="light"] .tg-dock-head {
+  border-bottom-color: #e2eaf0 !important;
+}
+[data-theme="light"] .tg-dock-title {
+  color: #0369a1 !important;
+}
+[data-theme="light"] .tg-chip {
+  background: #f1f6fa !important;
+  border-color: #cad5e0 !important;
+  color: #182b38 !important;
+}
+[data-theme="light"] .tg-chip:hover {
+  background: #e2eaf0 !important;
+  border-color: #79a2be !important;
+}
+[data-theme="light"] .tg-msg.from-bot {
+  background: #f8fafc !important;
+  border-color: #e2eaf0 !important;
+  color: #182b38 !important;
+}
+[data-theme="light"] .tg-msg.from-user {
+  background: #e0f2fe !important;
+  border-color: #bae6fd !important;
+  color: #0369a1 !important;
+}
+[data-theme="light"] .tg-input-row input {
+  background: #ffffff !important;
+  border-color: #cad5e0 !important;
+  color: #0e1b24 !important;
+}
+[data-theme="light"] .tg-inline-btn {
+  background: #f1f6fa !important;
+  border-color: #cad5e0 !important;
+  color: #182b38 !important;
+}
+[data-theme="light"] .tasks-card {
+  background: #ffffff !important;
+}
+[data-theme="light"] .tasks-card .section-heading h2 {
+  color: #0e1b24 !important;
+}
+[data-theme="light"] .review-item {
+  background: #ffffff !important;
+  border-color: #dce4eb !important;
+}
+[data-theme="light"] .review-item:hover {
+  background: #f8fafc !important;
+  border-color: #bad2e4 !important;
+}
+[data-theme="light"] .review-item strong {
+  color: #0e1b24 !important;
+}
+[data-theme="light"] .review-item small {
+  color: #556b7c !important;
+}
+[data-theme="light"] .count-badge {
+  background: #fdf6e7 !important;
+  border-color: #ecd79c !important;
+  color: #926d1a !important;
+}
+
+/* Modais, Dossiês e Telas Internas */
+[data-theme="light"] dialog {
+  background: #ffffff !important;
+  border-color: #cad5e0 !important;
+  color: #0e1b24 !important;
+  box-shadow: 0 30px 90px rgba(0,0,0,0.18) !important;
+}
+[data-theme="light"] dialog::backdrop {
+  background: rgba(15, 23, 42, 0.45) !important;
+}
+[data-theme="light"] .modal-head {
+  background: #ffffff !important;
+  border-bottom-color: #e2eaf0 !important;
+}
+[data-theme="light"] .modal-head h2 {
+  color: #0e1b24 !important;
+}
+[data-theme="light"] .modal-head p {
+  color: #556b7c !important;
+}
+[data-theme="light"] .close-button {
+  background: #f1f6fa !important;
+  border-color: #cad5e0 !important;
+  color: #1f3240 !important;
+}
+[data-theme="light"] .close-button:hover {
+  background: #e2eaf0 !important;
+}
+[data-theme="light"] .list-panel {
+  background: #f8fafc !important;
+  border-color: #dce4eb !important;
+}
+[data-theme="light"] .list-card-btn {
+  border-bottom-color: #e2eaf0 !important;
+  color: #0e1b24 !important;
+}
+[data-theme="light"] .list-card-btn small {
+  color: #556b7c !important;
+}
+[data-theme="light"] .list-card-btn:hover,
+[data-theme="light"] .list-card-btn.active {
+  background: #eef3f7 !important;
+}
+[data-theme="light"] .detail-panel {
+  background: #ffffff !important;
+  border-color: #dce4eb !important;
+}
+[data-theme="light"] .info-box,
+[data-theme="light"] .citation-box,
+[data-theme="light"] .chart-card {
+  background: #f8fafc !important;
+  border-color: #dce4eb !important;
+  color: #182b38 !important;
+}
+[data-theme="light"] .info-box small {
+  color: #637a8c !important;
+}
+[data-theme="light"] .info-box strong {
+  color: #0e1b24 !important;
+}
+[data-theme="light"] .metric-mini {
+  background: #f8fafc !important;
+  border-color: #dce4eb !important;
+}
+[data-theme="light"] .metric-mini strong {
+  color: #0e1b24 !important;
+}
+[data-theme="light"] input,
+[data-theme="light"] select,
+[data-theme="light"] textarea {
+  background: #ffffff !important;
+  border-color: #cad5e0 !important;
+  color: #0e1b24 !important;
+}
+[data-theme="light"] .page-footer {
+  background: #ffffff !important;
+  border-top-color: #dce4eb !important;
+  color: #637a8c !important;
+}
+
+.info-box strong, .info-box span {
+  word-break: break-word;
+}
+
+/* ======================================================================
+ * TABS DA COLUNA DIREITA (Agente Ativo | Telegram | Decisões)
+ * ====================================================================== */
+.right-column-nav {
+  display: flex;
+  background: #111e27;
+  border: 1px solid #2e404b;
+  border-radius: 9px;
+  padding: 4px;
+  gap: 4px;
+}
+[data-theme="light"] .right-column-nav {
+  background: #eef3f7;
+  border-color: #cbd7e2;
+}
+.right-nav-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 8px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  transition: all .15s ease;
+  white-space: nowrap;
+}
+.right-nav-tab:hover {
+  color: var(--text);
+  background: rgba(255,255,255,0.05);
+}
+[data-theme="light"] .right-nav-tab:hover {
+  background: rgba(0,0,0,0.04);
+}
+.right-nav-tab.active {
+  background: #1e313e;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+[data-theme="light"] .right-nav-tab.active {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+.tab-pill {
+  background: #dfa350;
+  color: #121d24;
+  border-radius: 99px;
+  padding: 1px 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+.right-column > [data-panel]:not(.active) {
+  display: none !important;
+}
+
+/* Ocultar a linha do tempo redundante do rodapé */
+.activity.card {
+  display: none !important;
+}
+
+/* ======================================================================
+ * ABAS DO DOSSIÊ 360° DO CLIENTE
+ * ====================================================================== */
+.client-tabs-nav {
+  display: flex;
+  gap: 6px;
+  border-bottom: 1px solid #2e404b;
+  padding: 12px 0 0;
+  margin-top: 14px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+[data-theme="light"] .client-tabs-nav {
+  border-bottom-color: #d8e2ea;
+}
+.client-nav-tab {
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  transition: .15s;
+}
+.client-nav-tab:hover {
+  color: var(--text);
+}
+.client-nav-tab.active {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+}
+[data-theme="light"] .client-nav-tab.active {
+  color: #9e7529;
+  border-bottom-color: #9e7529;
+}
+.client-tab-panel:not(.active) {
+  display: none !important;
+}
+
+/* ======================================================================
+ * LAYOUT HABBLAUD PARA A EQUIPE (team modal)
+ * ====================================================================== */
+.team-squad-block {
+  margin-bottom: 18px;
+  border: 1px solid #2e404b;
+  border-radius: 10px;
+  background: #111d26;
+  overflow: hidden;
+}
+[data-theme="light"] .team-squad-block {
+  background: #ffffff;
+  border-color: #d8e2ea;
+}
+.team-squad-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: #16242e;
+  border-bottom: 1px solid #2e404b;
+}
+[data-theme="light"] .team-squad-header {
+  background: #f8fafc;
+  border-bottom-color: #d8e2ea;
+}
+.team-squad-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 700;
+  font-size: 14px;
+}
+.team-squad-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+  padding: 12px;
+}
+.team-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #2c3f4b;
+  border-radius: 8px;
+  background: #172632;
+  cursor: pointer;
+  transition: all .15s;
+  text-align: left;
+}
+.team-card:hover {
+  border-color: #5d8196;
+  background: #1e3342;
+  transform: translateY(-1px);
+}
+[data-theme="light"] .team-card {
+  background: #f8fafc;
+  border-color: #d8e2ea;
+}
+[data-theme="light"] .team-card:hover {
+  background: #eef4f8;
+  border-color: #94a9bc;
+}
+.team-card .avatar-box {
+  width: 44px;
+  height: 48px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+.team-card .team-info {
+  flex: 1;
+  min-width: 0;
+}
+.team-card strong {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13.5px;
+  color: var(--text);
+}
+.team-card small {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+.team-status-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+
 @media(max-width:820px){
   .fin-row-side{width:100%;justify-content:space-between}
   .fin-amount{text-align:left;min-width:auto}
@@ -1052,8 +1670,7 @@ dialog::backdrop{background:#07111ad9;backdrop-filter:blur(6px)}
 
 @media(max-width:1080px){
   .office-layout{grid-template-columns:1fr}
-  .right-column{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
-  .tg-dock{grid-column:1/-1}
+  .right-column{display:flex;flex-direction:column;gap:16px}
 }
 
 @media(max-width:980px){
@@ -1127,6 +1744,7 @@ dialog::backdrop{background:#07111ad9;backdrop-filter:blur(6px)}
     <header class="topbar">
       <div class="breadcrumb">DANIEL FELIX ADVOCACIA <span>/</span> ESCRITÓRIO VIRTUAL OPERADO NO TELEGRAM</div>
       <div class="topbar-right">
+        <button class="outline-button" id="btn-toggle-theme" data-action="toggle-theme" style="padding:5px 12px;font-size:12px;border-radius:20px;display:flex;align-items:center;gap:6px" title="Alternar Modo Claro / Modo Escuro da interface"><span id="theme-icon">☀️</span> <span id="theme-text">Modo Claro</span></button>
         <button class="outline-button" id="btn-toggle-privacy" data-action="toggle-privacy" style="padding:5px 10px;font-size:12px;border-radius:20px;display:flex;align-items:center;gap:6px"><span data-icon="eye"></span><span id="privacy-label">Modo LGPD</span></button>
         <button class="tg-status-pill" data-action="telegram"><span class="tg-dot"></span><span>@DanielFelixAdvBot · ONLINE</span></button>
         <span class="demo-badge"><i></i>OPERAÇÃO INTERATIVA</span>
@@ -1152,15 +1770,20 @@ dialog::backdrop{background:#07111ad9;backdrop-filter:blur(6px)}
       <div class="kpi-grid" id="kpis"></div>
       <div class="office-layout">
         <section class="office-card" aria-label="Mapa interativo do escritório">
-          <div class="office-toolbar"><div class="office-title"><span class="live-dot"></span><strong>Planta do Escritório Daniel Felix</strong><span class="muted" id="agent-count"></span></div><div class="view-controls"><button class="small-button" id="btn-habblaud-view" data-action="set-habblaud" hidden>🎮 Habblaud 3D</button><button class="small-button view-toggle" id="view-toggle" data-action="toggle-view" hidden>Vista isométrica</button><button class="small-button" id="btn-habblaud-daylight" data-action="toggle-daylight" hidden title="Alternar iluminação Dia / Noite">☀️ Dia</button><button class="small-button" id="pause-button" data-action="pause"><span data-icon="pause"></span><span>Pausar</span></button><button class="icon-button" data-action="fullscreen" aria-label="Tela cheia"><span data-icon="expand"></span></button></div></div>
+          <div class="office-toolbar"><div class="office-title"><span class="live-dot"></span><strong>Planta do Escritório Daniel Felix</strong><span class="muted" id="agent-count"></span></div><div class="view-controls"><button class="small-button" id="btn-habblaud-view" data-action="set-habblaud" hidden>🎮 Habblaud 3D</button><button class="small-button view-toggle" id="view-toggle" data-action="toggle-view" hidden>Vista isométrica</button><button class="small-button" id="btn-habblaud-daylight" data-action="toggle-daylight" title="Alternar iluminação Dia / Noite do escritório">☀️ Dia</button><button class="small-button" id="pause-button" data-action="pause"><span data-icon="pause"></span><span>Pausar</span></button><button class="icon-button" data-action="fullscreen" aria-label="Tela cheia"><span data-icon="expand"></span></button></div></div>
           <div class="sector-tabs" id="sector-tabs" role="group" aria-label="Filtrar setor"></div>
           <div class="stage" id="stage"><div class="stage-hint"><span data-icon="pointer"></span>Clique nos bonecos, nas salas ou no telão para operar cada setor</div><div id="scene-container"></div><div class="scene-caption"><span class="gold-dot"></span><span id="scene-view-label">PIXEL ART · SALAS POR SETOR</span></div><div class="zoom-controls"><button data-action="zoom-out" aria-label="Diminuir zoom">−</button><button data-action="zoom-reset" id="zoom-label" aria-label="Centralizar vista">100%</button><button data-action="zoom-in" aria-label="Aumentar zoom">+</button></div></div>
           <div class="office-footer"><div class="legend"><span><i class="green"></i>Em atividade</span><span><i class="gold"></i>Revisão humana (Dr. Daniel)</span><span><i class="blue"></i>Aguardando</span></div><div class="office-footer-links"><button class="text-button" data-action="workflows">Simular fluxo completo <span>↗</span></button></div></div>
         </section>
         <aside class="right-column" aria-label="Detalhes da operação">
-          <section class="card tg-dock" id="telegram-dock"></section>
-          <section class="inspector card" id="inspector"></section>
-          <section class="card tasks-card">
+          <nav class="right-column-nav" role="tablist" aria-label="Seções do painel lateral">
+            <button class="right-nav-tab active" data-rtab="inspector" role="tab" aria-selected="true"><span class="tab-icon">👤</span> Agente Ativo</button>
+            <button class="right-nav-tab" data-rtab="telegram" role="tab" aria-selected="false"><span class="tab-icon">💬</span> Telegram Bot</button>
+            <button class="right-nav-tab" data-rtab="tasks" role="tab" aria-selected="false"><span class="tab-icon">⚖️</span> Decisões <span class="tab-pill" id="tab-decisions-count">4</span></button>
+          </nav>
+          <section class="inspector card active" id="inspector" data-panel="inspector"></section>
+          <section class="card tg-dock" id="telegram-dock" data-panel="telegram"></section>
+          <section class="card tasks-card" id="tasks-card" data-panel="tasks">
             <div class="section-heading"><div><div class="eyebrow">DECISÕES HUMANAS</div><h2>Na mesa do Dr. Daniel Felix</h2></div><span class="count-badge">4</span></div>
             <div id="review-queue"></div>
             <button class="text-button queue-action" data-action="reviews">Abrir central de revisões <span>↗</span></button>
@@ -2524,21 +3147,109 @@ const PixelScene=(()=>{
  const point=(x,y,z=0)=>[85+x*1.15,130+y*.95-z];
  const r=(x,y,w,h,c,extra='')=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}" ${extra}/>`;
  const text=(x,y,t,size=10,c='#d8d7ca',extra='')=>`<text x="${x}" y="${y}" fill="${c}" font-size="${size}" font-family="monospace" ${extra}>${e(t)}</text>`;
- const longHair=new Set(['sdr','agenda','tese','analista','redator','assinaturas','etica','coordenador']);
+
  function sprite(a){
-  const shirt=a.color||'#a58db9',skin=a.skin||'#cf9873',hair=a.hair||'#372b27';
-  let s=`<ellipse cx="0" cy="4" rx="17" ry="5" fill="#263129" opacity=".22"/><g class="body-bob" shape-rendering="crispEdges">`;
-  if(longHair.has(a.id)||a.accessory==='headset')s+=r(-13,-61,26,36,hair);
-  s+=r(-9,-20,7,20,'#35424e')+r(3,-20,7,20,'#35424e')+r(-11,-2,9,5,'#202b36')+r(3,-2,10,5,'#202b36');
-  s+=r(-12,-45,25,27,shirt)+r(-16,-41,5,19,shirt)+r(13,-41,5,19,shirt)+r(-16,-25,5,6,skin)+r(13,-25,5,6,skin);
-  s+=r(-4,-46,8,7,'#f3e5c6')+r(-2,-40,4,15,a.human?'#705036':'#e6dcc3');
-  s+=r(-11,-68,23,23,skin)+r(-14,-61,4,9,skin)+r(12,-61,4,9,skin)+r(-10,-71,22,8,hair)+r(-13,-67,5,11,hair)+r(9,-67,5,8,hair);
-  s+=r(-8,-58,4,4,'#f5edda')+r(4,-58,4,4,'#f5edda')+r(-6,-58,2,4,'#2d3333')+r(5,-58,2,4,'#2d3333')+r(-3,-49,7,2,'#98644e');
-  s+=r(-10,-52,3,2,'#c47d64')+r(9,-52,3,2,'#c47d64');
-  if(a.accessory==='glasses')s+=`<path d="M-10-60h9v7h-9zm12 0h9v7H2m-3-4h3" stroke="#2f3c42" stroke-width="2" fill="#afc8ca" fill-opacity=".3"/>`;
-  if(a.accessory==='headset')s+=`<path d="M-15-58v-10h5v-5h19v5h6v13" stroke="#263d49" stroke-width="4" fill="none"/>${r(-17,-61,5,11,'#71929b')}${r(13,-61,5,11,'#71929b')}<path d="M15-50h-8" stroke="#405560" stroke-width="2"/>`;
-  if(a.accessory==='gold')s+=r(6,-36,4,4,'#e6bb53');
-  return s+'</g>';
+  const pId = a.id || a.agentId || '';
+  const preset = (typeof AGENT_PRESETS !== 'undefined' ? (AGENT_PRESETS[pId] || AGENT_PRESETS[pId.toLowerCase()]) : null) || null;
+  const femaleSet = new Set(['controladoria','clara','coordenador','luana','sdr','lia','tese','iris','analista','eva','redator','maya','agenda','nina','assinaturas','bia','etica','elisa']);
+  const isFemale = (preset?.look === 'f') || femaleSet.has(pId.toLowerCase()) || (a.gender === 'f');
+
+  const shirt = (preset?.parts?.top) || a.color || '#a58db9';
+  const skin = a.skin || '#cf9873';
+  const hair = (preset?.parts?.hair) || a.hair || '#372b27';
+
+  const hairStyle = preset?.parts?.hairStyle || (isFemale ? (['controladoria','analista','clara','eva'].includes(pId)?'bun':['sdr','tese','lia','iris'].includes(pId)?'bob':['redator','assinaturas','maya','bia'].includes(pId)?'ponytail':'long') : 'short');
+  const topStyle = preset?.parts?.topStyle || (isFemale ? 'blouse' : (a.accessory === 'tie' ? 'shirt_tie' : 'polo'));
+  const hasGlasses = a.accessory === 'glasses' || preset?.parts?.accessory === 'glasses';
+  const hasHeadset = a.accessory === 'headset' || preset?.parts?.accessory === 'headphones' || preset?.parts?.accessory === 'headset';
+  const hasGold = a.accessory === 'gold' || preset?.parts?.accessory === 'gold' || a.id === 'proprietario';
+
+  let s = `<ellipse cx="0" cy="4" rx="17" ry="5" fill="#263129" opacity=".22"/><g class="body-bob" shape-rendering="crispEdges">`;
+
+  // --- 1. CABELO POR TRÁS DA CABEÇA / PENTEADO ---
+  if(hairStyle === 'bun'){
+    // Coque alto bem evidente no topo (Clara, Eva)
+    s += r(-13,-63,26,18,hair);
+    s += r(-5,-80,10,10,hair) + r(-3,-83,6,4,hair) + r(-1,-84,3,2,'#1b1512');
+  } else if(hairStyle === 'bob'){
+    // Chanel / Bob clássico (Lia SDR, Íris Tese)
+    s += r(-14,-63,28,26,hair);
+  } else if(hairStyle === 'ponytail'){
+    // Rabo de cavalo elegante com elástico (Maya, Bia)
+    s += r(-13,-65,26,20,hair) + r(9,-74,6,18,hair) + r(13,-68,4,14,hair) + r(8,-70,3,3,'#d4af37');
+  } else if(hairStyle === 'long' || hairStyle === 'wavy' || hasHeadset || isFemale){
+    // Cabelo comprido solto (Luana, Nina, Elisa)
+    s += r(-14,-63,28,38,hair);
+  }
+
+  // --- 2. PERNAS E INFERIOR (Calça ou Saia) ---
+  const isSkirt = preset?.parts?.bottomStyle === 'skirt' || (isFemale && ['tese','agenda','assinaturas'].includes(pId));
+  if(isSkirt){
+    s += r(-10,-20,21,14,'#232836') + r(-7,-6,5,10,skin) + r(2,-6,5,10,skin) + r(-9,3,7,4,'#1a1f26') + r(2,3,7,4,'#1a1f26');
+  } else {
+    s += r(-9,-20,7,20,'#2b3540') + r(3,-20,7,20,'#2b3540') + r(-11,-2,9,5,'#1a222b') + r(3,-2,10,5,'#1a222b');
+  }
+
+  // --- 3. TRONCO E BRAÇOS ---
+  if(isFemale){
+    // Silhueta feminina (blusa ou blazer feminino)
+    s += r(-11,-45,23,26,shirt) + r(-15,-41,4,18,shirt) + r(12,-41,4,18,shirt) + r(-15,-25,4,6,skin) + r(12,-25,4,6,skin);
+    // Decote feminino delicado mostrando a pele do pescoço (SEM GRAVATA!)
+    s += r(-4,-46,8,5,skin) + r(-2,-43,4,3,skin);
+    if(topStyle === 'jacket'){
+      const lapel = preset?.parts?.topAccent || '#e2c282';
+      s += r(-7,-45,3,15,lapel) + r(4,-45,3,15,lapel);
+    }
+  } else {
+    // Silhueta masculina
+    s += r(-12,-45,25,27,shirt) + r(-16,-41,5,19,shirt) + r(13,-41,5,19,shirt) + r(-16,-25,5,6,skin) + r(13,-25,5,6,skin);
+    if(topStyle === 'shirt_tie'){
+      // Colarinho de camisa + Gravata masculina com cor de destaque do personagem
+      const tieColor = preset?.parts?.topAccent || (a.human ? '#d4af37' : '#705036');
+      s += r(-4,-46,8,7,'#f3e5c6') + r(-2,-40,4,15,tieColor);
+    } else if(topStyle === 'jacket'){
+      const lapel = preset?.parts?.topAccent || '#d5b478';
+      s += r(-4,-46,8,5,skin) + r(-6,-45,3,14,lapel) + r(3,-45,3,14,lapel);
+    } else {
+      // Polo ou camisa aberta
+      s += r(-4,-46,8,5,skin);
+    }
+  }
+
+  // --- 4. ROSTO E CABEÇA ---
+  s += r(-11,-68,23,23,skin) + r(-14,-61,4,9,skin) + r(12,-61,4,9,skin);
+
+  // --- 5. CABELO FRONTAL / MECHAS ---
+  if(hairStyle === 'bun'){
+    // Mechas frontais elegantes de coque + franja
+    s += r(-10,-71,22,8,hair) + r(-13,-67,4,16,hair) + r(9,-67,4,16,hair) + r(-8,-63,4,4,hair);
+  } else if(hairStyle === 'bob'){
+    s += r(-10,-71,22,8,hair) + r(-14,-50,4,13,hair) + r(10,-50,4,13,hair);
+  } else if(hairStyle === 'long' || hairStyle === 'wavy'){
+    s += r(-10,-71,22,8,hair) + r(-14,-50,4,22,hair) + r(10,-50,4,22,hair);
+  } else if(hairStyle === 'side_part'){
+    s += r(-10,-72,22,9,hair) + r(-13,-68,5,11,hair) + r(7,-68,7,8,hair) + r(-5,-63,3,3,hair);
+  } else {
+    // Curto clássico
+    s += r(-10,-71,22,8,hair) + r(-13,-67,5,11,hair) + r(9,-67,5,8,hair);
+  }
+
+  // Olhos, bochechas e boca
+  s += r(-8,-58,4,4,'#f5edda') + r(4,-58,4,4,'#f5edda') + r(-6,-58,2,4,'#2d3333') + r(5,-58,2,4,'#2d3333') + r(-3,-49,7,2,'#98644e');
+  s += r(-10,-52,3,2,'#c47d64') + r(9,-52,3,2,'#c47d64');
+
+  // --- 6. ACESSÓRIOS ---
+  if(hasGlasses){
+    s += `<path d="M-10-60h9v7h-9zm12 0h9v7H2m-3-4h3" stroke="#2f3c42" stroke-width="2" fill="#afc8ca" fill-opacity=".3"/>`;
+  }
+  if(hasHeadset){
+    s += `<path d="M-15-58v-10h5v-5h19v5h6v13" stroke="#263d49" stroke-width="4" fill="none"/>${r(-17,-61,5,11,'#71929b')}${r(13,-61,5,11,'#71929b')}<path d="M15-50h-8" stroke="#405560" stroke-width="2"/>`;
+  }
+  if(hasGold){
+    s += r(5,-38,4,4,'#e6bb53');
+  }
+
+  return s + '</g>';
  }
  function chair(x,y,color='#5c7d88'){
   return r(x-15,y-37,30,23,'#3a505b')+r(x-13,y-35,26,17,color)+r(x-16,y-15,32,11,'#3a505b')+r(x-13,y-15,26,7,color)+r(x-2,y-3,4,8,'#70777a')+`<path d="M${x-13} ${y+6}h26" stroke="#596064" stroke-width="3"/>`;
@@ -2799,7 +3510,14 @@ class OfficeApp{
     const isJsdom=typeof navigator!=='undefined'&&/jsdom/i.test(navigator.userAgent||'');
     this.canUseHabblaud=isRealHttp&&!isJsdom;
     this.stageEngine=this.canUseHabblaud?'habblaud':'svg';
-    this.habblaudDaylight='day';
+    let savedTheme='dark';
+    try{savedTheme=localStorage.getItem('df_theme')||'dark';}catch{}
+    this.theme=savedTheme;
+    this.habblaudDaylight=this.theme==='light'?'day':'night';
+    this.activeRightTab='inspector';
+    if(typeof document!=='undefined'&&document.documentElement){
+      document.documentElement.setAttribute('data-theme',this.theme);
+    }
     this.habblaudReady=false;
     let saved=null;try{saved=localStorage.getItem('daniel-felix-office-demo-v1')||localStorage.getItem('arao-mendes-office-demo-v1');}catch{}
     this.state=this.live?initialState():restoreState(saved);
@@ -3009,7 +3727,12 @@ class OfficeApp{
       viewToggle.textContent=isHab?'Planta 2D':(this.state.view==='iso'?'Vista pixel':'Vista isométrica');
     }
     const dayBtn=$('#btn-habblaud-daylight');
-    if(dayBtn){dayBtn.hidden=!isHab;dayBtn.textContent=this.habblaudDaylight==='night'?'🌙 Noite':'☀️ Dia';}
+    if(dayBtn){
+      dayBtn.hidden=false;
+      dayBtn.textContent=this.habblaudDaylight==='night'?'🌙 Noite':'☀️ Dia';
+      dayBtn.title=`Iluminação do escritório: ${this.habblaudDaylight==='night'?'Noite':'Dia'} (clique para alternar)`;
+    }
+    this.syncThemeButtons();
     $('#scene-view-label').textContent=isHab?'HABBLAUD 3D · 6 SALAS & 19 AGENTES':(this.state.view==='iso'?'VISTA ISOMÉTRICA':'PIXEL ART · SALAS POR SETOR');
     if(this.canUseHabblaud)this.syncHabblaud();
   }
@@ -3189,6 +3912,7 @@ class OfficeApp{
       const signStep=e.target.closest('[data-sign-contract]');if(signStep){this.simulateZapSignStep(signStep.dataset.signContract);return;}
       const trNotice=e.target.closest('[data-translate-notice]');if(trNotice){this.translateNoticeForWhatsApp(trNotice.dataset.translateNotice);return;}
       const openCalc=e.target.closest('[data-open-calculator]');if(openCalc){this.openDeadlineCalculator();return;}
+      const rtab=e.target.closest('[data-rtab]');if(rtab){this.setRightTab(rtab.dataset.rtab);return;}
       const action=e.target.closest('[data-action]');if(action){e.preventDefault();this.action(action.dataset.action);}
     });
     document.addEventListener('keydown',e=>{const t=e.target;if((e.key==='Enter'||e.key===' ')&&t.matches('.person,.wall-screen')){e.preventDefault();t.dispatchEvent(new MouseEvent('click',{bubbles:true}));}});
@@ -3202,6 +3926,32 @@ class OfficeApp{
     });
     document.addEventListener('visibilitychange',()=>{if(document.hidden&&this.running)this.state.paused=true;this.syncPause();});
   }
+  setRightTab(tabId){
+    this.activeRightTab=tabId;
+    document.querySelectorAll('.right-nav-tab').forEach(b=>{
+      const isActive=b.dataset.rtab===tabId;
+      b.classList.toggle('active',isActive);
+      b.setAttribute('aria-selected',isActive?'true':'false');
+    });
+    document.querySelectorAll('.right-column > [data-panel]').forEach(p=>{
+      p.classList.toggle('active',p.dataset.panel===tabId);
+    });
+  }
+  toggleTheme(){
+    this.theme=this.theme==='light'?'dark':'light';
+    if(typeof document!=='undefined'&&document.documentElement){
+      document.documentElement.setAttribute('data-theme',this.theme);
+    }
+    try{localStorage.setItem('df_theme',this.theme);}catch{}
+    this.syncThemeButtons();
+    this.toast(`Tema alternado para ${this.theme==='light'?'Modo Claro':'Modo Escuro'}.`);
+  }
+  syncThemeButtons(){
+    const tIcon=$('#theme-icon'),tText=$('#theme-text'),tBtn=$('#btn-toggle-theme');
+    if(tIcon)tIcon.textContent=this.theme==='light'?'🌙':'☀️';
+    if(tText)tText.textContent=this.theme==='light'?'Modo Escuro':'Modo Claro';
+    if(tBtn)tBtn.title=`Alternar para ${this.theme==='light'?'Modo Escuro':'Modo Claro'}`;
+  }
   setActiveNav(key){
     document.querySelectorAll('.rail .nav-button').forEach(b=>b.classList.toggle('active',b.dataset.action===key));
   }
@@ -3212,10 +3962,19 @@ class OfficeApp{
       if(this.canUseHabblaud)return;
       this.state.view=this.state.view==='iso'?'pixel':'iso';this.state.zoom=1;this.pan={x:0,y:0};this.persist();this.renderScene();return;
     }
+    if(a==='toggle-theme'){
+      this.toggleTheme();
+      return;
+    }
     if(a==='toggle-daylight'){
       this.habblaudDaylight=this.habblaudDaylight==='day'?'night':'day';
+      const dayBtn=$('#btn-habblaud-daylight');
+      if(dayBtn){
+        dayBtn.textContent=this.habblaudDaylight==='night'?'🌙 Noite':'☀️ Dia';
+        dayBtn.title=`Iluminação do escritório: ${this.habblaudDaylight==='night'?'Noite':'Dia'} (clique para alternar)`;
+      }
       this.postToHabblaud({type:'df:options',options:{daylight:this.habblaudDaylight}});
-      this.renderScene();
+      this.toast(`Iluminação do escritório alternada para ${this.habblaudDaylight==='night'?'Noite':'Dia'}.`);
       return;
     }
     const navKeys=['home','telegram','clients','petitions','processes','contracts','financeiro','team','metrics','integrations','help'];
@@ -3254,7 +4013,7 @@ class OfficeApp{
   syncPause(){const b=$('#pause-button');b.innerHTML=icon(this.state.paused?'play':'pause')+`<span>${this.state.paused?'Retomar':'Pausar'}</span>`;$('#stage').classList.toggle('paused',this.state.paused);if(this.canUseHabblaud)this.postToHabblaud({type:'df:pause',paused:this.state.paused});}
   zoom(v){if(this.stageEngine==='habblaud'){this.postToHabblaud({type:'df:camera',action:v>0?'zoomIn':'zoomOut'});return;}this.state.zoom=Math.max(.65,Math.min(2.2,this.state.zoom+v));this.transformView();}
   transformView(){const c=$('#scene-container');c.style.transform=`translate(${this.pan.x}px,${this.pan.y}px) scale(${this.state.zoom})`;$('#zoom-label').textContent=`${Math.round(this.state.zoom*100)}%`;}
-  selectAgent(id,open=false,opts={}){if(!this.state.agents.some(a=>a.id===id))return;this.selected=id;if(this.stageEngine!=='habblaud')this.renderScene();this.renderInspector();if(this.stageEngine==='habblaud'&&!opts.fromHabblaud)this.postToHabblaud({type:'df:select-agent',agentId:id,focus:false});if(open&&innerWidth<=1020)this.profile(id);}
+  selectAgent(id,open=false,opts={}){if(!this.state.agents.some(a=>a.id===id))return;this.selected=id;this.setRightTab('inspector');if(this.stageEngine!=='habblaud')this.renderScene();this.renderInspector();if(this.stageEngine==='habblaud'&&!opts.fromHabblaud)this.postToHabblaud({type:'df:select-agent',agentId:id,focus:false});if(open&&innerWidth<=1020)this.profile(id);}
   show(title,subtitle,content){$('#modal-body').innerHTML=`<div class="modal-head"><div><div class="eyebrow">DANIEL FELIX · ${this.live?'GABINETE':'OPERAÇÃO DO ESCRITÓRIO'}</div><h2 id="modal-title">${title}</h2><p>${subtitle}</p></div><button class="close-button" data-action="close" aria-label="Fechar">×</button></div><div class="modal-content">${content}</div>`;$('#modal-body [data-action=close]').onclick=()=>this.modal.close();if(!this.modal.open)this.modal.showModal();}
 
   /* ======================================================================
@@ -3450,6 +4209,7 @@ class OfficeApp{
       document.querySelectorAll('[data-select-client]').forEach(b=>b.onclick=()=>{renderList(b.dataset.selectClient);renderDetail(list.find(x=>x.id===b.dataset.selectClient));});
     };
 
+    let activeClientTab='summary';
     const renderDetail=(c)=>{
       if(!c){$('#client-detail-panel').innerHTML='<p class="chart-note">Selecione um cliente ao lado.</p>';return;}
       const pet=(this.state.petitions||[]).find(p=>p.id===c.petitionId||p.clientId===c.id);
@@ -3468,41 +4228,77 @@ class OfficeApp{
           </div>
         </div>
 
-        <div class="info-grid-3">
-          <div class="info-box"><small>CPF / RG</small><strong>${esc(this.mask(c.cpf,'cpf'))} · ${esc(this.mask(c.rg||'—','cpf'))}</strong></div>
-          <div class="info-box"><small>Estado Civil / Profissão</small><strong>${esc(c.estadoCivil)} · ${esc(c.profissao)}</strong></div>
-          <div class="info-box"><small>WhatsApp / E-mail</small><strong>${esc(this.mask(c.phone,'phone'))}<br><span style="font-size:13px;font-weight:400;color:#9ab0bc">${esc(this.mask(c.email,'cpf'))}</span></strong></div>
-          <div class="info-box" style="grid-column:span 2"><small>Endereço Completo (Qualificação p/ Procuração e Inicial)</small><strong>${esc(this.mask(c.endereco,'cpf'))}</strong></div>
-          <div class="info-box"><small>Honorários da Pasta</small><strong style="color:#86d1b1">${esc(this.mask(money(c.honorariosPaid||0),'money'))} pagos <span style="color:#9ab0bc;font-weight:400">/ ${esc(this.mask(money(c.honorariosTotal||0),'money'))}</span></strong><button type="button" class="text-button" data-open-fin-client="${esc(c.name)}" style="font-size:12px;margin-top:6px">Ver parcelas no Financeiro ↗</button></div>
-        </div>
+        <nav class="client-tabs-nav" role="tablist">
+          <button class="client-nav-tab ${activeClientTab==='summary'?'active':''}" data-ctab="summary">📋 Resumo & Fatos</button>
+          <button class="client-nav-tab ${activeClientTab==='qualification'?'active':''}" data-ctab="qualification">👤 Qualificação Civil</button>
+          <button class="client-nav-tab ${activeClientTab==='documents'?'active':''}" data-ctab="documents">📁 Documentos & Provas (${(c.documents||[]).length})</button>
+          <button class="client-nav-tab ${activeClientTab==='financial'?'active':''}" data-ctab="financial">💰 Honorários & Vínculos</button>
+        </nav>
 
-        <div class="citation-box">
-          <h4>📋 Relato Triado no WhatsApp (Lia SDR) & Resumo do Caso</h4>
-          <p>${esc(c.summary)}</p>
-          <ul style="margin:10px 0 0;padding-left:20px;font-size:13.5px;color:#b8c7cf;line-height:1.65">
-            ${(c.facts||[]).map(f=>`<li>${esc(f)}</li>`).join('')}
-          </ul>
-        </div>
-
-        <div class="chart-grid" style="margin-top:14px">
+        <div class="client-tab-panel ${activeClientTab==='summary'?'active':''}" data-cpanel="summary" style="margin-top:16px">
           <div class="citation-box" style="margin-top:0">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <h4>📋 Relato Triado no WhatsApp (Lia SDR) & Resumo do Caso</h4>
+            <p style="font-size:14.5px;line-height:1.65">${esc(c.summary)}</p>
+            <h5 style="margin:14px 0 6px;font-size:13.5px;color:var(--gold)">Linha do Tempo e Fatos Identificados:</h5>
+            <ul style="margin:0;padding-left:20px;font-size:13.5px;color:var(--muted);line-height:1.65">
+              ${(c.facts||[]).map(f=>`<li>${esc(f)}</li>`).join('')}
+            </ul>
+          </div>
+        </div>
+
+        <div class="client-tab-panel ${activeClientTab==='qualification'?'active':''}" data-cpanel="qualification" style="margin-top:16px">
+          <div class="info-grid-3">
+            <div class="info-box"><small>CPF / RG</small><strong>${esc(this.mask(c.cpf,'cpf'))} · ${esc(this.mask(c.rg||'—','cpf'))}</strong></div>
+            <div class="info-box"><small>Estado Civil / Profissão</small><strong>${esc(c.estadoCivil)} · ${esc(c.profissao)}</strong></div>
+            <div class="info-box"><small>WhatsApp / E-mail</small><strong>${esc(this.mask(c.phone,'phone'))}<br><span style="font-size:13px;font-weight:400;color:var(--muted)">${esc(this.mask(c.email,'cpf'))}</span></strong></div>
+            <div class="info-box" style="grid-column:span 3"><small>Endereço Completo (Qualificação p/ Procuração e Inicial)</small><strong>${esc(this.mask(c.endereco,'cpf'))}</strong></div>
+          </div>
+        </div>
+
+        <div class="client-tab-panel ${activeClientTab==='documents'?'active':''}" data-cpanel="documents" style="margin-top:16px">
+          <div class="citation-box" style="margin-top:0">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
               <h4 style="margin:0">📂 Documentos & Provas no Dossiê (${(c.documents||[]).length})</h4>
               <label class="tg-inline-btn" style="cursor:pointer;margin:0;font-size:12px" title="Anexar arquivo com carimbo e hash SHA-256">
                 📎 Anexar Prova <input type="file" id="client-file-upload" style="display:none">
               </label>
             </div>
-            ${(c.documents||[]).map(d=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13.5px;padding:7px 0;border-bottom:1px solid #253640"><span>📄 ${esc(d.name)} ${d.hash?`<small style="color:#78909c;display:block">SHA-256: ${esc(d.hash.slice(0,22))}...</small>`:''}</span><span class="badge green">${esc(d.status)}</span></div>`).join('')}
-            ${c.missingDocs?.length?`<div style="margin-top:10px;color:#f0a399;font-size:13px">⚠️ Pendência documental: ${c.missingDocs.map(esc).join(', ')}</div>`:'<div style="margin-top:10px;color:#86d1b1;font-size:13px">✓ Documentação completa conferida por Eva.</div>'}
+            ${(c.documents||[]).map(d=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13.5px;padding:9px 0;border-bottom:1px solid #253640"><span>📄 <strong>${esc(d.name)}</strong> ${d.hash?`<small style="color:var(--muted);display:block">SHA-256: ${esc(d.hash.slice(0,28))}...</small>`:''}</span><span class="badge green">${esc(d.status)}</span></div>`).join('')}
+            ${c.missingDocs?.length?`<div style="margin-top:12px;color:#f0a399;font-size:13px">⚠️ Pendência documental: ${c.missingDocs.map(esc).join(', ')}</div>`:'<div style="margin-top:12px;color:#86d1b1;font-size:13px">✓ Documentação completa conferida por Eva.</div>'}
           </div>
-          <div class="citation-box" style="margin-top:0">
+        </div>
+
+        <div class="client-tab-panel ${activeClientTab==='financial'?'active':''}" data-cpanel="financial" style="margin-top:16px">
+          <div class="info-grid-3">
+            <div class="info-box" style="grid-column:span 2">
+              <small>Honorários da Pasta</small>
+              <strong style="color:#86d1b1;font-size:18px">${esc(this.mask(money(c.honorariosPaid||0),'money'))} pagos <span style="color:var(--muted);font-weight:400;font-size:14px">/ ${esc(this.mask(money(c.honorariosTotal||0),'money'))} contratados</span></strong>
+              <div style="margin-top:8px;background:#1a2832;border-radius:4px;height:7px;overflow:hidden">
+                <div style="background:#70c4a1;height:100%;width:${Math.min(100,((c.honorariosPaid||0)/(c.honorariosTotal||1))*100)}%"></div>
+              </div>
+              <button type="button" class="text-button" data-open-fin-client="${esc(c.name)}" style="font-size:12px;margin-top:8px">Ver parcelas no Financeiro ↗</button>
+            </div>
+            <div class="info-box">
+              <small>Processo CNJ</small>
+              <strong>${proc?`${esc(proc.numeroCnj)}`:'Aguardando protocolo'}</strong>
+              <small style="color:var(--muted);margin-top:4px">${proc?esc(proc.tribunal):'Vara Cível'}</small>
+            </div>
+          </div>
+          <div class="citation-box" style="margin-top:12px">
             <h4>🔗 Vínculos Operacionais do Cliente</h4>
             <p style="margin-bottom:8px"><strong>Petição / Minuta:</strong> ${pet?`<a href="#" data-open-petition="${esc(pet.id)}" style="color:#e6c786;text-decoration:underline">${esc(pet.code)} · ${esc(pet.statusLabel)}</a>`:'Nenhuma minuta gerada ainda'}</p>
             <p style="margin-bottom:8px"><strong>Procuração / Contrato:</strong> ${doc?`<a href="#" data-open-contract="${esc(doc.id)}" style="color:#9ad2f5;text-decoration:underline">${esc(doc.code)} · ${esc(doc.statusLabel)}</a>`:'Pendente de emissão'}</p>
-            <p><strong>Processo CNJ:</strong> ${proc?`${esc(proc.numeroCnj)} (${esc(proc.tribunal)})`:'Aguardando protocolo da inicial'}</p>
           </div>
         </div>
       `;
+
+      document.querySelectorAll('[data-ctab]').forEach(tabBtn=>{
+        tabBtn.onclick=()=>{
+          activeClientTab=tabBtn.dataset.ctab;
+          document.querySelectorAll('[data-ctab]').forEach(b=>b.classList.toggle('active',b.dataset.ctab===activeClientTab));
+          document.querySelectorAll('[data-cpanel]').forEach(p=>p.classList.toggle('active',p.dataset.cpanel===activeClientTab));
+        };
+      });
       const btnProc=$('#btn-proc-for-client');
       if(btnProc)btnProc.onclick=()=>this.contracts(doc?.id||null,c.id);
       const btnCreatePet=$('#btn-create-pet-for-client');
@@ -4886,9 +5682,89 @@ Emitido em: ${d.createdAt} · Escritório Daniel Felix Advocacia`;
     this.show('O pulso do escritório',this.live?'Leitura autenticada da mesma base do Gabinete. Campos sem integração ficam indisponíveis.':'Métricas do Escritório Daniel Felix para acompanhamento no telão.alterne o período abaixo.',`${!this.live?`<div class="period-switch">${Object.entries(METRICS).map(([k,v])=>`<button data-period="${k}" class="${this.state.period===k?'active':''}">${v.label}</button>`).join('')}</div>`:''}<div class="metrics-cards">${[['Processos na carteira',m.processes],['Minutas na lista',m.petitions],['Prazos em 7 dias',m.deadlines],['Recebido no período',m.received==null?'—':money(m.received)]].map(v=>`<div class="metric-mini"><small>${v[0]}</small><strong>${textOrDash(v[1])}</strong></div>`).join('')}</div><div class="chart-grid"><div class="chart-card"><h3>Atividades no período</h3><p>${this.live?'A integração preserva dados ausentes':'Série demonstrativa · tarefas preparadas'}</p>${graph}</div><div class="chart-card"><h3>Do contato à contratação</h3><p>${this.live?'Depende de ZapConversa e assinatura':'Funil comercial de clientes'}</p>${funnel.length?funnel.map((v,i)=>`<div class="funnel-row"><span>${['Contatos','Qualificados','Propostas','Contratados'][i]}</span><div class="bar-track"><div class="bar-fill" style="width:${v/(funnel[0]||1)*100}%"></div></div><span>${v}</span></div>`).join(''):'<p class="subtle-note">Ainda sem fonte conectada.</p>'}</div></div><p class="chart-note">${this.live?'Atualizado em '+esc(this.snapshot?.generatedAt||'—')+'. Consultas e aprovações continuam no Gabinete.':'Você pode alternar os períodos e comparar os gráficos. O quadro processual usa a mesma carteira; os totais de contatos e contratos variam com o período escolhido.'}</p>${p.length?`<details><summary class="chart-note">Ver valores do gráfico</summary><table class="data-table"><thead><tr><th>Ponto</th><th>Atividades de exemplo</th></tr></thead><tbody>${m.series.map((v,i)=>`<tr><td>${i+1}</td><td>${v}</td></tr>`).join('')}</tbody></table></details>`:''}`);
   }
   team(){
-    this.show('Cada agente, uma atribuição','Selecione uma pessoa para ver o papel, a especialidade e as rotinas do setor.',`<div class="team-tools"><input id="team-search" placeholder="Buscar nome ou atribuição" aria-label="Buscar equipe"><select id="team-area" aria-label="Filtrar área"><option>Todas</option>${AREAS.map(x=>`<option>${x}</option>`).join('')}</select><button class="outline-button" data-action="new-agent">+ Adicionar agente</button></div><div class="team-list" id="team-list"></div>`);
-    const draw=()=>{const q=$('#team-search').value.toLocaleLowerCase('pt-BR'),area=$('#team-area').value;const list=this.state.agents.filter(a=>(a.name+' '+a.role).toLocaleLowerCase('pt-BR').includes(q)&&(area==='Todas'||a.area===area));$('#team-list').innerHTML=list.map(a=>`<button class="team-member" data-open-agent="${esc(a.id)}">${portrait(a)}<span><strong>${esc(a.name)}</strong><small>${esc(a.role)}<br>${esc(a.area)} · ${esc(SECTORS[a.sector].short)}</small></span></button>`).join('')||'<p class="chart-note">Nenhum personagem encontrado nesta busca.</p>';};
-    $('#team-search').addEventListener('input',draw);$('#team-area').addEventListener('change',draw);draw();
+    this.show('Equipe do Escritório · Salas do Habblaud','Estrutura operacional organizada pelas 6 salas da planta virtual. Selecione um agente para ver o papel, a especialidade e as rotinas do setor.',`<div class="team-tools"><input id="team-search" placeholder="Buscar nome ou atribuição" aria-label="Buscar equipe"><select id="team-area" aria-label="Filtrar área"><option>Todas</option>${AREAS.map(x=>`<option>${x}</option>`).join('')}</select><button class="outline-button" data-action="new-agent">+ Adicionar agente</button></div><div class="team-list" id="team-list"></div>`);
+    const squads = [
+      { id: 'diretoria', name: 'Diretoria Executiva & Coordenação', icon: '⚖️', room: 'Sala 01 · Diretoria & Mesa Executiva' },
+      { id: 'juridico', name: 'Núcleo Jurídico & Petições', icon: '🏛️', room: 'Sala 02 · Redação, Jurisprudência & Teses' },
+      { id: 'comercial', name: 'Comercial & Triagem', icon: '📱', room: 'Sala 03 · Atendimento WhatsApp & SDR' },
+      { id: 'administrativo', name: 'Processual & Prazos', icon: '📅', room: 'Sala 04 · Controladoria & Agenda' },
+      { id: 'contratos', name: 'Contratos & Assinaturas', icon: '📜', room: 'Sala 05 · ZapSign & Procurações' },
+      { id: 'financeiro', name: 'Financeiro & Ética OAB', icon: '💰', room: 'Sala 06 · Honorários & Apoio Interno' },
+    ];
+    const draw=()=>{
+      const q=($('#team-search')?.value||'').toLocaleLowerCase('pt-BR');
+      const area=$('#team-area')?.value||'Todas';
+      const filtered=this.state.agents.filter(a=>(a.name+' '+a.role).toLocaleLowerCase('pt-BR').includes(q)&&(area==='Todas'||a.area===area));
+      if(!filtered.length){
+        $('#team-list').innerHTML='<p class="chart-note" style="padding:20px">Nenhum personagem encontrado nesta busca.</p>';
+        return;
+      }
+      let html='';
+      for(const squad of squads){
+        const squadAgents=filtered.filter(a=>{
+          if(squad.id==='financeiro')return a.sector==='financeiro'||a.sector==='etica';
+          return a.sector===squad.id;
+        });
+        if(!squadAgents.length)continue;
+        html+=`
+          <div class="team-squad-block">
+            <div class="team-squad-header">
+              <div class="team-squad-title">
+                <span>${squad.icon}</span>
+                <span>${squad.name}</span>
+                <span class="badge" style="font-size:11px">${squadAgents.length} ${squadAgents.length===1?'integrante':'integrantes'}</span>
+              </div>
+              <small class="muted">${squad.room}</small>
+            </div>
+            <div class="team-squad-grid">
+              ${squadAgents.map(a=>`
+                <button class="team-card team-member" data-open-agent="${esc(a.id)}">
+                  <div class="avatar-box">${portrait(a)}</div>
+                  <div class="team-info">
+                    <strong>
+                      <span>${esc(a.name)}</span>
+                      <span class="badge ${a.human?'gold':'blue'}" style="font-size:11px">${a.human?'Humano':'IA'}</span>
+                    </strong>
+                    <small style="color:var(--text);font-weight:500">${esc(a.role)}</small>
+                    <small><span class="team-status-dot" style="background:${STATUS_COLORS[a.status]||'#70c4a1'}"></span>${esc(STATES[a.status]||a.status)} · ${esc(a.area)}</small>
+                  </div>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+      const otherAgents=filtered.filter(a=>!squads.some(s=>s.id===a.sector)&&a.sector!=='etica');
+      if(otherAgents.length){
+        html+=`
+          <div class="team-squad-block">
+            <div class="team-squad-header">
+              <div class="team-squad-title">
+                <span>⭐</span>
+                <span>Personalizados</span>
+                <span class="badge" style="font-size:11px">${otherAgents.length}</span>
+              </div>
+            </div>
+            <div class="team-squad-grid">
+              ${otherAgents.map(a=>`
+                <button class="team-card team-member" data-open-agent="${esc(a.id)}">
+                  <div class="avatar-box">${portrait(a)}</div>
+                  <div class="team-info">
+                    <strong><span>${esc(a.name)}</span></strong>
+                    <small style="color:var(--text)">${esc(a.role)}</small>
+                    <small>${esc(a.area)} · ${esc(SECTORS[a.sector]?.short||a.sector)}</small>
+                  </div>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+      $('#team-list').innerHTML=html;
+    };
+    $('#team-search').addEventListener('input',draw);
+    $('#team-area').addEventListener('change',draw);
+    draw();
   }
   newAgent(){
     if(this.live){this.show('Adicionar agente','A maquete conectada ainda não possui cadastro persistente de agentes.',`<div class="content-copy"><p>O cadastro deve ser implementado pela API autenticada do escritório. Os perfis deste pacote definem os campos e as permissões. A maquete offline permite experimentar a aparência e a distribuição.</p></div>`);return;}

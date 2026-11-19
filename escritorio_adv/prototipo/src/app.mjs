@@ -46,7 +46,14 @@ export class OfficeApp{
     const isJsdom=typeof navigator!=='undefined'&&/jsdom/i.test(navigator.userAgent||'');
     this.canUseHabblaud=isRealHttp&&!isJsdom;
     this.stageEngine=this.canUseHabblaud?'habblaud':'svg';
-    this.habblaudDaylight='day';
+    let savedTheme='dark';
+    try{savedTheme=localStorage.getItem('df_theme')||'dark';}catch{}
+    this.theme=savedTheme;
+    this.habblaudDaylight=this.theme==='light'?'day':'night';
+    this.activeRightTab='inspector';
+    if(typeof document!=='undefined'&&document.documentElement){
+      document.documentElement.setAttribute('data-theme',this.theme);
+    }
     this.habblaudReady=false;
     let saved=null;try{saved=localStorage.getItem('daniel-felix-office-demo-v1')||localStorage.getItem('arao-mendes-office-demo-v1');}catch{}
     this.state=this.live?initialState():restoreState(saved);
@@ -256,7 +263,12 @@ export class OfficeApp{
       viewToggle.textContent=isHab?'Planta 2D':(this.state.view==='iso'?'Vista pixel':'Vista isométrica');
     }
     const dayBtn=$('#btn-habblaud-daylight');
-    if(dayBtn){dayBtn.hidden=!isHab;dayBtn.textContent=this.habblaudDaylight==='night'?'🌙 Noite':'☀️ Dia';}
+    if(dayBtn){
+      dayBtn.hidden=false;
+      dayBtn.textContent=this.habblaudDaylight==='night'?'🌙 Noite':'☀️ Dia';
+      dayBtn.title=`Iluminação do escritório: ${this.habblaudDaylight==='night'?'Noite':'Dia'} (clique para alternar)`;
+    }
+    this.syncThemeButtons();
     $('#scene-view-label').textContent=isHab?'HABBLAUD 3D · 6 SALAS & 19 AGENTES':(this.state.view==='iso'?'VISTA ISOMÉTRICA':'PIXEL ART · SALAS POR SETOR');
     if(this.canUseHabblaud)this.syncHabblaud();
   }
@@ -436,6 +448,7 @@ export class OfficeApp{
       const signStep=e.target.closest('[data-sign-contract]');if(signStep){this.simulateZapSignStep(signStep.dataset.signContract);return;}
       const trNotice=e.target.closest('[data-translate-notice]');if(trNotice){this.translateNoticeForWhatsApp(trNotice.dataset.translateNotice);return;}
       const openCalc=e.target.closest('[data-open-calculator]');if(openCalc){this.openDeadlineCalculator();return;}
+      const rtab=e.target.closest('[data-rtab]');if(rtab){this.setRightTab(rtab.dataset.rtab);return;}
       const action=e.target.closest('[data-action]');if(action){e.preventDefault();this.action(action.dataset.action);}
     });
     document.addEventListener('keydown',e=>{const t=e.target;if((e.key==='Enter'||e.key===' ')&&t.matches('.person,.wall-screen')){e.preventDefault();t.dispatchEvent(new MouseEvent('click',{bubbles:true}));}});
@@ -449,6 +462,32 @@ export class OfficeApp{
     });
     document.addEventListener('visibilitychange',()=>{if(document.hidden&&this.running)this.state.paused=true;this.syncPause();});
   }
+  setRightTab(tabId){
+    this.activeRightTab=tabId;
+    document.querySelectorAll('.right-nav-tab').forEach(b=>{
+      const isActive=b.dataset.rtab===tabId;
+      b.classList.toggle('active',isActive);
+      b.setAttribute('aria-selected',isActive?'true':'false');
+    });
+    document.querySelectorAll('.right-column > [data-panel]').forEach(p=>{
+      p.classList.toggle('active',p.dataset.panel===tabId);
+    });
+  }
+  toggleTheme(){
+    this.theme=this.theme==='light'?'dark':'light';
+    if(typeof document!=='undefined'&&document.documentElement){
+      document.documentElement.setAttribute('data-theme',this.theme);
+    }
+    try{localStorage.setItem('df_theme',this.theme);}catch{}
+    this.syncThemeButtons();
+    this.toast(`Tema alternado para ${this.theme==='light'?'Modo Claro':'Modo Escuro'}.`);
+  }
+  syncThemeButtons(){
+    const tIcon=$('#theme-icon'),tText=$('#theme-text'),tBtn=$('#btn-toggle-theme');
+    if(tIcon)tIcon.textContent=this.theme==='light'?'🌙':'☀️';
+    if(tText)tText.textContent=this.theme==='light'?'Modo Escuro':'Modo Claro';
+    if(tBtn)tBtn.title=`Alternar para ${this.theme==='light'?'Modo Escuro':'Modo Claro'}`;
+  }
   setActiveNav(key){
     document.querySelectorAll('.rail .nav-button').forEach(b=>b.classList.toggle('active',b.dataset.action===key));
   }
@@ -459,10 +498,19 @@ export class OfficeApp{
       if(this.canUseHabblaud)return;
       this.state.view=this.state.view==='iso'?'pixel':'iso';this.state.zoom=1;this.pan={x:0,y:0};this.persist();this.renderScene();return;
     }
+    if(a==='toggle-theme'){
+      this.toggleTheme();
+      return;
+    }
     if(a==='toggle-daylight'){
       this.habblaudDaylight=this.habblaudDaylight==='day'?'night':'day';
+      const dayBtn=$('#btn-habblaud-daylight');
+      if(dayBtn){
+        dayBtn.textContent=this.habblaudDaylight==='night'?'🌙 Noite':'☀️ Dia';
+        dayBtn.title=`Iluminação do escritório: ${this.habblaudDaylight==='night'?'Noite':'Dia'} (clique para alternar)`;
+      }
       this.postToHabblaud({type:'df:options',options:{daylight:this.habblaudDaylight}});
-      this.renderScene();
+      this.toast(`Iluminação do escritório alternada para ${this.habblaudDaylight==='night'?'Noite':'Dia'}.`);
       return;
     }
     const navKeys=['home','telegram','clients','petitions','processes','contracts','financeiro','team','metrics','integrations','help'];
@@ -501,7 +549,7 @@ export class OfficeApp{
   syncPause(){const b=$('#pause-button');b.innerHTML=icon(this.state.paused?'play':'pause')+`<span>${this.state.paused?'Retomar':'Pausar'}</span>`;$('#stage').classList.toggle('paused',this.state.paused);if(this.canUseHabblaud)this.postToHabblaud({type:'df:pause',paused:this.state.paused});}
   zoom(v){if(this.stageEngine==='habblaud'){this.postToHabblaud({type:'df:camera',action:v>0?'zoomIn':'zoomOut'});return;}this.state.zoom=Math.max(.65,Math.min(2.2,this.state.zoom+v));this.transformView();}
   transformView(){const c=$('#scene-container');c.style.transform=`translate(${this.pan.x}px,${this.pan.y}px) scale(${this.state.zoom})`;$('#zoom-label').textContent=`${Math.round(this.state.zoom*100)}%`;}
-  selectAgent(id,open=false,opts={}){if(!this.state.agents.some(a=>a.id===id))return;this.selected=id;if(this.stageEngine!=='habblaud')this.renderScene();this.renderInspector();if(this.stageEngine==='habblaud'&&!opts.fromHabblaud)this.postToHabblaud({type:'df:select-agent',agentId:id,focus:false});if(open&&innerWidth<=1020)this.profile(id);}
+  selectAgent(id,open=false,opts={}){if(!this.state.agents.some(a=>a.id===id))return;this.selected=id;this.setRightTab('inspector');if(this.stageEngine!=='habblaud')this.renderScene();this.renderInspector();if(this.stageEngine==='habblaud'&&!opts.fromHabblaud)this.postToHabblaud({type:'df:select-agent',agentId:id,focus:false});if(open&&innerWidth<=1020)this.profile(id);}
   show(title,subtitle,content){$('#modal-body').innerHTML=`<div class="modal-head"><div><div class="eyebrow">DANIEL FELIX · ${this.live?'GABINETE':'OPERAÇÃO DO ESCRITÓRIO'}</div><h2 id="modal-title">${title}</h2><p>${subtitle}</p></div><button class="close-button" data-action="close" aria-label="Fechar">×</button></div><div class="modal-content">${content}</div>`;$('#modal-body [data-action=close]').onclick=()=>this.modal.close();if(!this.modal.open)this.modal.showModal();}
 
   /* ======================================================================
@@ -697,6 +745,7 @@ export class OfficeApp{
       document.querySelectorAll('[data-select-client]').forEach(b=>b.onclick=()=>{renderList(b.dataset.selectClient);renderDetail(list.find(x=>x.id===b.dataset.selectClient));});
     };
 
+    let activeClientTab='summary';
     const renderDetail=(c)=>{
       if(!c){$('#client-detail-panel').innerHTML='<p class="chart-note">Selecione um cliente ao lado.</p>';return;}
       const pet=(this.state.petitions||[]).find(p=>p.id===c.petitionId||p.clientId===c.id);
@@ -715,41 +764,77 @@ export class OfficeApp{
           </div>
         </div>
 
-        <div class="info-grid-3">
-          <div class="info-box"><small>CPF / RG</small><strong>${esc(this.mask(c.cpf,'cpf'))} · ${esc(this.mask(c.rg||'—','cpf'))}</strong></div>
-          <div class="info-box"><small>Estado Civil / Profissão</small><strong>${esc(c.estadoCivil)} · ${esc(c.profissao)}</strong></div>
-          <div class="info-box"><small>WhatsApp / E-mail</small><strong>${esc(this.mask(c.phone,'phone'))}<br><span style="font-size:13px;font-weight:400;color:#9ab0bc">${esc(this.mask(c.email,'cpf'))}</span></strong></div>
-          <div class="info-box" style="grid-column:span 2"><small>Endereço Completo (Qualificação p/ Procuração e Inicial)</small><strong>${esc(this.mask(c.endereco,'cpf'))}</strong></div>
-          <div class="info-box"><small>Honorários da Pasta</small><strong style="color:#86d1b1">${esc(this.mask(money(c.honorariosPaid||0),'money'))} pagos <span style="color:#9ab0bc;font-weight:400">/ ${esc(this.mask(money(c.honorariosTotal||0),'money'))}</span></strong><button type="button" class="text-button" data-open-fin-client="${esc(c.name)}" style="font-size:12px;margin-top:6px">Ver parcelas no Financeiro ↗</button></div>
-        </div>
+        <nav class="client-tabs-nav" role="tablist">
+          <button class="client-nav-tab ${activeClientTab==='summary'?'active':''}" data-ctab="summary">📋 Resumo & Fatos</button>
+          <button class="client-nav-tab ${activeClientTab==='qualification'?'active':''}" data-ctab="qualification">👤 Qualificação Civil</button>
+          <button class="client-nav-tab ${activeClientTab==='documents'?'active':''}" data-ctab="documents">📁 Documentos & Provas (${(c.documents||[]).length})</button>
+          <button class="client-nav-tab ${activeClientTab==='financial'?'active':''}" data-ctab="financial">💰 Honorários & Vínculos</button>
+        </nav>
 
-        <div class="citation-box">
-          <h4>📋 Relato Triado no WhatsApp (Lia SDR) & Resumo do Caso</h4>
-          <p>${esc(c.summary)}</p>
-          <ul style="margin:10px 0 0;padding-left:20px;font-size:13.5px;color:#b8c7cf;line-height:1.65">
-            ${(c.facts||[]).map(f=>`<li>${esc(f)}</li>`).join('')}
-          </ul>
-        </div>
-
-        <div class="chart-grid" style="margin-top:14px">
+        <div class="client-tab-panel ${activeClientTab==='summary'?'active':''}" data-cpanel="summary" style="margin-top:16px">
           <div class="citation-box" style="margin-top:0">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <h4>📋 Relato Triado no WhatsApp (Lia SDR) & Resumo do Caso</h4>
+            <p style="font-size:14.5px;line-height:1.65">${esc(c.summary)}</p>
+            <h5 style="margin:14px 0 6px;font-size:13.5px;color:var(--gold)">Linha do Tempo e Fatos Identificados:</h5>
+            <ul style="margin:0;padding-left:20px;font-size:13.5px;color:var(--muted);line-height:1.65">
+              ${(c.facts||[]).map(f=>`<li>${esc(f)}</li>`).join('')}
+            </ul>
+          </div>
+        </div>
+
+        <div class="client-tab-panel ${activeClientTab==='qualification'?'active':''}" data-cpanel="qualification" style="margin-top:16px">
+          <div class="info-grid-3">
+            <div class="info-box"><small>CPF / RG</small><strong>${esc(this.mask(c.cpf,'cpf'))} · ${esc(this.mask(c.rg||'—','cpf'))}</strong></div>
+            <div class="info-box"><small>Estado Civil / Profissão</small><strong>${esc(c.estadoCivil)} · ${esc(c.profissao)}</strong></div>
+            <div class="info-box"><small>WhatsApp / E-mail</small><strong>${esc(this.mask(c.phone,'phone'))}<br><span style="font-size:13px;font-weight:400;color:var(--muted)">${esc(this.mask(c.email,'cpf'))}</span></strong></div>
+            <div class="info-box" style="grid-column:span 3"><small>Endereço Completo (Qualificação p/ Procuração e Inicial)</small><strong>${esc(this.mask(c.endereco,'cpf'))}</strong></div>
+          </div>
+        </div>
+
+        <div class="client-tab-panel ${activeClientTab==='documents'?'active':''}" data-cpanel="documents" style="margin-top:16px">
+          <div class="citation-box" style="margin-top:0">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
               <h4 style="margin:0">📂 Documentos & Provas no Dossiê (${(c.documents||[]).length})</h4>
               <label class="tg-inline-btn" style="cursor:pointer;margin:0;font-size:12px" title="Anexar arquivo com carimbo e hash SHA-256">
                 📎 Anexar Prova <input type="file" id="client-file-upload" style="display:none">
               </label>
             </div>
-            ${(c.documents||[]).map(d=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13.5px;padding:7px 0;border-bottom:1px solid #253640"><span>📄 ${esc(d.name)} ${d.hash?`<small style="color:#78909c;display:block">SHA-256: ${esc(d.hash.slice(0,22))}...</small>`:''}</span><span class="badge green">${esc(d.status)}</span></div>`).join('')}
-            ${c.missingDocs?.length?`<div style="margin-top:10px;color:#f0a399;font-size:13px">⚠️ Pendência documental: ${c.missingDocs.map(esc).join(', ')}</div>`:'<div style="margin-top:10px;color:#86d1b1;font-size:13px">✓ Documentação completa conferida por Eva.</div>'}
+            ${(c.documents||[]).map(d=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13.5px;padding:9px 0;border-bottom:1px solid #253640"><span>📄 <strong>${esc(d.name)}</strong> ${d.hash?`<small style="color:var(--muted);display:block">SHA-256: ${esc(d.hash.slice(0,28))}...</small>`:''}</span><span class="badge green">${esc(d.status)}</span></div>`).join('')}
+            ${c.missingDocs?.length?`<div style="margin-top:12px;color:#f0a399;font-size:13px">⚠️ Pendência documental: ${c.missingDocs.map(esc).join(', ')}</div>`:'<div style="margin-top:12px;color:#86d1b1;font-size:13px">✓ Documentação completa conferida por Eva.</div>'}
           </div>
-          <div class="citation-box" style="margin-top:0">
+        </div>
+
+        <div class="client-tab-panel ${activeClientTab==='financial'?'active':''}" data-cpanel="financial" style="margin-top:16px">
+          <div class="info-grid-3">
+            <div class="info-box" style="grid-column:span 2">
+              <small>Honorários da Pasta</small>
+              <strong style="color:#86d1b1;font-size:18px">${esc(this.mask(money(c.honorariosPaid||0),'money'))} pagos <span style="color:var(--muted);font-weight:400;font-size:14px">/ ${esc(this.mask(money(c.honorariosTotal||0),'money'))} contratados</span></strong>
+              <div style="margin-top:8px;background:#1a2832;border-radius:4px;height:7px;overflow:hidden">
+                <div style="background:#70c4a1;height:100%;width:${Math.min(100,((c.honorariosPaid||0)/(c.honorariosTotal||1))*100)}%"></div>
+              </div>
+              <button type="button" class="text-button" data-open-fin-client="${esc(c.name)}" style="font-size:12px;margin-top:8px">Ver parcelas no Financeiro ↗</button>
+            </div>
+            <div class="info-box">
+              <small>Processo CNJ</small>
+              <strong>${proc?`${esc(proc.numeroCnj)}`:'Aguardando protocolo'}</strong>
+              <small style="color:var(--muted);margin-top:4px">${proc?esc(proc.tribunal):'Vara Cível'}</small>
+            </div>
+          </div>
+          <div class="citation-box" style="margin-top:12px">
             <h4>🔗 Vínculos Operacionais do Cliente</h4>
             <p style="margin-bottom:8px"><strong>Petição / Minuta:</strong> ${pet?`<a href="#" data-open-petition="${esc(pet.id)}" style="color:#e6c786;text-decoration:underline">${esc(pet.code)} · ${esc(pet.statusLabel)}</a>`:'Nenhuma minuta gerada ainda'}</p>
             <p style="margin-bottom:8px"><strong>Procuração / Contrato:</strong> ${doc?`<a href="#" data-open-contract="${esc(doc.id)}" style="color:#9ad2f5;text-decoration:underline">${esc(doc.code)} · ${esc(doc.statusLabel)}</a>`:'Pendente de emissão'}</p>
-            <p><strong>Processo CNJ:</strong> ${proc?`${esc(proc.numeroCnj)} (${esc(proc.tribunal)})`:'Aguardando protocolo da inicial'}</p>
           </div>
         </div>
       `;
+
+      document.querySelectorAll('[data-ctab]').forEach(tabBtn=>{
+        tabBtn.onclick=()=>{
+          activeClientTab=tabBtn.dataset.ctab;
+          document.querySelectorAll('[data-ctab]').forEach(b=>b.classList.toggle('active',b.dataset.ctab===activeClientTab));
+          document.querySelectorAll('[data-cpanel]').forEach(p=>p.classList.toggle('active',p.dataset.cpanel===activeClientTab));
+        };
+      });
       const btnProc=$('#btn-proc-for-client');
       if(btnProc)btnProc.onclick=()=>this.contracts(doc?.id||null,c.id);
       const btnCreatePet=$('#btn-create-pet-for-client');
@@ -2133,9 +2218,89 @@ Emitido em: ${d.createdAt} · Escritório Daniel Felix Advocacia`;
     this.show('O pulso do escritório',this.live?'Leitura autenticada da mesma base do Gabinete. Campos sem integração ficam indisponíveis.':'Métricas do Escritório Daniel Felix para acompanhamento no telão.alterne o período abaixo.',`${!this.live?`<div class="period-switch">${Object.entries(METRICS).map(([k,v])=>`<button data-period="${k}" class="${this.state.period===k?'active':''}">${v.label}</button>`).join('')}</div>`:''}<div class="metrics-cards">${[['Processos na carteira',m.processes],['Minutas na lista',m.petitions],['Prazos em 7 dias',m.deadlines],['Recebido no período',m.received==null?'—':money(m.received)]].map(v=>`<div class="metric-mini"><small>${v[0]}</small><strong>${textOrDash(v[1])}</strong></div>`).join('')}</div><div class="chart-grid"><div class="chart-card"><h3>Atividades no período</h3><p>${this.live?'A integração preserva dados ausentes':'Série demonstrativa · tarefas preparadas'}</p>${graph}</div><div class="chart-card"><h3>Do contato à contratação</h3><p>${this.live?'Depende de ZapConversa e assinatura':'Funil comercial de clientes'}</p>${funnel.length?funnel.map((v,i)=>`<div class="funnel-row"><span>${['Contatos','Qualificados','Propostas','Contratados'][i]}</span><div class="bar-track"><div class="bar-fill" style="width:${v/(funnel[0]||1)*100}%"></div></div><span>${v}</span></div>`).join(''):'<p class="subtle-note">Ainda sem fonte conectada.</p>'}</div></div><p class="chart-note">${this.live?'Atualizado em '+esc(this.snapshot?.generatedAt||'—')+'. Consultas e aprovações continuam no Gabinete.':'Você pode alternar os períodos e comparar os gráficos. O quadro processual usa a mesma carteira; os totais de contatos e contratos variam com o período escolhido.'}</p>${p.length?`<details><summary class="chart-note">Ver valores do gráfico</summary><table class="data-table"><thead><tr><th>Ponto</th><th>Atividades de exemplo</th></tr></thead><tbody>${m.series.map((v,i)=>`<tr><td>${i+1}</td><td>${v}</td></tr>`).join('')}</tbody></table></details>`:''}`);
   }
   team(){
-    this.show('Cada agente, uma atribuição','Selecione uma pessoa para ver o papel, a especialidade e as rotinas do setor.',`<div class="team-tools"><input id="team-search" placeholder="Buscar nome ou atribuição" aria-label="Buscar equipe"><select id="team-area" aria-label="Filtrar área"><option>Todas</option>${AREAS.map(x=>`<option>${x}</option>`).join('')}</select><button class="outline-button" data-action="new-agent">+ Adicionar agente</button></div><div class="team-list" id="team-list"></div>`);
-    const draw=()=>{const q=$('#team-search').value.toLocaleLowerCase('pt-BR'),area=$('#team-area').value;const list=this.state.agents.filter(a=>(a.name+' '+a.role).toLocaleLowerCase('pt-BR').includes(q)&&(area==='Todas'||a.area===area));$('#team-list').innerHTML=list.map(a=>`<button class="team-member" data-open-agent="${esc(a.id)}">${portrait(a)}<span><strong>${esc(a.name)}</strong><small>${esc(a.role)}<br>${esc(a.area)} · ${esc(SECTORS[a.sector].short)}</small></span></button>`).join('')||'<p class="chart-note">Nenhum personagem encontrado nesta busca.</p>';};
-    $('#team-search').addEventListener('input',draw);$('#team-area').addEventListener('change',draw);draw();
+    this.show('Equipe do Escritório · Salas do Habblaud','Estrutura operacional organizada pelas 6 salas da planta virtual. Selecione um agente para ver o papel, a especialidade e as rotinas do setor.',`<div class="team-tools"><input id="team-search" placeholder="Buscar nome ou atribuição" aria-label="Buscar equipe"><select id="team-area" aria-label="Filtrar área"><option>Todas</option>${AREAS.map(x=>`<option>${x}</option>`).join('')}</select><button class="outline-button" data-action="new-agent">+ Adicionar agente</button></div><div class="team-list" id="team-list"></div>`);
+    const squads = [
+      { id: 'diretoria', name: 'Diretoria Executiva & Coordenação', icon: '⚖️', room: 'Sala 01 · Diretoria & Mesa Executiva' },
+      { id: 'juridico', name: 'Núcleo Jurídico & Petições', icon: '🏛️', room: 'Sala 02 · Redação, Jurisprudência & Teses' },
+      { id: 'comercial', name: 'Comercial & Triagem', icon: '📱', room: 'Sala 03 · Atendimento WhatsApp & SDR' },
+      { id: 'administrativo', name: 'Processual & Prazos', icon: '📅', room: 'Sala 04 · Controladoria & Agenda' },
+      { id: 'contratos', name: 'Contratos & Assinaturas', icon: '📜', room: 'Sala 05 · ZapSign & Procurações' },
+      { id: 'financeiro', name: 'Financeiro & Ética OAB', icon: '💰', room: 'Sala 06 · Honorários & Apoio Interno' },
+    ];
+    const draw=()=>{
+      const q=($('#team-search')?.value||'').toLocaleLowerCase('pt-BR');
+      const area=$('#team-area')?.value||'Todas';
+      const filtered=this.state.agents.filter(a=>(a.name+' '+a.role).toLocaleLowerCase('pt-BR').includes(q)&&(area==='Todas'||a.area===area));
+      if(!filtered.length){
+        $('#team-list').innerHTML='<p class="chart-note" style="padding:20px">Nenhum personagem encontrado nesta busca.</p>';
+        return;
+      }
+      let html='';
+      for(const squad of squads){
+        const squadAgents=filtered.filter(a=>{
+          if(squad.id==='financeiro')return a.sector==='financeiro'||a.sector==='etica';
+          return a.sector===squad.id;
+        });
+        if(!squadAgents.length)continue;
+        html+=`
+          <div class="team-squad-block">
+            <div class="team-squad-header">
+              <div class="team-squad-title">
+                <span>${squad.icon}</span>
+                <span>${squad.name}</span>
+                <span class="badge" style="font-size:11px">${squadAgents.length} ${squadAgents.length===1?'integrante':'integrantes'}</span>
+              </div>
+              <small class="muted">${squad.room}</small>
+            </div>
+            <div class="team-squad-grid">
+              ${squadAgents.map(a=>`
+                <button class="team-card team-member" data-open-agent="${esc(a.id)}">
+                  <div class="avatar-box">${portrait(a)}</div>
+                  <div class="team-info">
+                    <strong>
+                      <span>${esc(a.name)}</span>
+                      <span class="badge ${a.human?'gold':'blue'}" style="font-size:11px">${a.human?'Humano':'IA'}</span>
+                    </strong>
+                    <small style="color:var(--text);font-weight:500">${esc(a.role)}</small>
+                    <small><span class="team-status-dot" style="background:${STATUS_COLORS[a.status]||'#70c4a1'}"></span>${esc(STATES[a.status]||a.status)} · ${esc(a.area)}</small>
+                  </div>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+      const otherAgents=filtered.filter(a=>!squads.some(s=>s.id===a.sector)&&a.sector!=='etica');
+      if(otherAgents.length){
+        html+=`
+          <div class="team-squad-block">
+            <div class="team-squad-header">
+              <div class="team-squad-title">
+                <span>⭐</span>
+                <span>Personalizados</span>
+                <span class="badge" style="font-size:11px">${otherAgents.length}</span>
+              </div>
+            </div>
+            <div class="team-squad-grid">
+              ${otherAgents.map(a=>`
+                <button class="team-card team-member" data-open-agent="${esc(a.id)}">
+                  <div class="avatar-box">${portrait(a)}</div>
+                  <div class="team-info">
+                    <strong><span>${esc(a.name)}</span></strong>
+                    <small style="color:var(--text)">${esc(a.role)}</small>
+                    <small>${esc(a.area)} · ${esc(SECTORS[a.sector]?.short||a.sector)}</small>
+                  </div>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+      $('#team-list').innerHTML=html;
+    };
+    $('#team-search').addEventListener('input',draw);
+    $('#team-area').addEventListener('change',draw);
+    draw();
   }
   newAgent(){
     if(this.live){this.show('Adicionar agente','A maquete conectada ainda não possui cadastro persistente de agentes.',`<div class="content-copy"><p>O cadastro deve ser implementado pela API autenticada do escritório. Os perfis deste pacote definem os campos e as permissões. A maquete offline permite experimentar a aparência e a distribuição.</p></div>`);return;}
