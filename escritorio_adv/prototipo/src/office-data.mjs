@@ -668,6 +668,17 @@ export const INITIAL_CONTRACTS_LIST = [
 export const INITIAL_FINANCEIRO = {
   items: [
     {
+      id: 'fin-0',
+      clientId: 'cli-4',
+      clientName: 'Fernanda Costa Lira',
+      description: 'Honorários Defesa Penal Federal (Entrada 1/2) · TRF3',
+      dueDate: '10/10/2026',
+      paidAt: '10/10/2026',
+      method: 'Transferência TED',
+      amount: 15000,
+      status: 'paid'
+    },
+    {
       id: 'fin-1',
       clientId: 'cli-1',
       clientName: 'Maria Carolina Mendes',
@@ -741,8 +752,65 @@ export const INITIAL_FINANCEIRO = {
       dueDate: '25/10/2026',
       paidAt: null,
       method: 'PIX / TED',
-      amount: 16000,
+      amount: 10000,
       status: 'open'
+    }
+  ],
+  payables: [
+    {
+      id: 'pay-1',
+      vendor: 'Administradora Paulista',
+      category: 'Estrutura',
+      description: 'Aluguel & Condomínio do Escritório',
+      dueDate: '10/10/2026',
+      paidAt: '09/10/2026',
+      method: 'Boleto',
+      amount: 3800,
+      status: 'paid'
+    },
+    {
+      id: 'pay-2',
+      vendor: 'Suite Jurídica & ZapSign',
+      category: 'Tecnologia',
+      description: 'Sistemas Jurídicos (PJe, DataJud, ZapSign & Cloud)',
+      dueDate: '15/10/2026',
+      paidAt: '15/10/2026',
+      method: 'Cartão Corporativo',
+      amount: 890,
+      status: 'paid'
+    },
+    {
+      id: 'pay-3',
+      vendor: 'Receita Federal / Contabilidade',
+      category: 'Impostos',
+      description: 'Contabilidade & Simples Nacional (DAS)',
+      dueDate: '20/10/2026',
+      paidAt: null,
+      method: 'Boleto',
+      amount: 1950,
+      status: 'open'
+    },
+    {
+      id: 'pay-4',
+      vendor: 'Gestão Tráfego & Conteúdo',
+      category: 'Marketing',
+      description: 'Tráfego Pago & Conteúdo Jurídico (OAB)',
+      dueDate: '22/10/2026',
+      paidAt: null,
+      method: 'PIX',
+      amount: 2400,
+      status: 'open'
+    },
+    {
+      id: 'pay-5',
+      vendor: 'TJSP · Guia DARE',
+      category: 'Custas',
+      description: 'Custas Processuais & Diligências (TJSP)',
+      dueDate: '14/10/2026',
+      paidAt: null,
+      method: 'Guia DARE',
+      amount: 680,
+      status: 'overdue'
     }
   ],
   outbox: [
@@ -761,10 +829,10 @@ export const INITIAL_FINANCEIRO = {
       clientName: 'Fernanda Costa Lira',
       phone: '(11) 99123-8840',
       finId: 'fin-7',
-      amount: 16000,
+      amount: 10000,
       status: 'pending',
       idempotencyKey: 'outbox-fin-7-2026-10-25',
-      message: 'Prezada Fernanda, lembrete programado referente à 2ª parcela dos honorários contratuais com vencimento em 25/10/2026 (R$ 16.000,00). Permanecemos à disposição.'
+      message: 'Prezada Fernanda, lembrete programado referente à 2ª parcela dos honorários contratuais com vencimento em 25/10/2026 (R$ 10.000,00). Permanecemos à disposição.'
     }
   ]
 };

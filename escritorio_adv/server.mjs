@@ -49,15 +49,34 @@ async function loadOrInitState() {
   if (!existsSync(DATA_DIR)) {
     await mkdir(DATA_DIR, { recursive: true });
   }
+  const fresh = initialState();
   if (existsSync(STATE_FILE)) {
     try {
       const raw = await readFile(STATE_FILE, "utf8");
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        if (!parsed.financeiro || typeof parsed.financeiro !== "object") {
+          parsed.financeiro = fresh.financeiro;
+        } else {
+          if (!Array.isArray(parsed.financeiro.payables)) {
+            parsed.financeiro.payables = fresh.financeiro.payables;
+          }
+          if (!Array.isArray(parsed.financeiro.items)) {
+            parsed.financeiro.items = fresh.financeiro.items;
+          } else if (!parsed.financeiro.items.some((x) => x.id === "fin-0")) {
+            const fin0 = fresh.financeiro.items.find((x) => x.id === "fin-0");
+            if (fin0) parsed.financeiro.items.unshift(fin0);
+          }
+          if (!Array.isArray(parsed.financeiro.outbox)) {
+            parsed.financeiro.outbox = fresh.financeiro.outbox;
+          }
+        }
+        return parsed;
+      }
     } catch (e) {
       console.warn("[Server] Aviso: estado local corrompido, reinicializando...", e.message);
     }
   }
-  const fresh = initialState();
   await writeFile(STATE_FILE, JSON.stringify(fresh, null, 2), "utf8");
   return fresh;
 }
@@ -209,6 +228,12 @@ const server = createServer(async (req, res) => {
             const cli = state.clients?.find(c => c.id === item.clientId);
             if (cli) cli.honorariosPaid = (cli.honorariosPaid || 0) + Number(item.amount || 0);
           }
+        } else if (action === "pay_expense") {
+          const exp = state.financeiro?.payables?.find(x => x.id === payload.id);
+          if (exp) {
+            exp.status = "paid";
+            exp.paidAt = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date());
+          }
         } else if (action === "send_outbox") {
           const o = state.financeiro?.outbox?.find(x => x.id === payload.id);
           if (o) o.status = "sent";
@@ -287,10 +312,14 @@ const server = createServer(async (req, res) => {
   // 8. Roteamento de Arquivos do Motor Habblaud e Aplicação
   let filePath;
 
-  // Rota direta para o motor Habblaud (/habblaud)
+  // Rota direta para o motor Habblaud (/habblaud) redireciona para a central unificada
   if (pathname === "/habblaud" || pathname === "/habblaud/") {
-    filePath = path.join(HABBLAUD_DIR, "index.html");
-  } else if (
+    res.writeHead(302, { Location: "/" });
+    return res.end();
+  }
+
+  const relPath = pathname.replace(/^\/+/, "");
+  if (
     pathname.startsWith("/bundle/") ||
     pathname.startsWith("/assets/") ||
     pathname.startsWith("/brand/") ||
@@ -299,15 +328,15 @@ const server = createServer(async (req, res) => {
     pathname === "/manifest.json" ||
     pathname === "/og-image.png"
   ) {
-    filePath = path.join(HABBLAUD_DIR, pathname.replace(/^\//, ""));
+    filePath = path.join(HABBLAUD_DIR, relPath);
   } else if (pathname === "/") {
     filePath = path.join(__dirname, "index.html");
   } else {
-    filePath = path.join(__dirname, pathname);
-    if (!existsSync(filePath) && existsSync(path.join(__dirname, "prototipo", pathname))) {
-      filePath = path.join(__dirname, "prototipo", pathname);
-    } else if (!existsSync(filePath) && existsSync(path.join(HABBLAUD_DIR, pathname))) {
-      filePath = path.join(HABBLAUD_DIR, pathname);
+    filePath = path.join(__dirname, relPath);
+    if (!existsSync(filePath) && existsSync(path.join(__dirname, "prototipo", relPath))) {
+      filePath = path.join(__dirname, "prototipo", relPath);
+    } else if (!existsSync(filePath) && existsSync(path.join(HABBLAUD_DIR, relPath))) {
+      filePath = path.join(HABBLAUD_DIR, relPath);
     }
   }
 

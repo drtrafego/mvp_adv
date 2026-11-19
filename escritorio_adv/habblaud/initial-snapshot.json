@@ -1,86 +1,893 @@
 {
-  "rev": 1793732385728,
-  "serverTime": 1793732385728,
+  "rev": 1795100664632,
+  "serverTime": 1795100664631,
   "rooms": [
     {
       "id": "room-diretoria",
-      "name": "Gabinete & Diretoria",
+      "name": "Diretoria · Dr. Daniel",
       "path": "/escritorio/diretoria",
       "slot": 0,
       "seed": 101,
-      "createdAt": 1793728785728
+      "createdAt": 1795097064631
     },
     {
       "id": "room-juridico",
-      "name": "Núcleo Jurídico & Petições",
+      "name": "Núcleo Jurídico",
       "path": "/escritorio/juridico",
       "slot": 1,
       "seed": 202,
-      "createdAt": 1793728785728
-    },
-    {
-      "id": "room-processual",
-      "name": "Processual & Prazos DJEN",
-      "path": "/escritorio/processual",
-      "slot": 2,
-      "seed": 303,
-      "createdAt": 1793728785728
+      "createdAt": 1795097064631
     },
     {
       "id": "room-comercial",
-      "name": "Comercial, Contratos & Caixa",
+      "name": "Comercial & Clientes",
       "path": "/escritorio/comercial",
+      "slot": 2,
+      "seed": 303,
+      "createdAt": 1795097064631
+    },
+    {
+      "id": "room-administrativo",
+      "name": "Processual & Prazos",
+      "path": "/escritorio/processual",
       "slot": 3,
       "seed": 404,
-      "createdAt": 1793728785728
+      "createdAt": 1795097064631
+    },
+    {
+      "id": "room-contratos",
+      "name": "Contratos & ZapSign",
+      "path": "/escritorio/contratos",
+      "slot": 4,
+      "seed": 505,
+      "createdAt": 1795097064631
+    },
+    {
+      "id": "room-financeiro",
+      "name": "Financeiro & Ética",
+      "path": "/escritorio/financeiro",
+      "slot": 5,
+      "seed": 606,
+      "createdAt": 1795097064631
     }
   ],
   "agents": [
+    {
+      "id": "sdr",
+      "kind": "main",
+      "roomId": "room-comercial",
+      "name": "Lia",
+      "look": "f",
+      "role": "SDR · triagem",
+      "title": "SDR · triagem",
+      "sessionId": "ses-sdr",
+      "account": "daniel-felix",
+      "status": "working",
+      "activity": {
+        "id": "act-sdr-1795100664631",
+        "kind": "ask",
+        "icon": "📱",
+        "text": "Organizando o relato de um novo contato",
+        "detail": "SDR · triagem · Geral",
+        "at": 1795100649631
+      },
+      "recent": [],
+      "tasks": [
+        {
+          "id": "ta-sdr",
+          "title": "Organizando o relato de um novo contato",
+          "status": "in_progress"
+        }
+      ],
+      "startedAt": 1795028664631,
+      "lastEventAt": 1795100664631,
+      "statusSince": 1795100544631,
+      "stats": {
+        "toolCalls": 24,
+        "tokensIn": 18000,
+        "tokensOut": 4200,
+        "subagents": 2
+      },
+      "seed": 902,
+      "parts": {
+        "hairStyle": "bob",
+        "hair": "#362620",
+        "topStyle": "tshirt",
+        "top": "#148f77",
+        "bottomStyle": "pants",
+        "bottom": "#1d2b34",
+        "accessory": "headphones"
+      }
+    },
+    {
+      "id": "closer",
+      "kind": "sub",
+      "parentId": "sdr",
+      "roomId": "room-comercial",
+      "name": "Caio",
+      "look": "m",
+      "role": "Closer · contratação",
+      "title": "Closer · contratação",
+      "sessionId": "ses-closer",
+      "account": "daniel-felix",
+      "status": "working",
+      "activity": {
+        "id": "act-closer-1795100664631",
+        "kind": "communicate",
+        "icon": "🤝",
+        "text": "Preparando proposta para revisão",
+        "detail": "Closer · contratação · Geral",
+        "at": 1795100634631
+      },
+      "recent": [],
+      "tasks": [
+        {
+          "id": "ta-closer",
+          "title": "Preparando proposta para revisão",
+          "status": "in_progress"
+        }
+      ],
+      "startedAt": 1795028664631,
+      "lastEventAt": 1795100664631,
+      "statusSince": 1795100544631,
+      "stats": {
+        "toolCalls": 31,
+        "tokensIn": 20500,
+        "tokensOut": 4900,
+        "subagents": 0
+      },
+      "seed": 915,
+      "parts": {
+        "hairStyle": "spiky",
+        "hair": "#28201d",
+        "topStyle": "shirt_tie",
+        "top": "#1c6b5a",
+        "topAccent": "#90dfc8",
+        "bottomStyle": "pants",
+        "bottom": "#1a232b",
+        "accessory": "none"
+      }
+    },
+    {
+      "id": "controladoria",
+      "kind": "main",
+      "roomId": "room-administrativo",
+      "name": "Clara",
+      "look": "f",
+      "role": "Gestora de prazos",
+      "title": "Gestora de prazos",
+      "sessionId": "ses-controladoria",
+      "account": "daniel-felix",
+      "status": "waiting",
+      "waitingFor": "confirmar 23/10/2026",
+      "activity": {
+        "id": "act-controladoria-1795100664631",
+        "kind": "plan",
+        "icon": "📅",
+        "text": "Conferindo fonte, rito e calendário do prazo",
+        "detail": "Gestora de prazos · Cível",
+        "at": 1795100619631
+      },
+      "recent": [],
+      "tasks": [
+        {
+          "id": "td-pz-1",
+          "title": "Manifestação · Resposta à Acusação (Art. 396-A CPP) (23/10/2026)",
+          "status": "in_progress"
+        },
+        {
+          "id": "td-pz-2",
+          "title": "Juntada de Procuração e Comprovante de Endereço (05/11/2026)",
+          "status": "in_progress"
+        },
+        {
+          "id": "td-pz-3",
+          "title": "Preparação de audiência e rol de testemunhas (24/10/2026)",
+          "status": "completed"
+        }
+      ],
+      "startedAt": 1795028664631,
+      "lastEventAt": 1795100664631,
+      "statusSince": 1795100544631,
+      "stats": {
+        "toolCalls": 38,
+        "tokensIn": 23000,
+        "tokensOut": 5600,
+        "subagents": 2
+      },
+      "seed": 630,
+      "parts": {
+        "hairStyle": "bun",
+        "hair": "#453024",
+        "topStyle": "blouse",
+        "top": "#9a6823",
+        "bottomStyle": "pants",
+        "bottom": "#232b36",
+        "accessory": "glasses"
+      }
+    },
+    {
+      "id": "agenda",
+      "kind": "sub",
+      "parentId": "controladoria",
+      "roomId": "room-administrativo",
+      "name": "Nina",
+      "look": "f",
+      "role": "Agenda & relacionamento",
+      "title": "Agenda & relacionamento",
+      "sessionId": "ses-agenda",
+      "account": "daniel-felix",
+      "status": "working",
+      "activity": {
+        "id": "act-agenda-1795100664631",
+        "kind": "communicate",
+        "icon": "💬",
+        "text": "Consultando disponibilidade do advogado",
+        "detail": "Agenda & relacionamento · Geral",
+        "at": 1795100604631
+      },
+      "recent": [],
+      "tasks": [
+        {
+          "id": "ta-agenda",
+          "title": "Consultando disponibilidade do advogado",
+          "status": "in_progress"
+        }
+      ],
+      "startedAt": 1795028664631,
+      "lastEventAt": 1795100664631,
+      "statusSince": 1795100544631,
+      "stats": {
+        "toolCalls": 45,
+        "tokensIn": 25500,
+        "tokensOut": 6300,
+        "subagents": 0
+      },
+      "seed": 825,
+      "parts": {
+        "hairStyle": "wavy",
+        "hair": "#523426",
+        "topStyle": "blouse",
+        "top": "#b7791f",
+        "bottomStyle": "skirt",
+        "bottom": "#252b36",
+        "accessory": "headphones"
+      }
+    },
+    {
+      "id": "movimentacoes",
+      "kind": "main",
+      "roomId": "room-administrativo",
+      "name": "Breno",
+      "look": "m",
+      "role": "Andamentos & intimações",
+      "title": "Andamentos & intimações",
+      "sessionId": "ses-movimentacoes",
+      "account": "daniel-felix",
+      "status": "working",
+      "activity": {
+        "id": "act-movimentacoes-1795100664631",
+        "kind": "read",
+        "icon": "📰",
+        "text": "Acompanhando DataJud e DJEN do MVP",
+        "detail": "Andamentos & intimações · Geral",
+        "at": 1795100589631
+      },
+      "recent": [],
+      "tasks": [
+        {
+          "id": "ta-movimentacoes",
+          "title": "Acompanhando DataJud e DJEN do MVP",
+          "status": "in_progress"
+        }
+      ],
+      "startedAt": 1795028664631,
+      "lastEventAt": 1795100664631,
+      "statusSince": 1795100544631,
+      "stats": {
+        "toolCalls": 52,
+        "tokensIn": 28000,
+        "tokensOut": 7000,
+        "subagents": 2
+      },
+      "seed": 714,
+      "parts": {
+        "hairStyle": "short",
+        "hair": "#2b2421",
+        "topStyle": "polo",
+        "top": "#875a26",
+        "bottomStyle": "pants",
+        "bottom": "#1d242e",
+        "accessory": "glasses"
+      }
+    },
+    {
+      "id": "contratos",
+      "kind": "main",
+      "roomId": "room-contratos",
+      "name": "Davi",
+      "look": "m",
+      "role": "Contratos & procurações",
+      "title": "Contratos & procurações",
+      "sessionId": "ses-contratos",
+      "account": "daniel-felix",
+      "status": "waiting",
+      "waitingFor": "aprovar PROC-2026-002",
+      "activity": {
+        "id": "act-contratos-1795100664631",
+        "kind": "write",
+        "icon": "📜",
+        "text": "Montando procuração a partir de modelo",
+        "detail": "Contratos & procurações · Geral",
+        "at": 1795100574631
+      },
+      "recent": [],
+      "tasks": [
+        {
+          "id": "tc-doc-1",
+          "title": "PROC-2026-001 · Maria Carolina Mendes",
+          "status": "completed"
+        },
+        {
+          "id": "tc-doc-2",
+          "title": "PROC-2026-002 · Carlos Eduardo Albuquerque",
+          "status": "in_progress"
+        },
+        {
+          "id": "tc-doc-3",
+          "title": "PROC-2026-003 · Roberto Almeida Prado",
+          "status": "in_progress"
+        }
+      ],
+      "startedAt": 1795028664631,
+      "lastEventAt": 1795100664631,
+      "statusSince": 1795100544631,
+      "stats": {
+        "toolCalls": 59,
+        "tokensIn": 30500,
+        "tokensOut": 7700,
+        "subagents": 2
+      },
+      "seed": 144,
+      "parts": {
+        "hairStyle": "short",
+        "hair": "#2d2420",
+        "topStyle": "shirt_tie",
+        "top": "#2e4053",
+        "topAccent": "#92a7e8",
+        "bottomStyle": "pants",
+        "bottom": "#1a222d",
+        "accessory": "none"
+      }
+    },
+    {
+      "id": "assinaturas",
+      "kind": "sub",
+      "parentId": "contratos",
+      "roomId": "room-contratos",
+      "name": "Bia",
+      "look": "f",
+      "role": "Assinaturas · ZapSign",
+      "title": "Assinaturas · ZapSign",
+      "sessionId": "ses-assinaturas",
+      "account": "daniel-felix",
+      "status": "waiting",
+      "waitingFor": "Aguardando os demais signatários",
+      "activity": {
+        "id": "act-assinaturas-1795100664631",
+        "kind": "communicate",
+        "icon": "✍️",
+        "text": "Aguardando os demais signatários",
+        "detail": "Assinaturas · ZapSign · Geral",
+        "at": 1795100559631
+      },
+      "recent": [],
+      "tasks": [
+        {
+          "id": "tc-doc-1",
+          "title": "PROC-2026-001 · Maria Carolina Mendes",
+          "status": "completed"
+        },
+        {
+          "id": "tc-doc-2",
+          "title": "PROC-2026-002 · Carlos Eduardo Albuquerque",
+          "status": "in_progress"
+        },
+        {
+          "id": "tc-doc-3",
+          "title": "PROC-2026-003 · Roberto Almeida Prado",
+          "status": "in_progress"
+        }
+      ],
+      "startedAt": 1795028664631,
+      "lastEventAt": 1795100664631,
+      "statusSince": 1795100544631,
+      "stats": {
+        "toolCalls": 66,
+        "tokensIn": 33000,
+        "tokensOut": 8400,
+        "subagents": 0
+      },
+      "seed": 256,
+      "parts": {
+        "hairStyle": "ponytail",
+        "hair": "#38251e",
+        "topStyle": "blouse",
+        "top": "#3c5588",
+        "bottomStyle": "skirt",
+        "bottom": "#1f2633",
+        "accessory": "glasses"
+      }
+    },
+    {
+      "id": "forense",
+      "kind": "main",
+      "roomId": "room-juridico",
+      "name": "Forense",
+      "look": "m",
+      "role": "Coordenador jurídico",
+      "title": "Coordenador jurídico",
+      "sessionId": "ses-forense",
+      "account": "daniel-felix",
+      "status": "working",
+      "activity": {
+        "id": "act-forense-1795100664631",
+        "kind": "delegate",
+        "icon": "🏛️",
+        "text": "Distribuindo as etapas da minuta",
+        "detail": "Coordenador jurídico · Geral",
+        "at": 1795100544631
+      },
+      "recent": [],
+      "tasks": [
+        {
+          "id": "tp-pec-1",
+          "title": "PEC-2026-001 (v1.2) · Maria Carolina Mendes",
+          "status": "in_progress"
+        },
+        {
+          "id": "tp-pec-2",
+          "title": "PEC-2026-002 (v1.0) · Carlos Eduardo Albuquerque",
+          "status": "in_progress"
+        },
+        {
+          "id": "tp-pec-3",
+          "title": "PEC-2026-003 (v2.0) · Roberto Almeida Prado",
+          "status": "completed"
+        }
+      ],
+      "startedAt": 1795028664631,
+      "lastEventAt": 1795100664631,
+      "statusSince": 1795100544631,
+      "stats": {
+        "toolCalls": 73,
+        "tokensIn": 35500,
+        "tokensOut": 9100,
+        "subagents": 2
+      },
+      "seed": 105,
+      "parts": {
+        "hairStyle": "short",
+        "hair": "#2e2522",
+        "topStyle": "jacket",
+        "top": "#3c2e54",
+        "topAccent": "#d8c2f2",
+        "bottomStyle": "pants",
+        "bottom": "#1f232e",
+        "accessory": "glasses"
+      }
+    },
+    {
+      "id": "tese",
+      "kind": "sub",
+      "parentId": "forense",
+      "roomId": "room-juridico",
+      "name": "Íris",
+      "look": "f",
+      "role": "Construtora de tese",
+      "title": "Construtora de tese",
+      "sessionId": "ses-tese",
+      "account": "daniel-felix",
+      "status": "working",
+      "activity": {
+        "id": "act-tese-1795100664631",
+        "kind": "think",
+        "icon": "💡",
+        "text": "Organizando fatos, prova e pedidos",
+        "detail": "Construtora de tese · Consumidor",
+        "at": 1795100529631
+      },
+      "recent": [],
+      "tasks": [
+        {
+          "id": "ta-tese",
+          "title": "Organizando fatos, prova e pedidos",
+          "status": "in_progress"
+        }
+      ],
+      "startedAt": 1795028664631,
+      "lastEventAt": 1795100664631,
+      "statusSince": 1795100544631,
+      "stats": {
+        "toolCalls": 80,
+        "tokensIn": 38000,
+        "tokensOut": 9800,
+        "subagents": 0
+      },
+      "seed": 415,
+      "parts": {
+        "hairStyle": "bob",
+        "hair": "#4a2b20",
+        "topStyle": "blouse",
+        "top": "#5a3d7a",
+        "bottomStyle": "skirt",
+        "bottom": "#232836",
+        "accessory": "glasses"
+      }
+    },
+    {
+      "id": "pesquisador",
+      "kind": "sub",
+      "parentId": "forense",
+      "roomId": "room-juridico",
+      "name": "Theo",
+      "look": "m",
+      "role": "Pesquisa jurídica",
+      "title": "Pesquisa jurídica",
+      "sessionId": "ses-pesquisador",
+      "account": "daniel-felix",
+      "status": "working",
+      "activity": {
+        "id": "act-pesquisador-1795100664631",
+        "kind": "search",
+        "icon": "📚",
+        "text": "Conferindo fontes oficiais de julgados",
+        "detail": "Pesquisa jurídica · Cível",
+        "at": 1795100514631
+      },
+      "recent": [],
+      "tasks": [
+        {
+          "id": "ta-pesquisador",
+          "title": "Conferindo fontes oficiais de julgados",
+          "status": "in_progress"
+        }
+      ],
+      "startedAt": 1795028664631,
+      "lastEventAt": 1795100664631,
+      "statusSince": 1795100544631,
+      "stats": {
+        "toolCalls": 87,
+        "tokensIn": 40500,
+        "tokensOut": 10500,
+        "subagents": 0
+      },
+      "seed": 521,
+      "parts": {
+        "hairStyle": "buzz",
+        "hair": "#252020",
+        "topStyle": "polo",
+        "top": "#43386b",
+        "bottomStyle": "pants",
+        "bottom": "#1c2430",
+        "accessory": "glasses"
+      }
+    },
+    {
+      "id": "analista",
+      "kind": "sub",
+      "parentId": "forense",
+      "roomId": "room-juridico",
+      "name": "Eva",
+      "look": "f",
+      "role": "Análise documental",
+      "title": "Análise documental",
+      "sessionId": "ses-analista",
+      "account": "daniel-felix",
+      "status": "waiting",
+      "waitingFor": "Lendo o dossiê completo",
+      "activity": {
+        "id": "act-analista-1795100664631",
+        "kind": "read",
+        "icon": "📂",
+        "text": "Lendo o dossiê completo",
+        "detail": "Análise documental · Penal",
+        "at": 1795100499631
+      },
+      "recent": [],
+      "tasks": [
+        {
+          "id": "ta-analista",
+          "title": "Lendo o dossiê completo",
+          "status": "in_progress"
+        }
+      ],
+      "startedAt": 1795028664631,
+      "lastEventAt": 1795100664631,
+      "statusSince": 1795100544631,
+      "stats": {
+        "toolCalls": 94,
+        "tokensIn": 43000,
+        "tokensOut": 11200,
+        "subagents": 0
+      },
+      "seed": 430,
+      "parts": {
+        "hairStyle": "bun",
+        "hair": "#2f221e",
+        "topStyle": "blouse",
+        "top": "#6d528f",
+        "bottomStyle": "pants",
+        "bottom": "#222733",
+        "accessory": "none"
+      }
+    },
+    {
+      "id": "estrategista",
+      "kind": "sub",
+      "parentId": "forense",
+      "roomId": "room-juridico",
+      "name": "Otto",
+      "look": "m",
+      "role": "Estratégia de defesa",
+      "title": "Estratégia de defesa",
+      "sessionId": "ses-estrategista",
+      "account": "daniel-felix",
+      "status": "working",
+      "activity": {
+        "id": "act-estrategista-1795100664631",
+        "kind": "plan",
+        "icon": "🧭",
+        "text": "Organizando riscos da defesa",
+        "detail": "Estratégia de defesa · Penal",
+        "at": 1795100484631
+      },
+      "recent": [],
+      "tasks": [
+        {
+          "id": "ta-estrategista",
+          "title": "Organizando riscos da defesa",
+          "status": "in_progress"
+        }
+      ],
+      "startedAt": 1795028664631,
+      "lastEventAt": 1795100664631,
+      "statusSince": 1795100544631,
+      "stats": {
+        "toolCalls": 101,
+        "tokensIn": 45500,
+        "tokensOut": 11900,
+        "subagents": 0
+      },
+      "seed": 445,
+      "parts": {
+        "hairStyle": "side_part",
+        "hair": "#332924",
+        "topStyle": "shirt_tie",
+        "top": "#383259",
+        "topAccent": "#b89ad9",
+        "bottomStyle": "pants",
+        "bottom": "#1b202b",
+        "accessory": "none"
+      }
+    },
+    {
+      "id": "redator",
+      "kind": "sub",
+      "parentId": "forense",
+      "roomId": "room-juridico",
+      "name": "Maya",
+      "look": "f",
+      "role": "Redação forense",
+      "title": "Redação forense",
+      "sessionId": "ses-redator",
+      "account": "daniel-felix",
+      "status": "working",
+      "activity": {
+        "id": "act-redator-1795100664631",
+        "kind": "write",
+        "icon": "✍️",
+        "text": "Preparando uma inicial em rascunho",
+        "detail": "Redação forense · Consumidor",
+        "at": 1795100469631
+      },
+      "recent": [],
+      "tasks": [
+        {
+          "id": "tp-pec-1",
+          "title": "PEC-2026-001 (v1.2) · Maria Carolina Mendes",
+          "status": "in_progress"
+        },
+        {
+          "id": "tp-pec-2",
+          "title": "PEC-2026-002 (v1.0) · Carlos Eduardo Albuquerque",
+          "status": "in_progress"
+        },
+        {
+          "id": "tp-pec-3",
+          "title": "PEC-2026-003 (v2.0) · Roberto Almeida Prado",
+          "status": "completed"
+        }
+      ],
+      "startedAt": 1795028664631,
+      "lastEventAt": 1795100664631,
+      "statusSince": 1795100544631,
+      "stats": {
+        "toolCalls": 108,
+        "tokensIn": 48000,
+        "tokensOut": 12600,
+        "subagents": 0
+      },
+      "seed": 220,
+      "parts": {
+        "hairStyle": "ponytail",
+        "hair": "#3b241d",
+        "topStyle": "sweater",
+        "top": "#6c3483",
+        "bottomStyle": "pants",
+        "bottom": "#1f2633",
+        "accessory": "glasses"
+      }
+    },
+    {
+      "id": "revisor",
+      "kind": "sub",
+      "parentId": "forense",
+      "roomId": "room-juridico",
+      "name": "Noah",
+      "look": "m",
+      "role": "Revisão jurídica",
+      "title": "Revisão jurídica",
+      "sessionId": "ses-revisor",
+      "account": "daniel-felix",
+      "status": "waiting",
+      "waitingFor": "aprovação de Dr. Daniel Felix",
+      "activity": {
+        "id": "act-revisor-1795100664631",
+        "kind": "read",
+        "icon": "🔍",
+        "text": "Auditoria de citações da minuta",
+        "detail": "Revisão jurídica · Cível",
+        "at": 1795100454631
+      },
+      "recent": [],
+      "tasks": [
+        {
+          "id": "tp-pec-1",
+          "title": "PEC-2026-001 (v1.2) · Maria Carolina Mendes",
+          "status": "in_progress"
+        },
+        {
+          "id": "tp-pec-2",
+          "title": "PEC-2026-002 (v1.0) · Carlos Eduardo Albuquerque",
+          "status": "in_progress"
+        },
+        {
+          "id": "tp-pec-3",
+          "title": "PEC-2026-003 (v2.0) · Roberto Almeida Prado",
+          "status": "completed"
+        }
+      ],
+      "startedAt": 1795028664631,
+      "lastEventAt": 1795100664631,
+      "statusSince": 1795100544631,
+      "stats": {
+        "toolCalls": 115,
+        "tokensIn": 50500,
+        "tokensOut": 13300,
+        "subagents": 0
+      },
+      "seed": 312,
+      "parts": {
+        "hairStyle": "curly",
+        "hair": "#261f1c",
+        "topStyle": "shirt_tie",
+        "top": "#2b4368",
+        "topAccent": "#aed6f1",
+        "bottomStyle": "pants",
+        "bottom": "#1a202c",
+        "accessory": "glasses"
+      }
+    },
+    {
+      "id": "coordenador",
+      "kind": "main",
+      "roomId": "room-diretoria",
+      "name": "Luana · Coord.",
+      "look": "f",
+      "role": "Orquestração · nome a definir",
+      "title": "Orquestração · nome a definir",
+      "sessionId": "ses-coordenador",
+      "account": "daniel-felix",
+      "status": "working",
+      "activity": {
+        "id": "act-coordenador-1795100664631",
+        "kind": "communicate",
+        "icon": "🎙️",
+        "text": "Consolidando a operação para o advogado",
+        "detail": "Orquestração · nome a definir · Geral",
+        "at": 1795100439631
+      },
+      "recent": [],
+      "tasks": [
+        {
+          "id": "ta-coordenador",
+          "title": "Consolidando a operação para o advogado",
+          "status": "in_progress"
+        }
+      ],
+      "startedAt": 1795028664631,
+      "lastEventAt": 1795100664631,
+      "statusSince": 1795100544631,
+      "stats": {
+        "toolCalls": 122,
+        "tokensIn": 53000,
+        "tokensOut": 14000,
+        "subagents": 2
+      },
+      "seed": 88,
+      "parts": {
+        "hairStyle": "long",
+        "hair": "#3d281f",
+        "topStyle": "jacket",
+        "top": "#22495a",
+        "topAccent": "#e2c282",
+        "bottomStyle": "pants",
+        "bottom": "#18242e",
+        "accessory": "headphones"
+      }
+    },
     {
       "id": "daniel",
       "kind": "main",
       "roomId": "room-diretoria",
       "name": "Dr. Daniel Felix",
       "look": "m",
-      "role": "Advogado Titular",
-      "title": "Revisão Humana de Peças e Prazos",
+      "role": "Advogado humano",
+      "title": "Advogado humano",
       "sessionId": "ses-daniel",
       "account": "daniel-felix",
-      "status": "working",
+      "status": "waiting",
+      "waitingFor": "revisar PEC-2026-001",
       "activity": {
-        "id": "act-dan-1793732385728",
+        "id": "act-daniel-1795100664631",
         "kind": "edit",
         "icon": "⚖️",
-        "text": "Supervisionando teses e homologações",
-        "detail": "Dr. Daniel Felix • OAB/SP • Decisão privativa de advogado",
-        "at": 1793732265728
+        "text": "Revisão de minutas e decisões",
+        "detail": "Advogado humano · Geral",
+        "at": 1795100424631
       },
       "recent": [],
       "tasks": [
         {
-          "id": "t-dan-1",
-          "title": "Homologar Inicial PEC-2026-001",
-          "status": "completed"
+          "id": "tp-pec-1",
+          "title": "PEC-2026-001 · Maria Carolina Mendes",
+          "status": "in_progress"
         },
         {
-          "id": "t-dan-2",
-          "title": "Confirmar Prazos Fatais CPC da Clara",
-          "status": "completed"
+          "id": "tp-pec-2",
+          "title": "PEC-2026-002 · Carlos Eduardo Albuquerque",
+          "status": "in_progress"
+        },
+        {
+          "id": "td-pz-1",
+          "title": "Prazo 23/10/2026 · Fernanda Costa Lira",
+          "status": "in_progress"
         }
       ],
-      "startedAt": 1793645985728,
-      "lastEventAt": 1793732385728,
-      "statusSince": 1793732085728,
+      "startedAt": 1795028664631,
+      "lastEventAt": 1795100664631,
+      "statusSince": 1795100544631,
       "stats": {
-        "toolCalls": 84,
-        "tokensIn": 45000,
-        "tokensOut": 12000,
-        "costUSD": 0.85,
-        "subagents": 6
+        "toolCalls": 129,
+        "tokensIn": 55500,
+        "tokensOut": 14700,
+        "subagents": 2
       },
       "seed": 42,
       "parts": {
         "hairStyle": "short",
+        "hair": "#2c221e",
         "topStyle": "shirt_tie",
         "top": "#1c2833",
         "topAccent": "#d4af37",
@@ -95,580 +902,151 @@
       "roomId": "room-diretoria",
       "name": "Proprietário",
       "look": "m",
-      "role": "Gestão Executiva da Banca",
-      "title": "Supervisão de Metas e Crescimento",
-      "sessionId": "ses-prop",
+      "role": "Direção humana",
+      "title": "Direção humana",
+      "sessionId": "ses-proprietario",
       "account": "daniel-felix",
-      "status": "working",
+      "status": "idle",
       "activity": {
-        "id": "act-prop-1793732385728",
+        "id": "act-proprietario-1795100664631",
         "kind": "plan",
         "icon": "📊",
-        "text": "Acompanhando receita contratada e pipeline",
-        "at": 1793732205728
+        "text": "Acompanhando a operação",
+        "detail": "Direção humana · Geral",
+        "at": 1795100409631
       },
       "recent": [],
       "tasks": [
         {
-          "id": "t-prop-1",
-          "title": "Planejamento de expansão cível e empresarial",
-          "status": "in_progress"
+          "id": "ta-proprietario",
+          "title": "Acompanhando a operação",
+          "status": "completed"
         }
       ],
-      "startedAt": 1793645985728,
-      "lastEventAt": 1793732385728,
-      "statusSince": 1793731785728,
+      "startedAt": 1795028664631,
+      "lastEventAt": 1795100664631,
+      "statusSince": 1795100544631,
       "stats": {
-        "toolCalls": 32,
-        "tokensIn": 18000,
-        "tokensOut": 4500,
+        "toolCalls": 136,
+        "tokensIn": 58000,
+        "tokensOut": 15400,
         "subagents": 2
       },
       "seed": 77,
       "parts": {
         "hairStyle": "side_part",
+        "hair": "#3b2f2a",
         "topStyle": "jacket",
         "top": "#283747",
-        "topAccent": "#abb2b9",
+        "topAccent": "#d5b478",
         "bottomStyle": "pants",
-        "bottom": "#1c2833"
+        "bottom": "#1c2833",
+        "accessory": "none"
       }
     },
     {
-      "id": "forense",
+      "id": "financeiro",
       "kind": "main",
-      "roomId": "room-juridico",
-      "name": "Forense",
-      "look": "m",
-      "role": "Orquestrador do Squad Jurídico",
-      "title": "Coordenação de Pesquisa, Tese e Redação",
-      "sessionId": "ses-forense",
-      "account": "daniel-felix",
-      "status": "working",
-      "activity": {
-        "id": "act-for-1793732385728",
-        "kind": "delegate",
-        "icon": "🏛️",
-        "text": "Distribuindo teses para Maya e Theo",
-        "at": 1793732325728
-      },
-      "recent": [],
-      "tasks": [
-        {
-          "id": "t-for-1",
-          "title": "Distribuir Inicial de Indenização",
-          "status": "completed"
-        }
-      ],
-      "startedAt": 1793660385728,
-      "lastEventAt": 1793732385728,
-      "statusSince": 1793732145728,
-      "stats": {
-        "toolCalls": 120,
-        "tokensIn": 88000,
-        "tokensOut": 32000,
-        "subagents": 5
-      },
-      "seed": 105,
-      "parts": {
-        "hairStyle": "short",
-        "topStyle": "jacket",
-        "top": "#212f3d",
-        "bottomStyle": "pants",
-        "accessory": "glasses"
-      }
-    },
-    {
-      "id": "maya",
-      "kind": "sub",
-      "parentId": "forense",
-      "roomId": "room-juridico",
-      "name": "Maya",
-      "look": "f",
-      "role": "Redatora Forense",
-      "title": "Elaboração de Peças e Recursos",
-      "sessionId": "ses-maya",
-      "account": "daniel-felix",
-      "status": "working",
-      "activity": {
-        "id": "act-may-1793732385728",
-        "kind": "write",
-        "icon": "✍️",
-        "text": "Formatando petição inicial",
-        "at": 1793732340728
-      },
-      "recent": [],
-      "tasks": [
-        {
-          "id": "t-may-1",
-          "title": "Minuta de Tutela de Urgência",
-          "status": "in_progress"
-        }
-      ],
-      "startedAt": 1793696385728,
-      "lastEventAt": 1793732385728,
-      "statusSince": 1793732205728,
-      "stats": {
-        "toolCalls": 95,
-        "tokensIn": 64000,
-        "tokensOut": 24000,
-        "subagents": 0
-      },
-      "seed": 220,
-      "parts": {
-        "hairStyle": "ponytail",
-        "topStyle": "sweater",
-        "top": "#5b2c6f",
-        "bottomStyle": "pants",
-        "accessory": "glasses"
-      }
-    },
-    {
-      "id": "noah",
-      "kind": "sub",
-      "parentId": "forense",
-      "roomId": "room-juridico",
-      "name": "Noah",
-      "look": "m",
-      "role": "Revisor Jurídico",
-      "title": "Auditoria de Citações e Súmulas",
-      "sessionId": "ses-noah",
-      "account": "daniel-felix",
-      "status": "working",
-      "activity": {
-        "id": "act-noa-1793732385728",
-        "kind": "read",
-        "icon": "🔍",
-        "text": "Auditando precedentes vinculantes no STJ",
-        "at": 1793732355728
-      },
-      "recent": [],
-      "tasks": [
-        {
-          "id": "t-noa-1",
-          "title": "Checar Súmula 479 do STJ",
-          "status": "completed"
-        }
-      ],
-      "startedAt": 1793696385728,
-      "lastEventAt": 1793732385728,
-      "statusSince": 1793732235728,
-      "stats": {
-        "toolCalls": 54,
-        "tokensIn": 38000,
-        "tokensOut": 9000,
-        "subagents": 0
-      },
-      "seed": 312,
-      "parts": {
-        "hairStyle": "curly",
-        "topStyle": "shirt_tie",
-        "top": "#1b4f72",
-        "topAccent": "#aed6f1",
-        "bottomStyle": "pants"
-      }
-    },
-    {
-      "id": "iris",
-      "kind": "sub",
-      "parentId": "forense",
-      "roomId": "room-juridico",
-      "name": "Íris",
-      "look": "f",
-      "role": "Construtor de Teses",
-      "title": "Mapeamento de Fundamentos e Doutrina",
-      "sessionId": "ses-iris",
-      "account": "daniel-felix",
-      "status": "idle",
-      "activity": {
-        "id": "act-iri-1793732385728",
-        "kind": "think",
-        "icon": "💡",
-        "text": "Estruturando tese consumerista",
-        "at": 1793732295728
-      },
-      "recent": [],
-      "tasks": [
-        {
-          "id": "t-iri-1",
-          "title": "Fundamentação art. 14 do CDC",
-          "status": "completed"
-        }
-      ],
-      "startedAt": 1793696385728,
-      "lastEventAt": 1793732385728,
-      "statusSince": 1793732185728,
-      "stats": {
-        "toolCalls": 40,
-        "tokensIn": 29000,
-        "tokensOut": 7500,
-        "subagents": 0
-      },
-      "seed": 415,
-      "parts": {
-        "hairStyle": "bob",
-        "topStyle": "blouse",
-        "top": "#117864",
-        "bottomStyle": "skirt"
-      }
-    },
-    {
-      "id": "theo",
-      "kind": "sub",
-      "parentId": "forense",
-      "roomId": "room-juridico",
-      "name": "Theo",
-      "look": "m",
-      "role": "Pesquisador de Jurisprudência",
-      "title": "Coleta de Acórdãos em Fontes Oficiais",
-      "sessionId": "ses-theo",
-      "account": "daniel-felix",
-      "status": "working",
-      "activity": {
-        "id": "act-the-1793732385728",
-        "kind": "search",
-        "icon": "📚",
-        "text": "Buscando acórdãos unânimes TJSP / STJ",
-        "at": 1793732365728
-      },
-      "recent": [],
-      "tasks": [
-        {
-          "id": "t-the-1",
-          "title": "Capturar ementas STJ c/ link oficial",
-          "status": "completed"
-        }
-      ],
-      "startedAt": 1793696385728,
-      "lastEventAt": 1793732385728,
-      "statusSince": 1793732275728,
-      "stats": {
-        "toolCalls": 62,
-        "tokensIn": 41000,
-        "tokensOut": 11000,
-        "subagents": 0
-      },
-      "seed": 521,
-      "parts": {
-        "hairStyle": "buzz",
-        "topStyle": "polo",
-        "top": "#6e2c00",
-        "bottomStyle": "pants",
-        "accessory": "glasses"
-      }
-    },
-    {
-      "id": "clara",
-      "kind": "main",
-      "roomId": "room-processual",
-      "name": "Clara",
-      "look": "f",
-      "role": "Gestora de Prazos (Controladoria)",
-      "title": "Motor Determinístico CPC / CPP / CLT",
-      "sessionId": "ses-clara",
-      "account": "daniel-felix",
-      "status": "working",
-      "activity": {
-        "id": "act-cla-1793732385728",
-        "kind": "plan",
-        "icon": "📅",
-        "text": "Monitorando marcos processuais",
-        "detail": "Art. 224 do CPC: D0 disponibilização -> D1 publicação -> D2 início da contagem",
-        "at": 1793732335728
-      },
-      "recent": [],
-      "tasks": [
-        {
-          "id": "t-cla-1",
-          "title": "Auditoria de prazo fatal de contestação",
-          "status": "completed"
-        }
-      ],
-      "startedAt": 1793678385728,
-      "lastEventAt": 1793732385728,
-      "statusSince": 1793732205728,
-      "stats": {
-        "toolCalls": 78,
-        "tokensIn": 52000,
-        "tokensOut": 14000,
-        "subagents": 0
-      },
-      "seed": 630,
-      "parts": {
-        "hairStyle": "bun",
-        "topStyle": "blouse",
-        "top": "#1f618d",
-        "bottomStyle": "pants",
-        "accessory": "glasses"
-      }
-    },
-    {
-      "id": "breno",
-      "kind": "main",
-      "roomId": "room-processual",
-      "name": "Breno",
-      "look": "m",
-      "role": "Monitor DJEN & DataJud",
-      "title": "Leitura Integral do Diário Oficial",
-      "sessionId": "ses-breno",
-      "account": "daniel-felix",
-      "status": "working",
-      "activity": {
-        "id": "act-bre-1793732385728",
-        "kind": "read",
-        "icon": "📰",
-        "text": "Conferindo coletas matinais DJEN",
-        "at": 1793732345728
-      },
-      "recent": [],
-      "tasks": [
-        {
-          "id": "t-bre-1",
-          "title": "Varredura diária OAB Dr. Daniel Felix",
-          "status": "completed"
-        }
-      ],
-      "startedAt": 1793678385728,
-      "lastEventAt": 1793732385728,
-      "statusSince": 1793732165728,
-      "stats": {
-        "toolCalls": 110,
-        "tokensIn": 76000,
-        "tokensOut": 20000,
-        "subagents": 0
-      },
-      "seed": 714,
-      "parts": {
-        "hairStyle": "short",
-        "topStyle": "polo",
-        "top": "#196f3d",
-        "bottomStyle": "pants"
-      }
-    },
-    {
-      "id": "nina",
-      "kind": "sub",
-      "parentId": "clara",
-      "roomId": "room-processual",
-      "name": "Nina",
-      "look": "f",
-      "role": "Tradutora & Audiências",
-      "title": "Tradução de Juridiquês & Agenda",
-      "sessionId": "ses-nina",
-      "account": "daniel-felix",
-      "status": "working",
-      "activity": {
-        "id": "act-nin-1793732385728",
-        "kind": "communicate",
-        "icon": "💬",
-        "text": "Traduzindo despacho judicial para WhatsApp",
-        "at": 1793732350728
-      },
-      "recent": [],
-      "tasks": [
-        {
-          "id": "t-nin-1",
-          "title": "Mensagem explicativa para cliente",
-          "status": "completed"
-        }
-      ],
-      "startedAt": 1793692385728,
-      "lastEventAt": 1793732385728,
-      "statusSince": 1793732225728,
-      "stats": {
-        "toolCalls": 45,
-        "tokensIn": 31000,
-        "tokensOut": 8500,
-        "subagents": 0
-      },
-      "seed": 825,
-      "parts": {
-        "hairStyle": "wavy",
-        "topStyle": "blouse",
-        "top": "#b7950b",
-        "bottomStyle": "skirt"
-      }
-    },
-    {
-      "id": "lia",
-      "kind": "main",
-      "roomId": "room-comercial",
-      "name": "Lia",
-      "look": "f",
-      "role": "SDR WhatsApp & Triagem",
-      "title": "Atendimento e Qualificação Civil",
-      "sessionId": "ses-lia",
-      "account": "daniel-felix",
-      "status": "working",
-      "activity": {
-        "id": "act-lia-1793732385728",
-        "kind": "ask",
-        "icon": "📱",
-        "text": "Acolhendo novo contato do WhatsApp",
-        "at": 1793732360728
-      },
-      "recent": [],
-      "tasks": [
-        {
-          "id": "t-lia-1",
-          "title": "Triagem e checklist de documentos",
-          "status": "completed"
-        }
-      ],
-      "startedAt": 1793672385728,
-      "lastEventAt": 1793732385728,
-      "statusSince": 1793732175728,
-      "stats": {
-        "toolCalls": 85,
-        "tokensIn": 58000,
-        "tokensOut": 16000,
-        "subagents": 0
-      },
-      "seed": 902,
-      "parts": {
-        "hairStyle": "bob",
-        "topStyle": "tshirt",
-        "top": "#148f77",
-        "bottomStyle": "pants",
-        "accessory": "headphones"
-      }
-    },
-    {
-      "id": "davi",
-      "kind": "sub",
-      "parentId": "lia",
-      "roomId": "room-comercial",
-      "name": "Davi",
-      "look": "m",
-      "role": "Contratos & Procurações",
-      "title": "Emissão Ad Judicia (Art. 105 CPC)",
-      "sessionId": "ses-davi",
-      "account": "daniel-felix",
-      "status": "working",
-      "activity": {
-        "id": "act-dav-1793732385728",
-        "kind": "write",
-        "icon": "📜",
-        "text": "Preparando contrato de honorários",
-        "at": 1793732315728
-      },
-      "recent": [],
-      "tasks": [
-        {
-          "id": "t-dav-1",
-          "title": "Validação de poderes especiais do mandato",
-          "status": "completed"
-        }
-      ],
-      "startedAt": 1793687385728,
-      "lastEventAt": 1793732385728,
-      "statusSince": 1793732195728,
-      "stats": {
-        "toolCalls": 50,
-        "tokensIn": 34000,
-        "tokensOut": 9800,
-        "subagents": 0
-      },
-      "seed": 144,
-      "parts": {
-        "hairStyle": "short",
-        "topStyle": "shirt_tie",
-        "top": "#2e4053",
-        "topAccent": "#f5b041",
-        "bottomStyle": "pants"
-      }
-    },
-    {
-      "id": "bia",
-      "kind": "sub",
-      "parentId": "lia",
-      "roomId": "room-comercial",
-      "name": "Bia",
-      "look": "f",
-      "role": "Gestora ZapSign",
-      "title": "Reconciliação de Signatários",
-      "sessionId": "ses-bia",
-      "account": "daniel-felix",
-      "status": "working",
-      "activity": {
-        "id": "act-bia-1793732385728",
-        "kind": "communicate",
-        "icon": "✍️",
-        "text": "Acompanhando coleta de assinaturas digitais",
-        "at": 1793732355728
-      },
-      "recent": [],
-      "tasks": [
-        {
-          "id": "t-bia-1",
-          "title": "Webhook ZapSign de signatário concluído",
-          "status": "completed"
-        }
-      ],
-      "startedAt": 1793687385728,
-      "lastEventAt": 1793732385728,
-      "statusSince": 1793732245728,
-      "stats": {
-        "toolCalls": 65,
-        "tokensIn": 42000,
-        "tokensOut": 11000,
-        "subagents": 0
-      },
-      "seed": 256,
-      "parts": {
-        "hairStyle": "ponytail",
-        "topStyle": "blouse",
-        "top": "#7d3c98",
-        "bottomStyle": "skirt"
-      }
-    },
-    {
-      "id": "rui",
-      "kind": "main",
-      "roomId": "room-comercial",
+      "roomId": "room-financeiro",
       "name": "Rui",
       "look": "m",
-      "role": "Gestor Financeiro & Caixa",
-      "title": "Conciliação e Fila Outbox de Cobrança",
-      "sessionId": "ses-rui",
+      "role": "Financeiro · honorários",
+      "title": "Financeiro · honorários",
+      "sessionId": "ses-financeiro",
       "account": "daniel-felix",
       "status": "working",
       "activity": {
-        "id": "act-rui-1793732385728",
-        "kind": "other",
+        "id": "act-financeiro-1795100664631",
+        "kind": "plan",
         "icon": "💰",
-        "text": "Apurando honorários da carteira",
-        "at": 1793732345728
+        "text": "Conferindo honorários a receber",
+        "detail": "Financeiro · honorários · Geral",
+        "at": 1795100394631
       },
       "recent": [],
       "tasks": [
         {
-          "id": "t-rui-1",
-          "title": "Conciliação bancária PIX",
+          "id": "tf-rec",
+          "title": "4 parcelas recebidas",
           "status": "completed"
         },
         {
-          "id": "t-rui-2",
-          "title": "Fila de lembretes no Outbox",
+          "id": "tf-ovd",
+          "title": "1 parcela(s) vencida(s) a cobrar",
+          "status": "in_progress"
+        },
+        {
+          "id": "tf-pay",
+          "title": "3 conta(s) a pagar do escritório",
           "status": "in_progress"
         }
       ],
-      "startedAt": 1793672385728,
-      "lastEventAt": 1793732385728,
-      "statusSince": 1793732215728,
+      "startedAt": 1795028664631,
+      "lastEventAt": 1795100664631,
+      "statusSince": 1795100544631,
       "stats": {
-        "toolCalls": 70,
-        "tokensIn": 48000,
-        "tokensOut": 13000,
-        "subagents": 0
+        "toolCalls": 143,
+        "tokensIn": 60500,
+        "tokensOut": 16100,
+        "subagents": 2
       },
       "seed": 368,
       "parts": {
         "hairStyle": "side_part",
+        "hair": "#302723",
         "topStyle": "shirt_tie",
         "top": "#1e8449",
         "topAccent": "#f4d03f",
         "bottomStyle": "pants",
+        "bottom": "#19222b",
+        "accessory": "glasses"
+      }
+    },
+    {
+      "id": "etica",
+      "kind": "main",
+      "roomId": "room-financeiro",
+      "name": "Elisa",
+      "look": "f",
+      "role": "Ética e OAB · apoio interno",
+      "title": "Ética e OAB · apoio interno",
+      "sessionId": "ses-etica",
+      "account": "daniel-felix",
+      "status": "idle",
+      "activity": {
+        "id": "act-etica-1795100664631",
+        "kind": "read",
+        "icon": "🛡️",
+        "text": "Conferindo comunicação e sigilo",
+        "detail": "Ética e OAB · apoio interno · Ética e OAB",
+        "at": 1795100379631
+      },
+      "recent": [],
+      "tasks": [
+        {
+          "id": "ta-etica",
+          "title": "Conferindo comunicação e sigilo",
+          "status": "completed"
+        }
+      ],
+      "startedAt": 1795028664631,
+      "lastEventAt": 1795100664631,
+      "statusSince": 1795100544631,
+      "stats": {
+        "toolCalls": 150,
+        "tokensIn": 63000,
+        "tokensOut": 16800,
+        "subagents": 2
+      },
+      "seed": 512,
+      "parts": {
+        "hairStyle": "wavy",
+        "hair": "#3d2a23",
+        "topStyle": "jacket",
+        "top": "#784256",
+        "topAccent": "#e6b8c6",
+        "bottomStyle": "pants",
+        "bottom": "#1e222b",
         "accessory": "glasses"
       }
     }
@@ -677,19 +1055,19 @@
     {
       "id": "daniel-felix",
       "short": "DF",
-      "name": "Escritório Daniel Felix Advocacia",
+      "name": "Daniel Felix Advocacia",
       "color": "#d4af37",
       "configDir": ".adv",
-      "sessions": 14,
+      "sessions": 19,
       "usage": {
         "fiveHour": {
-          "utilization": 22
+          "utilization": 40
         },
         "sevenDay": {
-          "utilization": 38
+          "utilization": 56
         },
         "source": "statusline",
-        "fetchedAt": 1793732385728
+        "fetchedAt": 1795100664631
       },
       "usageStatus": "ok"
     }
@@ -698,13 +1076,13 @@
     "demo": false,
     "sources": [
       {
-        "label": "Gabinete Daniel Felix",
-        "path": "d:/Meu Drive/Bilder Ai/mvp_escritorio_adv",
-        "sessions": 14,
+        "label": "Escritório Daniel Felix",
+        "path": "mvp_escritorio_adv",
+        "sessions": 19,
         "ok": true
       }
     ],
-    "startedAt": 1793645985728,
-    "version": "1.0.3 Habblaud Edition"
+    "startedAt": 1795014264631,
+    "version": "2.0.0 Habblaud Unificado"
   }
 }

@@ -132,7 +132,11 @@ export function restoreState(raw){
     if(Array.isArray(r.deadlinesList)&&r.deadlinesList.length)s.deadlinesList=r.deadlinesList;
     if(Array.isArray(r.noticesList)&&r.noticesList.length)s.noticesList=r.noticesList;
     if(Array.isArray(r.contractsList)&&r.contractsList.length)s.contractsList=r.contractsList;
-    if(r.financeiro&&Array.isArray(r.financeiro.items))s.financeiro=r.financeiro;
+    if(r.financeiro&&Array.isArray(r.financeiro.items)){
+      s.financeiro=r.financeiro;
+      if(!Array.isArray(s.financeiro.payables))s.financeiro.payables=structuredClone(INITIAL_FINANCEIRO.payables);
+      if(!Array.isArray(s.financeiro.outbox))s.financeiro.outbox=structuredClone(INITIAL_FINANCEIRO.outbox);
+    }
     if(Array.isArray(r.telegramMessages)&&r.telegramMessages.length)s.telegramMessages=r.telegramMessages;
   }catch{/* Armazenamento indisponível ou versão antiga: usar apenas demonstração. */}
   return s;

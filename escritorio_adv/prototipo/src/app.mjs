@@ -1,4 +1,5 @@
 import {AREAS,SECTORS,STATES,STATUS_COLORS,METRICS,TASKS,WORKFLOWS,escapeHtml as esc,money,initialState,restoreState,visibleAgents,addAgent} from './model.mjs';
+import {HABBLAUD_ROOM_BY_SECTOR,SECTOR_BY_HABBLAUD_ROOM,buildHabblaudSnapshotFromState,buildHabblaudFeedFromState} from './habblaud-bridge.mjs';
 import {sceneMarkup,scenePoint,sceneAvatar,sceneRoute} from './scene.mjs';
 import {PixelScene} from './pixel-scene.mjs';
 
@@ -35,21 +36,99 @@ const civil=v=>v?String(v).slice(0,10).split('-').reverse().join('/'):'—';
 const textOrDash=v=>v===null||v===undefined?'—':esc(v);
 const simpleHash=str=>{let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0).toString(16).padStart(8,'0')+'a94f8c2d17e03b6591c4820f7a3e19d4b8c20194e72a6105c38b91e4';};
 const routes={controladoria:'/prazos',movimentacoes:'/processos',forense:'/pecas',tese:'/inicial',pesquisador:'/analises',analista:'/analises',estrategista:'/analises',redator:'/pecas',revisor:'/pecas',financeiro:'/financeiro',agenda:'/operacao',daniel:'/pecas',proprietario:'/operacao'};
+const SECTOR_LEAD={all:'coordenador',diretoria:'daniel',comercial:'sdr',administrativo:'controladoria',juridico:'forense',contratos:'contratos',financeiro:'financeiro',etica:'etica'};
 
 export class OfficeApp{
   constructor(){
     this.live=new URLSearchParams(location.search).get('mode')==='gabinete';
     this.privacyMode=false;
+    const isRealHttp=typeof window!=='undefined'&&window.location?.protocol?.startsWith('http')&&!window.location?.hostname?.endsWith('.test');
+    const isJsdom=typeof navigator!=='undefined'&&/jsdom/i.test(navigator.userAgent||'');
+    this.canUseHabblaud=isRealHttp&&!isJsdom;
+    this.stageEngine=this.canUseHabblaud?'habblaud':'svg';
+    this.habblaudDaylight='day';
+    this.habblaudReady=false;
     let saved=null;try{saved=localStorage.getItem('daniel-felix-office-demo-v1')||localStorage.getItem('arao-mendes-office-demo-v1');}catch{}
     this.state=this.live?initialState():restoreState(saved);
     this.state.live=this.live;this.selected='coordenador';this.pan={x:0,y:0};this.running=false;this.snapshot=null;this.connectionError=null;
     this.modal=$('#modal');this.reduceMotion=matchMedia('(prefers-reduced-motion:reduce)').matches;
     this.state.logs=[{time:'TELEGRAM · ONLINE',text:'Coordenadora Luana conectada ao canal @DanielFelixAdvBot. Petições, clientes, prazos e financeiro prontos.'}];
     if(this.live){this.state.logs=[];for(const a of this.state.agents){a.status='waiting';a.task=a.human?'Revisões disponíveis no Gabinete':'Perfil cadastrado · execução do agente ainda não conectada';}}
+    if(this.canUseHabblaud)this.initHabblaudBridge();
     this.injectIcons();this.bind();this.render();
     $('#date-label').textContent=new Intl.DateTimeFormat('pt-BR',{day:'numeric',month:'long'}).format(new Date());
     if(this.live){$('.demo-badge').innerHTML='<i></i>GABINETE · CONECTANDO';this.loadSnapshot();}
     this.initServerSync();
+  }
+  initHabblaudBridge(){
+    const stage=$('#stage'),sc=$('#scene-container');
+    if(!stage||$('#habblaud-frame'))return;
+    const iframe=document.createElement('iframe');
+    iframe.id='habblaud-frame';
+    iframe.className='habblaud-frame';
+    iframe.src='./habblaud/embed.html?embed=1';
+    iframe.title='Escritório Virtual 3D Habblaud';
+    iframe.setAttribute('allow','autoplay');
+    stage.insertBefore(iframe,sc||null);
+    window.addEventListener('message',ev=>{
+      const msg=ev.data;
+      if(!msg||typeof msg.type!=='string')return;
+      if(msg.type==='habblaud:ready'){
+        this.habblaudReady=true;
+        this.postToHabblaud({type:'df:options',options:{showNames:true,bubbles:'all',liveliness:'normal',followSelected:false,daylight:this.habblaudDaylight,theme:'none'}});
+        this.syncHabblaud();
+        if(this.selected)this.postToHabblaud({type:'df:select-agent',agentId:this.selected,focus:false});
+        if(this.state.paused)this.postToHabblaud({type:'df:pause',paused:true});
+      }else if(msg.type==='habblaud:select'){
+        const sel=msg.selection;
+        if(sel?.type==='agent'&&sel.id){
+          this.selectAgent(sel.id,false,{fromHabblaud:true});
+        }else if(sel?.type==='room'&&sel.id){
+          const sec=SECTOR_BY_HABBLAUD_ROOM[sel.id];
+          if(sec){
+            if(this.state.sector!==sec){
+              this.state.sector=sec;
+              this.renderTabs();
+            }
+            const cur=this.state.agents.find(a=>a.id===this.selected);
+            const sameRoom=cur&&(HABBLAUD_ROOM_BY_SECTOR[cur.sector]===sel.id);
+            if(!sameRoom){
+              const lead=SECTOR_LEAD[sec];
+              if(lead)this.selectAgent(lead,false,{fromHabblaud:true});
+            }
+          }
+        }
+      }else if(msg.type==='habblaud:dblclick'){
+        const sel=msg.selection;
+        if(sel?.type==='agent'&&sel.id){
+          this.openAgentPrimaryModule(sel.id);
+        }
+      }
+    });
+  }
+  postToHabblaud(msg){
+    if(!this.canUseHabblaud)return;
+    const fr=$('#habblaud-frame');
+    if(fr?.contentWindow){
+      try{fr.contentWindow.postMessage(msg,'*');}catch{}
+    }
+  }
+  syncHabblaud(){
+    if(!this.canUseHabblaud)return;
+    const snapshot=buildHabblaudSnapshotFromState(this.state);
+    const feed=buildHabblaudFeedFromState(this.state);
+    this.postToHabblaud({type:'df:snapshot',snapshot,feed});
+  }
+  openAgentPrimaryModule(agentId){
+    if(['financeiro','proprietario'].includes(agentId)){this.financeiro();return;}
+    if(['forense','tese','pesquisador','estrategista','redator','revisor','daniel'].includes(agentId)){this.petitions();return;}
+    if(['sdr','closer','analista'].includes(agentId)){this.clients();return;}
+    if(agentId==='controladoria'){this.processual('deadlines');return;}
+    if(agentId==='movimentacoes'){this.processual('processes');return;}
+    if(agentId==='agenda'){this.processual('notices');return;}
+    if(['contratos','assinaturas'].includes(agentId)){this.contracts();return;}
+    if(agentId==='coordenador'){this.telegram();return;}
+    this.profile(agentId);
   }
   initServerSync(){
     if(typeof window!=='undefined'&&window.location?.protocol?.startsWith('http')&&!window.location?.hostname?.endsWith('.test')&&typeof EventSource!=='undefined'){
@@ -97,6 +176,7 @@ export class OfficeApp{
       const raw=JSON.stringify(this.state);
       localStorage.setItem('daniel-felix-office-demo-v1',raw);
       localStorage.setItem('arao-mendes-office-demo-v1',raw);
+      if(this.canUseHabblaud)this.syncHabblaud();
       if(typeof window!=='undefined'&&window.location?.protocol?.startsWith('http')&&!window.location?.hostname?.endsWith('.test')){
         fetch('/api/office/state',{method:'POST',headers:{'Content-Type':'application/json'},body:raw}).catch(()=>{});
       }
@@ -109,10 +189,31 @@ export class OfficeApp{
   }
   finTotals(){
     const items=this.state.financeiro?.items||[];
-    const paid=items.filter(x=>x.status==='paid').reduce((s,x)=>s+Number(x.amount||0),0);
-    const open=items.filter(x=>x.status==='open').reduce((s,x)=>s+Number(x.amount||0),0);
-    const overdue=items.filter(x=>x.status==='overdue').reduce((s,x)=>s+Number(x.amount||0),0);
-    return {paid,open,overdue,receivable:open+overdue,total:paid+open+overdue};
+    const payables=this.state.financeiro?.payables||[];
+    const paidItems=items.filter(x=>x.status==='paid');
+    const openItems=items.filter(x=>x.status==='open');
+    const overdueItems=items.filter(x=>x.status==='overdue');
+    const paid=paidItems.reduce((s,x)=>s+Number(x.amount||0),0);
+    const open=openItems.reduce((s,x)=>s+Number(x.amount||0),0);
+    const overdue=overdueItems.reduce((s,x)=>s+Number(x.amount||0),0);
+    const payPaidItems=payables.filter(x=>x.status==='paid');
+    const payOpenItems=payables.filter(x=>x.status==='open');
+    const payOverdueItems=payables.filter(x=>x.status==='overdue');
+    const payablesPaid=payPaidItems.reduce((s,x)=>s+Number(x.amount||0),0);
+    const payablesOpen=payOpenItems.reduce((s,x)=>s+Number(x.amount||0),0);
+    const payablesOverdue=payOverdueItems.reduce((s,x)=>s+Number(x.amount||0),0);
+    const payablesPending=payablesOpen+payablesOverdue;
+    const payablesTotal=payablesPaid+payablesPending;
+    const receivable=open+overdue;
+    const total=paid+receivable;
+    return {
+      paid,open,overdue,receivable,total,
+      paidCount:paidItems.length,openCount:openItems.length,overdueCount:overdueItems.length,
+      payablesPaid,payablesOpen,payablesOverdue,payablesPending,payablesTotal,
+      payablesPendingCount:payOpenItems.length+payOverdueItems.length,payablesOverdueCount:payOverdueItems.length,
+      netCash:paid-payablesPaid,
+      projectedBalance:(paid+receivable)-payablesTotal
+    };
   }
   render(){this.renderKpis();this.renderTabs();this.renderScene();this.renderTelegramDock();this.renderInspector();this.renderQueue();this.renderActivity();}
   renderKpis(){
@@ -130,7 +231,7 @@ export class OfficeApp{
       ['Clientes & Pastas',(this.state.clients||[]).length,'people',`${m.leads} contatos no período · ver dossiês`,'clients'],
       ['Petições & Minutas',(this.state.petitions||[]).length,'file',`${pendingPetitions} aguardando revisão de Dr. Daniel`,'petitions'],
       ['Contratos & Procurações',m.contracts,'check',`${(this.state.contractsList||[]).length} pastas documentais · ZapSign`,'contracts'],
-      ['Financeiro (Recebido)',money(fin.paid),'wallet',`${money(fin.receivable)} a receber · abrir caixa`,'financeiro']
+      ['Financeiro (Caixa Líquido)',this.mask(money(fin.netCash),'money'),'wallet',`${this.mask(money(fin.paid),'money')} recebido · ${this.mask(money(fin.receivable),'money')} a receber · ${this.mask(money(fin.payablesPending),'money')} a pagar`,'financeiro']
     ];
     $('#kpis').innerHTML=rows.map((r,i)=>`<button class="kpi ${i===2||i===4?'urgent':''}" data-action="${r[4]}"><span class="kpi-label">${r[0]}${icon(r[2])}</span><strong class="kpi-value">${textOrDash(r[1])}</strong><span class="kpi-foot">${r[3]}</span></button>`).join('');
   }
@@ -141,10 +242,19 @@ export class OfficeApp{
   }
   renderScene(){
     $('#scene-container').innerHTML=sceneMarkup(this.state,this.selected,this.metric());this.transformView();
-    $('#stage').classList.toggle('paused',this.state.paused);
-    $('#stage').classList.toggle('pixel-view',this.state.view!=='iso');
-    $('#scene-view-label').textContent=this.state.view==='iso'?'VISTA ISOMÉTRICA':'PIXEL ART · SALAS POR SETOR';
-    $('#view-toggle').textContent=this.state.view==='iso'?'Vista pixel':'Vista isométrica';
+    const stage=$('#stage');
+    const isHab=this.canUseHabblaud&&this.stageEngine==='habblaud';
+    stage.classList.toggle('paused',this.state.paused);
+    stage.classList.toggle('habblaud-mode',isHab);
+    stage.classList.toggle('pixel-view',!isHab&&this.state.view!=='iso');
+    const fr=$('#habblaud-frame');if(fr)fr.hidden=!isHab;
+    const habBtn=$('#btn-habblaud-view');
+    if(habBtn){habBtn.hidden=!this.canUseHabblaud;habBtn.classList.toggle('active-engine',isHab);}
+    const dayBtn=$('#btn-habblaud-daylight');
+    if(dayBtn){dayBtn.hidden=!isHab;dayBtn.textContent=this.habblaudDaylight==='night'?'🌙 Noite':'☀️ Dia';}
+    $('#scene-view-label').textContent=isHab?'HABBLAUD 3D · 6 SALAS & 19 AGENTES':(this.state.view==='iso'?'VISTA ISOMÉTRICA':'PIXEL ART · SALAS POR SETOR');
+    $('#view-toggle').textContent=isHab?'Planta 2D':(this.state.view==='iso'?'Vista pixel':'Vista isométrica');
+    if(this.canUseHabblaud)this.syncHabblaud();
   }
   renderTelegramDock(){
     const dock=$('#telegram-dock');if(!dock)return;
@@ -233,7 +343,17 @@ export class OfficeApp{
     document.addEventListener('click',e=>{
       const agent=e.target.closest('[data-agent]');if(agent){this.selectAgent(agent.dataset.agent,true);return;}
       const open=e.target.closest('[data-open-agent]');if(open){this.profile(open.dataset.openAgent);return;}
-      const filter=e.target.closest('[data-sector-filter]');if(filter){this.state.sector=filter.dataset.sectorFilter;this.renderTabs();this.renderScene();return;}
+      const filter=e.target.closest('[data-sector-filter]');if(filter){
+        this.state.sector=filter.dataset.sectorFilter;
+        this.renderTabs();
+        if(this.canUseHabblaud&&this.stageEngine==='habblaud'){
+          const roomId=this.state.sector==='all'?'all':(HABBLAUD_ROOM_BY_SECTOR[this.state.sector]||'all');
+          this.postToHabblaud({type:'df:focus-room',roomId});
+          const lead=SECTOR_LEAD[this.state.sector];
+          if(lead)this.selectAgent(lead,false,{fromHabblaud:true});
+        }else this.renderScene();
+        return;
+      }
       const flow=e.target.closest('[data-workflow]');if(flow){this.modal.close();this.runWorkflow(flow.dataset.workflow);return;}
       const period=e.target.closest('[data-period]');if(period){this.state.period=period.dataset.period;this.persist();this.renderKpis();this.renderScene();this.metrics();return;}
       const review=e.target.closest('[data-review]');if(review){this.review(review.dataset.review);return;}
@@ -245,6 +365,8 @@ export class OfficeApp{
       const openCli=e.target.closest('[data-open-client]');if(openCli){this.clients(openCli.dataset.openClient);return;}
       const confDead=e.target.closest('[data-confirm-deadline]');if(confDead){this.confirmDeadline(confDead.dataset.confirmDeadline);return;}
       const payFin=e.target.closest('[data-pay-fin]');if(payFin){this.markFinanceiroPaid(payFin.dataset.payFin);return;}
+      const payExp=e.target.closest('[data-pay-expense]');if(payExp){this.markExpensePaid(payExp.dataset.payExpense);return;}
+      const openFinCli=e.target.closest('[data-open-fin-client]');if(openFinCli){this.financeiro('items',{q:openFinCli.dataset.openFinClient});return;}
       const billFin=e.target.closest('[data-bill-fin]');if(billFin){this.createOutboxBilling(billFin.dataset.billFin);return;}
       const sendOut=e.target.closest('[data-send-outbox]');if(sendOut){this.authorizeOutbox(sendOut.dataset.sendOutbox);return;}
       const openDoc=e.target.closest('[data-open-contract]');if(openDoc){this.contracts(openDoc.dataset.openContract);return;}
@@ -257,7 +379,7 @@ export class OfficeApp{
     document.addEventListener('keydown',e=>{const t=e.target;if((e.key==='Enter'||e.key===' ')&&t.matches('.person,.wall-screen')){e.preventDefault();t.dispatchEvent(new MouseEvent('click',{bubbles:true}));}});
     this.modal.addEventListener('click',e=>{if(e.target===this.modal){const r=this.modal.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)this.modal.close();}});
     $('#stage').addEventListener('pointerdown',e=>{
-      if(e.target.closest('[data-agent],[data-action]')||e.pointerType==='touch')return;
+      if(this.stageEngine==='habblaud'||e.target.closest('[data-agent],[data-action]')||e.pointerType==='touch')return;
       const start={x:e.clientX,y:e.clientY,px:this.pan.x,py:this.pan.y},stage=$('#stage');stage.setPointerCapture(e.pointerId);
       const move=ev=>{this.pan={x:start.px+ev.clientX-start.x,y:start.py+ev.clientY-start.y};this.transformView();};
       const up=()=>{stage.removeEventListener('pointermove',move);stage.removeEventListener('pointerup',up);stage.removeEventListener('pointercancel',up);};
@@ -269,11 +391,31 @@ export class OfficeApp{
     document.querySelectorAll('.rail .nav-button').forEach(b=>b.classList.toggle('active',b.dataset.action===key));
   }
   action(a){
-    if(a==='toggle-view'){if(this.running){this.toast('Aguarde o fim do fluxo para trocar a vista.');return;}this.state.view=this.state.view==='iso'?'pixel':'iso';this.state.zoom=1;this.pan={x:0,y:0};this.persist();this.renderScene();return;}
+    if(a==='set-habblaud'){
+      if(this.running){this.toast('Aguarde o fim do fluxo para trocar a vista.');return;}
+      if(!this.canUseHabblaud)return;
+      this.stageEngine='habblaud';
+      this.postToHabblaud({type:'df:pause',paused:this.state.paused});
+      this.renderScene();
+      return;
+    }
+    if(a==='toggle-view'){
+      if(this.running){this.toast('Aguarde o fim do fluxo para trocar a vista.');return;}
+      if(this.canUseHabblaud&&this.stageEngine==='habblaud'){
+        this.stageEngine='svg';this.state.zoom=1;this.pan={x:0,y:0};this.renderScene();return;
+      }
+      this.state.view=this.state.view==='iso'?'pixel':'iso';this.state.zoom=1;this.pan={x:0,y:0};this.persist();this.renderScene();return;
+    }
+    if(a==='toggle-daylight'){
+      this.habblaudDaylight=this.habblaudDaylight==='day'?'night':'day';
+      this.postToHabblaud({type:'df:options',options:{daylight:this.habblaudDaylight}});
+      this.renderScene();
+      return;
+    }
     const navKeys=['home','telegram','clients','petitions','processes','contracts','financeiro','team','metrics','integrations','help'];
     if(navKeys.includes(a))this.setActiveNav(a);
     const actions={
-      home:()=>{this.state.sector='all';this.pan={x:0,y:0};this.state.zoom=1;this.modal.close();this.renderTabs();this.renderScene();},
+      home:()=>{this.state.sector='all';this.pan={x:0,y:0};this.state.zoom=1;this.modal.close();this.renderTabs();if(this.stageEngine==='habblaud')this.postToHabblaud({type:'df:focus-room',roomId:'all'});this.renderScene();},
       telegram:()=>this.telegram(),
       clients:()=>this.clients(),
       petitions:()=>this.petitions(),
@@ -284,10 +426,10 @@ export class OfficeApp{
       integrations:()=>this.integrations(),
       'new-agent':()=>this.newAgent(),
       'toggle-privacy':()=>this.togglePrivacy(),
-      pause:()=>{this.state.paused=!this.state.paused;this.syncPause();},
+      pause:()=>{this.state.paused=!this.state.paused;this.syncPause();if(this.canUseHabblaud)this.postToHabblaud({type:'df:pause',paused:this.state.paused});},
       'zoom-in':()=>this.zoom(.15),
       'zoom-out':()=>this.zoom(-.15),
-      'zoom-reset':()=>{this.state.zoom=1;this.pan={x:0,y:0};this.transformView();},
+      'zoom-reset':()=>{if(this.stageEngine==='habblaud'){this.postToHabblaud({type:'df:camera',action:'overview'});return;}this.state.zoom=1;this.pan={x:0,y:0};this.transformView();},
       fullscreen:async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await $('#stage').requestFullscreen();}catch{this.toast('Tela cheia indisponível. Use os controles de zoom.');}},
       help:()=>this.help(),
       logs:()=>this.logs(),
@@ -303,10 +445,10 @@ export class OfficeApp{
     };
     actions[a]?.();
   }
-  syncPause(){const b=$('#pause-button');b.innerHTML=icon(this.state.paused?'play':'pause')+`<span>${this.state.paused?'Retomar':'Pausar'}</span>`;$('#stage').classList.toggle('paused',this.state.paused);}
-  zoom(v){this.state.zoom=Math.max(.65,Math.min(2.2,this.state.zoom+v));this.transformView();}
+  syncPause(){const b=$('#pause-button');b.innerHTML=icon(this.state.paused?'play':'pause')+`<span>${this.state.paused?'Retomar':'Pausar'}</span>`;$('#stage').classList.toggle('paused',this.state.paused);if(this.canUseHabblaud)this.postToHabblaud({type:'df:pause',paused:this.state.paused});}
+  zoom(v){if(this.stageEngine==='habblaud'){this.postToHabblaud({type:'df:camera',action:v>0?'zoomIn':'zoomOut'});return;}this.state.zoom=Math.max(.65,Math.min(2.2,this.state.zoom+v));this.transformView();}
   transformView(){const c=$('#scene-container');c.style.transform=`translate(${this.pan.x}px,${this.pan.y}px) scale(${this.state.zoom})`;$('#zoom-label').textContent=`${Math.round(this.state.zoom*100)}%`;}
-  selectAgent(id,open=false){if(!this.state.agents.some(a=>a.id===id))return;this.selected=id;this.renderScene();this.renderInspector();if(open&&innerWidth<=1020)this.profile(id);}
+  selectAgent(id,open=false,opts={}){if(!this.state.agents.some(a=>a.id===id))return;this.selected=id;if(this.stageEngine!=='habblaud')this.renderScene();this.renderInspector();if(this.stageEngine==='habblaud'&&!opts.fromHabblaud)this.postToHabblaud({type:'df:select-agent',agentId:id,focus:false});if(open&&innerWidth<=1020)this.profile(id);}
   show(title,subtitle,content){$('#modal-body').innerHTML=`<div class="modal-head"><div><div class="eyebrow">DANIEL FELIX · ${this.live?'GABINETE':'OPERAÇÃO DO ESCRITÓRIO'}</div><h2 id="modal-title">${title}</h2><p>${subtitle}</p></div><button class="close-button" data-action="close" aria-label="Fechar">×</button></div><div class="modal-content">${content}</div>`;$('#modal-body [data-action=close]').onclick=()=>this.modal.close();if(!this.modal.open)this.modal.showModal();}
 
   /* ======================================================================
@@ -410,7 +552,7 @@ export class OfficeApp{
     }else if(q.includes('/financeiro')||q.includes('caixa')||q.includes('honor')||q.includes('cobrar')||q.includes('pagamento')){
       targetAgent='financeiro';
       const fin=this.finTotals();
-      replyText=`💰 Relatório do Rui (Financeiro): Recebido confirmado: ${money(fin.paid)} | A receber: ${money(fin.open)} | Em atraso: ${money(fin.overdue)}. Parcela de Roberto Almeida Prado (R$ 5.900) tem cobrança pronta no Outbox.`;
+      replyText=`💰 Relatório do Rui (Financeiro): Recebido confirmado: ${money(fin.paid)} | A receber: ${money(fin.open)} | Em atraso: ${money(fin.overdue)} | Contas a pagar: ${money(fin.payablesPending)}. Parcela de Roberto Almeida Prado (R$ 5.900) tem cobrança pronta no Outbox.`;
       actions=[
         {label:'💰 Abrir Módulo Financeiro',action:'financeiro'},
         {label:'📲 Autorizar Cobrança Outbox',sendOutbox:'out-1'}
@@ -451,10 +593,13 @@ export class OfficeApp{
       text:replyText,
       actions
     });
+    const dispatched=this.state.agents.find(x=>x.id===targetAgent);
+    if(dispatched)dispatched.task=`Atendendo Telegram: ${rawText.slice(0,42)}`;
     this.log(`Telegram (@DanielFelixAdvBot): "${rawText}" → despachado para ${targetAgent}.`);
     this.selected=targetAgent;
     this.persist();
     this.render();
+    if(this.stageEngine==='habblaud')this.postToHabblaud({type:'df:select-agent',agentId:targetAgent,focus:true});
     if(reopenModal||(this.modal.open&&$('#tg-modal-feed')))this.telegram();
   }
 
@@ -522,7 +667,7 @@ export class OfficeApp{
           <div class="info-box"><small>Estado Civil / Profissão</small><strong>${esc(c.estadoCivil)} · ${esc(c.profissao)}</strong></div>
           <div class="info-box"><small>WhatsApp / E-mail</small><strong>${esc(this.mask(c.phone,'phone'))}<br><span style="font-size:13px;font-weight:400;color:#9ab0bc">${esc(this.mask(c.email,'cpf'))}</span></strong></div>
           <div class="info-box" style="grid-column:span 2"><small>Endereço Completo (Qualificação p/ Procuração e Inicial)</small><strong>${esc(this.mask(c.endereco,'cpf'))}</strong></div>
-          <div class="info-box"><small>Honorários da Pasta</small><strong style="color:#86d1b1">${esc(this.mask(money(c.honorariosPaid||0),'money'))} pagos <span style="color:#9ab0bc;font-weight:400">/ ${esc(this.mask(money(c.honorariosTotal||0),'money'))}</span></strong></div>
+          <div class="info-box"><small>Honorários da Pasta</small><strong style="color:#86d1b1">${esc(this.mask(money(c.honorariosPaid||0),'money'))} pagos <span style="color:#9ab0bc;font-weight:400">/ ${esc(this.mask(money(c.honorariosTotal||0),'money'))}</span></strong><button type="button" class="text-button" data-open-fin-client="${esc(c.name)}" style="font-size:12px;margin-top:6px">Ver parcelas no Financeiro ↗</button></div>
         </div>
 
         <div class="citation-box">
@@ -691,6 +836,7 @@ export class OfficeApp{
               <strong style="font-size:15px">Fila de Peças (${list.length})</strong>
               <button class="primary-button" id="btn-new-petition" style="padding:9px 13px;font-size:13px">+ Nova Petição</button>
             </div>
+            <input id="pet-search" placeholder="Buscar peça, cliente ou código..." style="background:#0e1b23;border:1px solid #3a4c58;border-radius:6px;color:#fff;padding:9px 12px;font-size:13.5px">
             <select id="pet-status-filter" style="background:#0e1b23;border:1px solid #3a4c58;border-radius:6px;color:#cbd6dc;padding:10px;font-size:13.5px">
               <option value="all">Todas as peças (${list.length})</option>
               <option value="review">Aguardando revisão de Dr. Daniel</option>
@@ -705,8 +851,9 @@ export class OfficeApp{
     );
 
     const renderList=(activeId)=>{
+      const q=($('#pet-search')?.value||'').toLocaleLowerCase('pt-BR');
       const st=$('#pet-status-filter')?.value||'all';
-      const filtered=list.filter(p=>st==='all'||p.status===st);
+      const filtered=list.filter(p=>(st==='all'||p.status===st)&&(p.code+' '+p.title+' '+p.clientName+' '+p.type).toLocaleLowerCase('pt-BR').includes(q));
       $('#petition-list-items').innerHTML=filtered.map(p=>`
         <button class="list-card-btn ${p.id===activeId?'active':''}" data-select-pet="${esc(p.id)}">
           <strong><span>${esc(p.code)} · ${esc(p.type)}</span><span class="badge ${p.status==='approved'?'green':p.status==='review'?'gold':'blue'}">${p.status==='approved'?'Aprovada':p.status==='review'?'Revisar':'Squad'}</span></strong>
@@ -794,6 +941,7 @@ export class OfficeApp{
       };
     };
 
+    $('#pet-search').oninput=()=>renderList(current?.id);
     $('#pet-status-filter').onchange=()=>renderList(current?.id);
     $('#btn-new-petition').onclick=()=>{
       const clis=this.state.clients||[];
@@ -929,110 +1077,346 @@ Advogado · Escritório Daniel Felix Advocacia`;
   }
 
   /* ======================================================================
-   * 4. MÓDULO FINANCEIRO COMPLETO (RUI · HONORÁRIOS, CAIXA E OUTBOX)
+   * 4. MÓDULO FINANCEIRO EXECUTIVO (RUI · RECEBER, PAGAR, FLUXO & OUTBOX)
    * ====================================================================== */
-  financeiro(tab='items'){
+  financeiro(tab='items',opts={}){
     const fin=this.finTotals();
     const items=this.state.financeiro?.items||[];
+    if(!Array.isArray(this.state.financeiro.payables))this.state.financeiro.payables=[];
+    const payables=this.state.financeiro.payables;
     const outbox=this.state.financeiro?.outbox||[];
+    const filterStatus=opts.status||'all';
+    const filterQuery=opts.q||'';
+
+    const pctPaid=fin.total?Math.round((fin.paid/fin.total)*100):0;
+    const pctOpen=fin.total?Math.round((fin.open/fin.total)*100):0;
+    const pctOverdue=fin.total?Math.max(0,100-pctPaid-pctOpen):0;
+
     this.show(
-      'Gestão Financeira, Honorários & Caixa (Rui)',
-      'Controle unificado de honorários contratuais, parcelas por cliente, conciliação de recebimentos e fila auditável de cobrança (Outbox).',
-      `<div class="metrics-cards" style="margin-bottom:18px">
-        <div class="metric-mini"><small>Recebido no Período (Caixa Real)</small><strong style="color:#86d1b1">${money(fin.paid)}</strong></div>
-        <div class="metric-mini"><small>A Receber (Em Aberto)</small><strong style="color:#e6c786">${money(fin.open)}</strong></div>
-        <div class="metric-mini"><small>Em Atraso (Vencido)</small><strong style="color:#f0a399">${money(fin.overdue)}</strong></div>
-        <div class="metric-mini"><small>Total Contratado na Carteira</small><strong>${money(fin.total)}</strong></div>
+      'Gestão Financeira Executiva, Honorários & Despesas (Rui)',
+      'Visão clara do que já entrou, honorários a vencer ou em atraso, contas a pagar do escritório e fila de cobrança no WhatsApp.',
+      `<div class="fin-kpi-grid">
+        <div class="fin-kpi" style="--fin-accent:#66c29a">
+          <small>💚 Já Entrou (Recebido) <span>${fin.paidCount} receb.</span></small>
+          <strong style="color:#86d1b1">${esc(this.mask(money(fin.paid),'money'))}</strong>
+          <span>${fin.paidCount} parcela(s) conciliada(s) em caixa real</span>
+        </div>
+        <div class="fin-kpi" style="--fin-accent:#dfba6c">
+          <small>🟡 Honorários a Receber <span>${fin.openCount+fin.overdueCount} pendente(s)</span></small>
+          <strong style="color:#f0cf88">${esc(this.mask(money(fin.receivable),'money'))}</strong>
+          <span>${fin.openCount} a vencer (${esc(this.mask(money(fin.open),'money'))}) · ${fin.overdueCount} vencida(s) (${esc(this.mask(money(fin.overdue),'money'))})</span>
+        </div>
+        <div class="fin-kpi" style="--fin-accent:#df6d61">
+          <small>🔴 Contas a Pagar (Despesas) <span>${fin.payablesPendingCount} aberta(s)</span></small>
+          <strong style="color:#f5a79e">${esc(this.mask(money(fin.payablesPending),'money'))}</strong>
+          <span>${fin.payablesOverdueCount} vencida(s) · Já pago: ${esc(this.mask(money(fin.payablesPaid),'money'))}</span>
+        </div>
+        <div class="fin-kpi" style="--fin-accent:#7cc8ff">
+          <small>🏛️ Saldo Líquido em Caixa <span>Caixa real</span></small>
+          <strong style="color:${fin.netCash>=0?'#b5e3ff':'#f5a79e'}">${esc(this.mask(money(fin.netCash),'money'))}</strong>
+          <span>Recebido − Pago · Previsto c/ carteira: ${esc(this.mask(money(fin.projectedBalance),'money'))}</span>
+        </div>
       </div>
+
+      <div class="fin-health">
+        <div class="fin-health-head">
+          <strong>Raio-X da Carteira de Honorários (${esc(this.mask(money(fin.total),'money'))} contratados)</strong>
+          <div class="fin-health-legend">
+            <span><i style="background:#66c29a"></i>Recebido (${pctPaid}%)</span>
+            <span><i style="background:#dfba6c"></i>A Vencer (${pctOpen}%)</span>
+            <span><i style="background:#df6d61"></i>Em Atraso (${pctOverdue}%)</span>
+          </div>
+        </div>
+        <div class="fin-health-bar" role="img" aria-label="Distribuição dos honorários recebidos, a vencer e em atraso">
+          <div class="fin-seg-paid" style="width:${pctPaid}%"></div>
+          <div class="fin-seg-open" style="width:${pctOpen}%"></div>
+          <div class="fin-seg-overdue" style="width:${pctOverdue}%"></div>
+        </div>
+        ${(fin.overdueCount>0||fin.payablesOverdueCount>0)?`
+          <button type="button" class="fin-alert-btn" id="btn-fin-quick-overdue">
+            <span>⚠️ Atenção imediata: ${fin.overdueCount} honorário(s) em atraso (${esc(this.mask(money(fin.overdue),'money'))}) e ${fin.payablesOverdueCount} despesa(s) vencida(s) (${esc(this.mask(money(fin.payablesOverdue),'money'))}).</span>
+            <span>Filtrar vencidos →</span>
+          </button>
+        `:''}
+      </div>
+
       <div class="period-switch">
-        <button data-fin-tab="items" class="${tab==='items'?'active':''}">📋 Parcelas & Honorários (${items.length})</button>
-        <button data-fin-tab="outbox" class="${tab==='outbox'?'active':''}">📤 Fila de Cobrança Outbox (${outbox.length})</button>
-        <button data-fin-tab="new" class="${tab==='new'?'active':''}">➕ Lançar Honorários</button>
+        <button data-fin-tab="items" class="${tab==='items'?'active':''}">📥 A Receber (${items.length})</button>
+        <button data-fin-tab="payables" class="${tab==='payables'?'active':''}">📤 Contas a Pagar (${payables.length})</button>
+        <button data-fin-tab="clients" class="${tab==='clients'?'active':''}">👥 Por Cliente (${(this.state.clients||[]).length})</button>
+        <button data-fin-tab="outbox" class="${tab==='outbox'?'active':''}">📲 Fila de Cobrança (${outbox.length})</button>
+        <button data-fin-tab="new" class="${tab==='new'?'active':''}">➕ Novo Lançamento</button>
       </div>
       <div id="fin-tab-body"></div>`
     );
 
+    const quickOvd=$('#btn-fin-quick-overdue');
+    if(quickOvd)quickOvd.onclick=()=>{
+      if(fin.overdueCount>0)this.financeiro('items',{status:'overdue'});
+      else this.financeiro('payables',{status:'overdue'});
+    };
+
     const body=$('#fin-tab-body');
     if(tab==='items'){
+      const renderItems=(st,qStr)=>{
+        const q=qStr.trim().toLocaleLowerCase('pt-BR');
+        const filtered=items.filter(item=>{
+          const okSt=st==='all'||item.status===st;
+          const okQ=!q||(item.clientName+' '+item.description+' '+item.method).toLocaleLowerCase('pt-BR').includes(q);
+          return okSt&&okQ;
+        });
+        const cardHtml=item=>`
+          <div class="fin-row-card ${esc(item.status)}">
+            <div class="fin-row-main">
+              <div class="fin-row-title">
+                <a href="#" data-open-client="${esc(item.clientId)}" style="color:#f1d392;text-decoration:underline">${esc(this.mask(item.clientName,'name'))}</a>
+                <span class="badge ${item.status==='paid'?'green':item.status==='overdue'?'red':'gold'}">${item.status==='paid'?`Pago em ${esc(item.paidAt||'—')}`:item.status==='overdue'?'Em atraso':'A vencer'}</span>
+              </div>
+              <div class="fin-row-desc">${esc(item.description)}</div>
+              <div class="fin-row-meta">
+                <span>📅 Vencimento: <strong>${esc(item.dueDate)}</strong></span>
+                <span>💳 Meio: ${esc(item.method)}</span>
+              </div>
+            </div>
+            <div class="fin-row-side">
+              <div class="fin-amount">${esc(this.mask(money(item.amount),'money'))}</div>
+              <div class="fin-row-actions">
+                ${item.status!=='paid'?`
+                  <button class="success-button" style="padding:7px 12px;font-size:12.5px" data-pay-fin="${esc(item.id)}">✓ Confirmar Pago</button>
+                  <button class="outline-button" style="padding:7px 11px;font-size:12.5px" data-bill-fin="${esc(item.id)}">📲 Cobrar</button>
+                `:`
+                  <button class="outline-button" style="padding:7px 11px;font-size:12.5px" data-receipt-fin="${esc(item.id)}">🧾 Recibo</button>
+                `}
+              </div>
+            </div>
+          </div>`;
+        const groups=[
+          ['overdue','🔴 Atenção Imediata — Vencidos / Em Atraso',filtered.filter(x=>x.status==='overdue')],
+          ['open','🟡 Próximos Vencimentos — A Vencer',filtered.filter(x=>x.status==='open')],
+          ['paid','✅ Já Recebidos — Conciliados em Caixa',filtered.filter(x=>x.status==='paid')]
+        ].filter(g=>g[2].length>0);
+
+        $('#fin-items-groups').innerHTML=groups.map(([,title,list])=>`
+          <div class="fin-group">
+            <div class="fin-group-head"><span>${title}</span><span>${list.length} título(s) · ${esc(this.mask(money(list.reduce((s,x)=>s+Number(x.amount||0),0)),'money'))}</span></div>
+            <div class="fin-group-list">${list.map(cardHtml).join('')}</div>
+          </div>
+        `).join('')||'<p class="subtle-note">Nenhum honorário encontrado para este filtro.</p>';
+
+        body.querySelectorAll('[data-receipt-fin]').forEach(btn=>btn.onclick=()=>this.printReceipt(btn.dataset.receiptFin));
+      };
+
       body.innerHTML=`
-        <div class="data-table-wrap">
-          <table class="data-table">
-            <thead><tr><th>Cliente</th><th>Descrição / Contrato</th><th>Vencimento</th><th>Meio</th><th>Valor</th><th>Situação</th><th>Ação</th></tr></thead>
-            <tbody>
-              ${items.map(item=>`
-                <tr>
-                  <td><a href="#" data-open-client="${esc(item.clientId)}" style="color:#e6c786;text-decoration:underline">${esc(item.clientName)}</a></td>
-                  <td>${esc(item.description)}</td>
-                  <td>${esc(item.dueDate)}</td>
-                  <td>${esc(item.method)}</td>
-                  <td><strong>${money(item.amount)}</strong></td>
-                  <td><span class="badge ${item.status==='paid'?'green':item.status==='overdue'?'red':'gold'}">${item.status==='paid'?`Pago (${esc(item.paidAt)})`:item.status==='overdue'?'Vencido':'A vencer'}</span></td>
-                  <td>
-                    ${item.status!=='paid'?`
-                      <button class="tg-inline-btn" data-pay-fin="${esc(item.id)}">✓ Confirmar Pago</button>
-                      <button class="tg-inline-btn" data-bill-fin="${esc(item.id)}">📲 Cobrar</button>
-                    `:'<span class="muted">Conciliado ✓</span>'}
-                  </td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
+        <div class="fin-filter-bar">
+          <div class="fin-filter-pills">
+            <button type="button" class="fin-pill ${filterStatus==='all'?'active':''}" data-fin-st="all">Todos (${items.length})</button>
+            <button type="button" class="fin-pill ${filterStatus==='overdue'?'active':''}" data-fin-st="overdue">🔴 Em atraso (${fin.overdueCount})</button>
+            <button type="button" class="fin-pill ${filterStatus==='open'?'active':''}" data-fin-st="open">🟡 A vencer (${fin.openCount})</button>
+            <button type="button" class="fin-pill ${filterStatus==='paid'?'active':''}" data-fin-st="paid">✅ Recebidos (${fin.paidCount})</button>
+          </div>
+          <input id="fin-items-search" class="fin-search-input" placeholder="Buscar cliente, contrato ou PIX..." value="${esc(filterQuery)}">
         </div>
-        <p class="subtle-note">Regra de integridade financeira: assinatura de contrato não cria receita de caixa automaticamente. A baixa de parcela registra conciliação real e cancela lembretes pendentes no Outbox.</p>
+        <div id="fin-items-groups"></div>
+        <p class="subtle-note">Regra de integridade financeira: assinatura no ZapSign não cria entrada automática de caixa. Cada baixa registra pagamento real e remove lembretes pendentes no Outbox.</p>
       `;
+      let curSt=filterStatus;
+      const inp=$('#fin-items-search');
+      inp.oninput=()=>renderItems(curSt,inp.value);
+      body.querySelectorAll('[data-fin-st]').forEach(b=>b.onclick=()=>{
+        curSt=b.dataset.finSt;
+        body.querySelectorAll('[data-fin-st]').forEach(x=>x.classList.toggle('active',x.dataset.finSt===curSt));
+        renderItems(curSt,inp.value);
+      });
+      renderItems(curSt,inp.value);
+    }else if(tab==='payables'){
+      const renderPayables=(st,qStr)=>{
+        const q=qStr.trim().toLocaleLowerCase('pt-BR');
+        const filtered=payables.filter(p=>{
+          const okSt=st==='all'||p.status===st;
+          const okQ=!q||(p.vendor+' '+p.category+' '+p.description+' '+p.method).toLocaleLowerCase('pt-BR').includes(q);
+          return okSt&&okQ;
+        });
+        const cardHtml=p=>`
+          <div class="fin-row-card ${esc(p.status)}">
+            <div class="fin-row-main">
+              <div class="fin-row-title">
+                <span class="badge blue">${esc(p.category||'Despesa')}</span>
+                <span>${esc(p.description)}</span>
+                <span class="badge ${p.status==='paid'?'green':p.status==='overdue'?'red':'gold'}">${p.status==='paid'?`Pago em ${esc(p.paidAt||'—')}`:p.status==='overdue'?'Vencida':'A vencer'}</span>
+              </div>
+              <div class="fin-row-meta">
+                <span>🏢 Favorecido: ${esc(p.vendor||'—')}</span>
+                <span>📅 Vencimento: <strong>${esc(p.dueDate)}</strong></span>
+                <span>💳 ${esc(p.method)}</span>
+              </div>
+            </div>
+            <div class="fin-row-side">
+              <div class="fin-amount">${esc(this.mask(money(p.amount),'money'))}</div>
+              <div class="fin-row-actions">
+                ${p.status!=='paid'?`<button class="success-button" style="padding:7px 12px;font-size:12.5px" data-pay-expense="${esc(p.id)}">✓ Dar Baixa (Pago)</button>`:'<span class="muted">Liquidada ✓</span>'}
+              </div>
+            </div>
+          </div>`;
+        const groups=[
+          ['overdue','🔴 Despesas Vencidas — Prioridade',filtered.filter(x=>x.status==='overdue')],
+          ['open','🟡 Despesas a Vencer',filtered.filter(x=>x.status==='open')],
+          ['paid','✅ Despesas Pagas no Período',filtered.filter(x=>x.status==='paid')]
+        ].filter(g=>g[2].length>0);
+
+        $('#fin-payables-groups').innerHTML=groups.map(([,title,list])=>`
+          <div class="fin-group">
+            <div class="fin-group-head"><span>${title}</span><span>${list.length} conta(s) · ${esc(this.mask(money(list.reduce((s,x)=>s+Number(x.amount||0),0)),'money'))}</span></div>
+            <div class="fin-group-list">${list.map(cardHtml).join('')}</div>
+          </div>
+        `).join('')||'<p class="subtle-note">Nenhuma conta a pagar encontrada neste filtro.</p>';
+      };
+
+      const ovCount=payables.filter(x=>x.status==='overdue').length;
+      const opCount=payables.filter(x=>x.status==='open').length;
+      const pdCount=payables.filter(x=>x.status==='paid').length;
+      body.innerHTML=`
+        <div class="fin-filter-bar">
+          <div class="fin-filter-pills">
+            <button type="button" class="fin-pill ${filterStatus==='all'?'active':''}" data-pay-st="all">Todas (${payables.length})</button>
+            <button type="button" class="fin-pill ${filterStatus==='overdue'?'active':''}" data-pay-st="overdue">🔴 Vencidas (${ovCount})</button>
+            <button type="button" class="fin-pill ${filterStatus==='open'?'active':''}" data-pay-st="open">🟡 A vencer (${opCount})</button>
+            <button type="button" class="fin-pill ${filterStatus==='paid'?'active':''}" data-pay-st="paid">✅ Pagas (${pdCount})</button>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input id="fin-payables-search" class="fin-search-input" placeholder="Buscar despesa, categoria ou favorecido..." value="${esc(filterQuery)}">
+            <button type="button" class="primary-button" id="btn-fin-new-expense" style="padding:8px 13px;font-size:12.5px">+ Nova Despesa</button>
+          </div>
+        </div>
+        <div id="fin-payables-groups"></div>
+      `;
+      let curSt=filterStatus;
+      const inp=$('#fin-payables-search');
+      inp.oninput=()=>renderPayables(curSt,inp.value);
+      body.querySelectorAll('[data-pay-st]').forEach(b=>b.onclick=()=>{
+        curSt=b.dataset.paySt;
+        body.querySelectorAll('[data-pay-st]').forEach(x=>x.classList.toggle('active',x.dataset.paySt===curSt));
+        renderPayables(curSt,inp.value);
+      });
+      $('#btn-fin-new-expense').onclick=()=>this.financeiro('new',{kind:'payable'});
+      renderPayables(curSt,inp.value);
+    }else if(tab==='clients'){
+      const clis=this.state.clients||[];
+      body.innerHTML=`
+        <div class="fin-client-grid">
+          ${clis.map(c=>{
+            const cItems=items.filter(i=>i.clientId===c.id||i.clientName===c.name);
+            const cPaid=cItems.length?cItems.filter(x=>x.status==='paid').reduce((s,x)=>s+Number(x.amount||0),0):Number(c.honorariosPaid||0);
+            const cTotal=cItems.length?cItems.reduce((s,x)=>s+Number(x.amount||0),0):Number(c.honorariosTotal||0);
+            const cOverdue=cItems.filter(x=>x.status==='overdue').reduce((s,x)=>s+Number(x.amount||0),0);
+            const cPending=Math.max(0,cTotal-cPaid);
+            const pct=cTotal?Math.min(100,Math.round((cPaid/cTotal)*100)):0;
+            return `<div class="fin-client-card">
+              <div class="fin-client-top">
+                <div>
+                  <strong style="font-size:15px">${esc(this.mask(c.name,'name'))}</strong>
+                  <div class="muted">${esc(c.area)} · ${cItems.length} parcela(s) lançada(s)</div>
+                </div>
+                <span class="badge ${cOverdue>0?'red':cPending===0&&cTotal>0?'green':'gold'}">${cOverdue>0?'Parcela vencida':cPending===0&&cTotal>0?'Quitado 100%':`${pct}% pago`}</span>
+              </div>
+              <div class="fin-client-stats">
+                <div class="fin-client-stat"><small>Contratado</small><strong>${esc(this.mask(money(cTotal),'money'))}</strong></div>
+                <div class="fin-client-stat"><small>Já Pago</small><strong style="color:#86d1b1">${esc(this.mask(money(cPaid),'money'))}</strong></div>
+                <div class="fin-client-stat"><small>${cOverdue>0?'Vencido':'A Receber'}</small><strong style="color:${cOverdue>0?'#f5a79e':'#f0cf88'}">${esc(this.mask(money(cOverdue>0?cOverdue:cPending),'money'))}</strong></div>
+              </div>
+              <div class="fin-progress" aria-label="${pct}% quitado"><div style="width:${pct}%"></div></div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button type="button" class="outline-button" style="padding:7px 11px;font-size:12px" data-open-client="${esc(c.id)}">👤 Abrir Dossiê</button>
+                <button type="button" class="outline-button" style="padding:7px 11px;font-size:12px" data-fin-cli-add="${esc(c.id)}">➕ Lançar Parcela</button>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      `;
+      body.querySelectorAll('[data-fin-cli-add]').forEach(b=>b.onclick=()=>this.financeiro('new',{kind:'receivable',clientId:b.dataset.finCliAdd}));
     }else if(tab==='outbox'){
       body.innerHTML=`
-        <div class="data-table-wrap">
-          <table class="data-table">
-            <thead><tr><th>Destinatário</th><th>WhatsApp</th><th>Valor</th><th>Mensagem Preparada pelo Rui</th><th>Estado / Idempotência</th><th>Ação</th></tr></thead>
-            <tbody>
-              ${outbox.map(o=>`
-                <tr>
-                  <td><strong>${esc(o.clientName)}</strong></td>
-                  <td>${esc(o.phone)}</td>
-                  <td>${money(o.amount)}</td>
-                  <td style="max-width:420px;font-size:13.5px;color:#bfd0d8">${esc(o.message)}</td>
-                  <td><span class="badge ${o.status==='sent'?'green':'gold'}">${o.status==='sent'?'Enviado ✓':'Aguardando autorização'}</span><small>${esc(o.idempotencyKey)}</small></td>
-                  <td>${o.status==='sent'?'<span class="muted">Entregue</span>':`<button class="success-button" style="padding:8px 13px;font-size:13px" data-send-outbox="${esc(o.id)}">📲 Autorizar Envio</button>`}</td>
-                </tr>
-              `).join('')||'<tr><td colspan="6">Nenhuma cobrança pendente no Outbox.</td></tr>'}
-            </tbody>
-          </table>
+        <div class="fin-outbox-grid">
+          ${outbox.map(o=>`
+            <div class="fin-outbox-card">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+                <div>
+                  <strong style="font-size:15px">${esc(this.mask(o.clientName,'name'))}</strong>
+                  <div class="muted">WhatsApp: ${esc(this.mask(o.phone,'phone'))}</div>
+                </div>
+                <strong style="font:700 17px Georgia,serif;color:#f0cf88">${esc(this.mask(money(o.amount),'money'))}</strong>
+              </div>
+              <div class="fin-outbox-msg">${esc(o.message)}</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+                <span class="badge ${o.status==='sent'?'green':'gold'}">${o.status==='sent'?'Enviado ✓':'Aguardando autorização'} · <code>${esc(o.idempotencyKey)}</code></span>
+                ${o.status==='sent'?'<span class="muted">Entregue</span>':`<button class="success-button" style="padding:8px 13px;font-size:12.5px" data-send-outbox="${esc(o.id)}">📲 Autorizar Envio</button>`}
+              </div>
+            </div>
+          `).join('')||'<p class="subtle-note">Nenhuma mensagem de cobrança pendente no Outbox.</p>'}
         </div>
       `;
     }else if(tab==='new'){
       const clis=this.state.clients||[];
+      const kind=opts.kind==='payable'?'payable':'receivable';
+      const preCli=opts.clientId||clis[0]?.id||'';
       body.innerHTML=`
-        <form id="new-fin-form" style="margin-top:12px">
+        <div class="fin-filter-pills" style="margin-bottom:14px">
+          <button type="button" class="fin-pill ${kind==='receivable'?'active':''}" id="btn-kind-rec">🟢 Receita (Honorários de Cliente)</button>
+          <button type="button" class="fin-pill ${kind==='payable'?'active':''}" id="btn-kind-pay">🔴 Despesa (Conta a Pagar do Escritório)</button>
+        </div>
+        <form id="new-fin-form">
           <div class="form-grid">
-            <label class="field">Cliente<select name="clientId">${clis.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}</select></label>
-            <label class="field">Valor (R$)<input name="amount" type="number" required min="1" value="3500"></label>
+            ${kind==='receivable'
+              ?`<label class="field">Cliente<select name="clientId">${clis.map(c=>`<option value="${esc(c.id)}" ${c.id===preCli?'selected':''}>${esc(c.name)}</option>`).join('')}</select></label>`
+              :`<label class="field">Favorecido / Fornecedor<input name="vendor" required placeholder="Ex.: TJSP / Contabilidade / Fornecedor"></label>
+                <label class="field">Categoria<select name="category"><option>Estrutura</option><option>Tecnologia</option><option>Impostos</option><option>Marketing</option><option>Custas</option><option>Outros</option></select></label>`
+            }
+            <label class="field">Valor (R$)<input name="amount" type="number" required min="1" value="${kind==='receivable'?3500:850}"></label>
             <label class="field">Data de Vencimento<input name="dueDate" required placeholder="Ex.: 30/10/2026" value="30/10/2026"></label>
-            <label class="field">Meio de Pagamento<select name="method"><option>PIX</option><option>Boleto Bancário</option><option>Transferência TED</option><option>Cartão de Crédito</option></select></label>
-            <label class="field full">Descrição da Parcela / Honorários<input name="description" required placeholder="Ex.: Honorários Iniciais (Parcela 1/2) · Ação Indenizatória"></label>
+            <label class="field">Meio de Pagamento<select name="method"><option>PIX</option><option>Boleto Bancário</option><option>Transferência TED</option><option>Cartão Corporativo</option><option>Guia DARE</option></select></label>
+            <label class="field full">Descrição<input name="description" required placeholder="${kind==='receivable'?'Ex.: Honorários Iniciais (Parcela 1/2) · Ação Indenizatória':'Ex.: Taxa de protocolo / Manutenção de sistema'}"></label>
           </div>
-          <div class="action-bar"><button type="submit" class="primary-button">Lançar Título no Financeiro +</button></div>
+          <div class="action-bar"><button type="submit" class="primary-button">${kind==='receivable'?'Lançar Receita (A Receber) +':'Lançar Despesa (A Pagar) +'}</button></div>
         </form>
       `;
+      $('#btn-kind-rec').onclick=()=>this.financeiro('new',{kind:'receivable',clientId:preCli});
+      $('#btn-kind-pay').onclick=()=>this.financeiro('new',{kind:'payable'});
       $('#new-fin-form').onsubmit=e=>{
         e.preventDefault();
         const fd=Object.fromEntries(new FormData(e.target));
-        const cli=clis.find(c=>c.id===fd.clientId)||clis[0];
-        this.state.financeiro.items.unshift({
-          id:'fin-'+Date.now(),
-          clientId:cli.id,
-          clientName:cli.name,
-          description:fd.description.trim(),
-          dueDate:fd.dueDate.trim(),
-          paidAt:null,
-          method:fd.method,
-          amount:Number(fd.amount||0),
-          status:'open'
-        });
-        this.log(`Rui lançou novo título financeiro para ${cli.name}: ${money(Number(fd.amount))} (vencimento ${fd.dueDate}).`);
-        this.persist();this.render();
-        this.toast('Título lançado no módulo financeiro!');
-        this.financeiro('items');
+        if(kind==='receivable'){
+          const cli=clis.find(c=>c.id===fd.clientId)||clis[0];
+          this.state.financeiro.items.unshift({
+            id:'fin-'+Date.now(),
+            clientId:cli.id,
+            clientName:cli.name,
+            description:fd.description.trim(),
+            dueDate:fd.dueDate.trim(),
+            paidAt:null,
+            method:fd.method,
+            amount:Number(fd.amount||0),
+            status:'open'
+          });
+          this.log(`Rui lançou honorários a receber de ${cli.name}: ${money(Number(fd.amount))} (venc. ${fd.dueDate}).`);
+          this.persist();this.render();
+          this.toast('Receita lançada em A Receber!');
+          this.financeiro('items');
+        }else{
+          this.state.financeiro.payables.unshift({
+            id:'pay-'+Date.now(),
+            vendor:fd.vendor.trim(),
+            category:fd.category||'Outros',
+            description:fd.description.trim(),
+            dueDate:fd.dueDate.trim(),
+            paidAt:null,
+            method:fd.method,
+            amount:Number(fd.amount||0),
+            status:'open'
+          });
+          this.log(`Rui lançou conta a pagar (${fd.category}): ${fd.description.trim()} — ${money(Number(fd.amount))}.`);
+          this.persist();this.render();
+          this.toast('Despesa lançada em Contas a Pagar!');
+          this.financeiro('payables');
+        }
       };
     }
 
@@ -1043,16 +1427,38 @@ Advogado · Escritório Daniel Felix Advocacia`;
     const item=(this.state.financeiro?.items||[]).find(x=>x.id===id);
     if(!item)return;
     item.status='paid';
-    item.paidAt='16/10/2026';
+    item.paidAt=new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date());
     const cli=(this.state.clients||[]).find(c=>c.id===item.clientId);
     if(cli)cli.honorariosPaid=(cli.honorariosPaid||0)+Number(item.amount||0);
     if(this.state.financeiro?.outbox){
       this.state.financeiro.outbox=this.state.financeiro.outbox.filter(o=>o.finId!==item.id);
     }
+    const rui=this.state.agents.find(a=>a.id==='financeiro');
+    if(rui)rui.task=`Conciliou ${money(item.amount)} de ${item.clientName}`;
     this.log(`Rui confirmou recebimento de ${money(item.amount)} de ${item.clientName}. Caixa atualizado.`);
     this.persist();this.render();
     this.toast(`Recebimento de ${money(item.amount)} (${item.clientName}) conciliado no caixa!`);
     if(this.modal.open)this.financeiro('items');
+  }
+
+  markExpensePaid(id){
+    const exp=(this.state.financeiro?.payables||[]).find(x=>x.id===id);
+    if(!exp)return;
+    exp.status='paid';
+    exp.paidAt=new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date());
+    const rui=this.state.agents.find(a=>a.id==='financeiro');
+    if(rui)rui.task=`Liquidou despesa: ${exp.description.slice(0,28)}`;
+    this.log(`Rui liquidou conta a pagar "${exp.description}" (${money(exp.amount)}).`);
+    this.persist();this.render();
+    this.toast(`Despesa de ${money(exp.amount)} (${exp.vendor}) marcada como paga!`);
+    if(this.modal.open)this.financeiro('payables');
+  }
+
+  printReceipt(id){
+    const item=(this.state.financeiro?.items||[]).find(x=>x.id===id);
+    if(!item)return;
+    const text=`RECIBO DE HONORÁRIOS ADVOCATÍCIOS\n\nRecebemos de ${item.clientName.toUpperCase()} a importância de ${money(item.amount)}, referente a: ${item.description}.\n\nData de Quitação: ${item.paidAt||item.dueDate}\nMeio de Pagamento: ${item.method}\n\nPara maior clareza, firmamos o presente recibo dando plena e irrevogável quitação da parcela discriminada.\n\nEscritório Daniel Felix Advocacia\nResponsável financeiro: Rui (Conciliado em caixa)`;
+    this.printTimbrado('Recibo de Honorários',text,simpleHash(item.id+item.clientName+item.amount),`REC-${item.id.toUpperCase()}`,item.clientName,'Financeiro · Honorários');
   }
 
   createOutboxBilling(id){
@@ -1690,7 +2096,22 @@ Emitido em: ${d.createdAt} · Escritório Daniel Felix Advocacia`;
   async runWorkflow(key){
     if(this.live||this.running){this.toast('Já existe uma simulação em andamento. Acompanhe o histórico.');return;}
     const flow=WORKFLOWS[key];if(!flow)return;this.running=true;this.state.paused=false;this.state.sector='all';this.syncPause();this.renderTabs();
-    try{for(const [id,text] of flow.steps){const a=this.state.agents.find(a=>a.id===id);if(!a)continue;this.selected=id;a.task=text+' · simulação';a.status=a.human||id==='revisor'?'review':id==='assinaturas'?'waiting':'working';this.renderScene();this.renderInspector();this.log(`${a.name}: ${text}.`);await this.walk(a);}this.toast(`Simulação concluída: ${flow.name}.`);}finally{this.running=false;this.persist();}
+    try{
+      for(const [id,text] of flow.steps){
+        const a=this.state.agents.find(a=>a.id===id);if(!a)continue;
+        this.selected=id;a.task=text+' · simulação';
+        a.status=a.human||id==='revisor'?'review':id==='assinaturas'?'waiting':'working';
+        this.renderScene();this.renderInspector();this.log(`${a.name}: ${text}.`);
+        if(this.stageEngine==='habblaud'){
+          this.syncHabblaud();
+          this.postToHabblaud({type:'df:select-agent',agentId:a.id,focus:true});
+          await new Promise(r=>setTimeout(r,1300));
+        }else{
+          await this.walk(a);
+        }
+      }
+      this.toast(`Simulação concluída: ${flow.name}.`);
+    }finally{this.running=false;this.persist();}
   }
   async walk(a){
     if(this.reduceMotion||a.human)return new Promise(r=>setTimeout(r,250));

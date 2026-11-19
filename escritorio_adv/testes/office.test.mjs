@@ -8,6 +8,7 @@ import {Script} from 'node:vm';
 import {initialState,addAgent,restoreState,DEFAULT_AGENTS} from '../prototipo/src/model.mjs';
 import {FinanceiroRead} from '../adaptadores/financeiro-read.mjs';
 import {PixelScene} from '../prototipo/src/pixel-scene.mjs';
+import {buildHabblaudSnapshotFromState} from '../prototipo/src/habblaud-bridge.mjs';
 const require=createRequire(process.env.ARAO_QA_MODULES ? path.join(process.env.ARAO_QA_MODULES,'package.json') : import.meta.url);
 const {JSDOM}=require('jsdom');
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
@@ -135,5 +136,57 @@ test('módulos operacionais: Telegram, Clientes, Petições e Financeiro funcion
   click(x.w,'[data-tg-cmd="/prazos"]');
   assert.equal(x.app.state.telegramMessages.length,msgCount+2);
  }finally{x.close();}
+});
+
+test('financeiro redesenhado separa pagar, receber, clientes, filtros, LGPD e busca de petições',()=>{
+ const x=boot();try{
+  const before=x.app.finTotals();
+  assert.ok(before.payablesPending>0);
+  assert.equal(before.netCash,before.paid-before.payablesPaid);
+  click(x.w,'[data-action=financeiro]');
+  assert.ok(x.d.querySelector('[data-fin-tab="payables"]'));
+  assert.ok(x.d.querySelector('[data-fin-tab="clients"]'));
+  assert.ok(x.d.querySelector('[data-fin-tab="outbox"]'));
+  assert.ok(x.d.querySelector('[data-fin-tab="new"]'));
+  click(x.w,'[data-fin-st="overdue"]');
+  const ovText=x.d.querySelector('#fin-items-groups').textContent;
+  assert.match(ovText,/Em atraso/);
+  assert.ok(!ovText.includes('Pago em '));
+  click(x.w,'[data-fin-tab="payables"]');
+  click(x.w,'[data-pay-expense="pay-5"]');
+  const afterPay=x.app.finTotals();
+  assert.equal(afterPay.payablesPending,before.payablesPending-680);
+  assert.equal(afterPay.netCash,before.netCash-680);
+  click(x.w,'[data-fin-tab="clients"]');
+  assert.match(x.d.querySelector('#fin-tab-body').textContent,/Fernanda Costa Lira/);
+  click(x.w,'[data-fin-tab="outbox"]');
+  assert.match(x.d.querySelector('#fin-tab-body').textContent,/Autorizar Envio|Entregue/);
+  click(x.w,'[data-fin-tab="new"]');
+  assert.ok(x.d.querySelector('#new-fin-form'));
+  click(x.w,'#btn-toggle-privacy');
+  assert.equal(x.app.privacyMode,true);
+  click(x.w,'[data-action=financeiro]');
+  assert.match(x.d.querySelector('#fin-tab-body').textContent,/R\$ \*\*\*,\*\*/);
+  click(x.w,'#btn-toggle-privacy');
+  click(x.w,'[data-action=petitions]');
+  const petSearch=x.d.querySelector('#pet-search');
+  petSearch.value='Súmula 543';
+  petSearch.oninput();
+  assert.match(x.d.querySelector('#modal-body').textContent,/Rescisão Contratual Imobiliária/);
+ }finally{x.close();}
+});
+
+test('bridge Habblaud mapeia 6 salas e todos os 19 agentes + personalizados com IDs exatos',()=>{
+ const st=initialState();
+ const custom=addAgent(st,{name:'Perita Fiscal',role:'Especialista Tributária',sector:'juridico',area:'Cível',color:'#4f7a65',accessory:'glasses'});
+ const snap=buildHabblaudSnapshotFromState(st);
+ assert.equal(snap.rooms.length,6);
+ assert.deepEqual(snap.rooms.map(r=>r.slot),[0,1,2,3,4,5]);
+ assert.equal(snap.agents.length,DEFAULT_AGENTS.length+1);
+ const snapIds=new Set(snap.agents.map(a=>a.id));
+ for(const a of DEFAULT_AGENTS){
+  assert.ok(snapIds.has(a.id),`Agente ausente no snapshot Habblaud: ${a.id}`);
+ }
+ assert.ok(snapIds.has(custom.id),'Agente customizado ausente no snapshot Habblaud');
 });
 
